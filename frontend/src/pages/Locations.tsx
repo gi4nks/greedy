@@ -21,8 +21,17 @@ export default function Locations(): JSX.Element {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'description' | 'notes'>('description');
+  // Collapsed state for each location
+  const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const adv = useAdventures();
+
+  // Toggle collapse for a location
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     fetchLocations();
@@ -103,8 +112,9 @@ export default function Locations(): JSX.Element {
 
       {(showCreateForm || editingId) && (
         <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
-        <h3 className="text-lg font-semibold mb-2">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
-        <div className="mb-2">
+        <h3 className="text-lg font-semibold mb-4">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
+        
+        <div className="mb-4">
           <input
             type="text"
             placeholder="Name"
@@ -114,38 +124,73 @@ export default function Locations(): JSX.Element {
             required
           />
         </div>
-        <div className="mb-2 grid grid-cols-2 gap-4">
-          <textarea
-            placeholder="Description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full p-2 border rounded h-20"
-            required
-          />
-          <div>
-            <h4 className="font-semibold mb-2">Preview</h4>
-            <div className="p-2 border rounded h-20 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown>{formData.description}</ReactMarkdown>
-            </div>
-          </div>
-        </div>
-        <div className="mb-2 grid grid-cols-2 gap-4">
-          <textarea
-            placeholder="Notes (Markdown supported)"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className="w-full p-2 border rounded h-32"
-            required
-          />
-          <div>
-            <h4 className="font-semibold mb-2">Preview</h4>
-            <div className="p-2 border rounded h-32 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown>{formData.notes}</ReactMarkdown>
-            </div>
+
+        {/* Tab Navigation */}
+        <div className="mb-4">
+          <div className="flex border-b">
+            <button
+              type="button"
+              onClick={() => setActiveTab('description')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'description'
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Description
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('notes')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'notes'
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Notes
+            </button>
           </div>
         </div>
 
-        <div className="mb-2">
+        {/* Tab Content */}
+        <div className="mb-4">
+          {activeTab === 'description' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <textarea
+                  placeholder="Description (Markdown supported)"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full p-2 border rounded h-64"
+                  required
+                />
+              </div>
+              <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
+                <ReactMarkdown children={formData.description} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'notes' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <textarea
+                  placeholder="Notes (Markdown supported)"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full p-2 border rounded h-64"
+                  required
+                />
+              </div>
+              <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
+                <ReactMarkdown children={formData.notes} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-4">
           <div className="flex items-center">
             <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2" />
             <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-1 rounded">Add Tag</button>
@@ -157,68 +202,73 @@ export default function Locations(): JSX.Element {
           </div>
         </div>
 
-        <button type="submit" className="bg-yellow-600 text-white px-4 py-2 rounded">
-          {editingId ? 'Update' : 'Add'} Location
-        </button>
-        {editingId && (
+        <div className="flex gap-2">
+          <button type="submit" className="bg-yellow-600 text-white px-4 py-2 rounded">
+            {editingId ? 'Update' : 'Add'} Location
+          </button>
           <button
             type="button"
             onClick={() => {
               setFormData({ name: '', description: '', notes: '', tags: [] });
               setEditingId(null);
               setShowCreateForm(false);
+              setActiveTab('description');
             }}
-            className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+            className="bg-gray-500 text-white px-4 py-2 rounded"
           >
             Cancel
           </button>
-        )}
-        {!editingId && (
-          <button
-            type="button"
-            onClick={() => {
-              setFormData({ name: '', description: '', notes: '', tags: [] });
-              setShowCreateForm(false);
-            }}
-            className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-        )}
+        </div>
       </form>
       )}
 
       <div className="space-y-4">
-        {locations.map(location => (
-          <div key={location.id} className="p-4 bg-white rounded shadow">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-semibold">{location.name}</h3>
-              <div>
-                <button
-                  onClick={() => handleEdit(location as Location & { id: number })}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(location.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
+        {locations.map(location => {
+          const isCollapsed = location.id ? collapsed[location.id] ?? true : false;
+          return (
+            <div key={location.id} className="p-4 bg-white rounded shadow">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleCollapse(location.id)}
+                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
+                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
+                  </button>
+                  <h3 className="text-xl font-semibold">{location.name}</h3>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEdit(location as Location & { id: number })}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(location.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+              {!isCollapsed && (
+                <>
+                  <p className="text-gray-600 mb-2">{location.description}</p>
+                  <div className="prose mb-2">
+                    <ReactMarkdown children={location.notes} />
+                  </div>
+                  <div>
+                    {(location.tags || []).map(t => (
+                      <Chip key={t} label={t} onRemove={() => {}} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-gray-600 mb-2">{location.description}</p>
-            <div className="prose mb-2">
-              <ReactMarkdown>{location.notes}</ReactMarkdown>
-            </div>
-            <div>
-              {(location.tags || []).map(t => (
-                <Chip key={t} label={t} onRemove={() => {}} />
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Page>
   );

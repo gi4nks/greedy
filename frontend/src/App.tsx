@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sessions from './pages/Sessions';
-import NPCs from './pages/NPCs';
+import Characters from './pages/Characters';
 import Locations from './pages/Locations';
 import Timeline from './pages/Timeline';
 import Search from './pages/Search';
+import Adventures from './pages/Adventures';
 import Header from './components/Header';
 import { AdventureProvider } from './contexts/AdventureContext';
 
@@ -16,10 +17,11 @@ function App(): JSX.Element {
           <main className="container mx-auto p-4">
             <Routes>
               <Route path="/sessions" element={<Sessions />} />
-              <Route path="/npcs" element={<NPCs />} />
+              <Route path="/characters" element={<Characters />} />
               <Route path="/locations" element={<Locations />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/adventures" element={<Adventures />} />
               <Route path="/" element={<Sessions />} />
             </Routes>
           </main>

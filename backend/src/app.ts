@@ -4,7 +4,7 @@ import { migrate } from '../db';
 
 import adventures from './routes/adventures';
 import sessions from './routes/sessions';
-import npcs from './routes/npcs';
+import characters from './routes/characters';
 import locations from './routes/locations';
 import misc from './routes/misc';
 
@@ -20,7 +20,7 @@ export function createApp(): Express {
 
   app.use('/api/adventures', adventures);
   app.use('/api/sessions', sessions);
-  app.use('/api/npcs', npcs);
+  app.use('/api/characters', characters);
   app.use('/api/locations', locations);
   // misc handles /api/global_notes, /api/export, /api/import, /api/search
   app.use('/api', misc);

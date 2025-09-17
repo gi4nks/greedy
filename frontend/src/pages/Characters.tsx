@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
 
@@ -13,23 +14,31 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
-type NPC = { id?: number; name: string; role: string; description: string; tags?: string[] };
+type Character = { id?: number; name: string; role: string; description: string; tags?: string[] };
 
-export default function NPCs(): JSX.Element {
-  const [npcs, setNpcs] = useState<NPC[]>([]);
-  const [formData, setFormData] = useState<NPC>({ name: '', role: '', description: '', tags: [] });
+export default function Characters(): JSX.Element {
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [formData, setFormData] = useState<Character>({ name: '', role: '', description: '', tags: [] });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  // Collapsed state for each NPC
+  const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const adv = useAdventures();
 
+  // Toggle collapse for an NPC
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   useEffect(() => {
-    fetchNpcs();
+    fetchCharacters();
   }, []);
 
-  const fetchNpcs = () => {
-    axios.get('/api/npcs').then(res => setNpcs(res.data));
+  const fetchCharacters = () => {
+    axios.get('/api/characters').then(res => setCharacters(res.data));
   };
 
   const handleAddTag = () => {
@@ -49,32 +58,32 @@ export default function NPCs(): JSX.Element {
     e.preventDefault();
     const data = { ...formData };
     if (editingId) {
-      axios.put(`/api/npcs/${editingId}`, data).then(() => {
-        fetchNpcs();
+      axios.put(`/api/characters/${editingId}`, data).then(() => {
+        fetchCharacters();
         setFormData({ name: '', role: '', description: '', tags: [] });
         setEditingId(null);
         setShowCreateForm(false);
       });
     } else {
-      axios.post('/api/npcs', data).then(() => {
-        fetchNpcs();
+      axios.post('/api/characters', data).then(() => {
+        fetchCharacters();
         setFormData({ name: '', role: '', description: '', tags: [] });
         setShowCreateForm(false);
       });
     }
   };
 
-  const handleEdit = (npc: NPC & { id: number }) => {
-    setFormData({ name: npc.name, role: npc.role, description: npc.description, tags: npc.tags || [] });
-    setEditingId(npc.id);
+  const handleEdit = (character: Character & { id: number }) => {
+    setFormData({ name: character.name, role: character.role, description: character.description, tags: character.tags || [] });
+    setEditingId(character.id);
     setShowCreateForm(true);
   };
 
   const handleDelete = (id?: number) => {
     if (!id) return;
-    if (window.confirm('Are you sure you want to delete this NPC?')) {
-      axios.delete(`/api/npcs/${id}`).then(() => {
-        fetchNpcs();
+    if (window.confirm('Are you sure you want to delete this character?')) {
+      axios.delete(`/api/characters/${id}`).then(() => {
+        fetchCharacters();
       });
     }
   };
@@ -84,16 +93,16 @@ export default function NPCs(): JSX.Element {
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
     const res = await axios.get(`/api/search?${params.toString()}`);
-    setNpcs(res.data.npcs || []);
+    setCharacters(res.data.characters || []);
   };
 
   return (
-    <Page title="NPCs" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="Characters" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
             type="text"
-            placeholder="Search NPCs..."
+            placeholder="Search Characters..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 border rounded"
@@ -103,7 +112,7 @@ export default function NPCs(): JSX.Element {
 
       {(showCreateForm || editingId) && (
         <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
-        <h3 className="text-lg font-semibold mb-2">{editingId ? 'Edit NPC' : 'Add New NPC'}</h3>
+        <h3 className="text-lg font-semibold mb-2">{editingId ? 'Edit Character' : 'Add New Character'}</h3>
         <div className="mb-2">
           <input
             type="text"
@@ -124,19 +133,20 @@ export default function NPCs(): JSX.Element {
             required
           />
         </div>
-        <div className="mb-2 grid grid-cols-2 gap-4">
+        <div className="mb-2">
           <textarea
             placeholder="Description (Markdown supported)"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full p-2 border rounded h-32"
+            className="w-full p-2 border rounded h-40"
             required
           />
-          <div>
-            <h4 className="font-semibold mb-2">Preview</h4>
-            <div className="p-2 border rounded h-32 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown>{formData.description}</ReactMarkdown>
-            </div>
+        </div>
+
+        <div className="mb-4">
+          <h4 className="font-semibold mb-2">Preview</h4>
+          <div className="p-2 border rounded h-32 overflow-auto bg-white prose text-gray-900">
+            <ReactMarkdown children={formData.description} />
           </div>
         </div>
 
@@ -153,7 +163,7 @@ export default function NPCs(): JSX.Element {
         </div>
 
         <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded">
-          {editingId ? 'Update' : 'Add'} NPC
+          {editingId ? 'Update' : 'Add'} Character
         </button>
         {editingId && (
           <button
@@ -184,36 +194,52 @@ export default function NPCs(): JSX.Element {
       )}
 
       <div className="space-y-4">
-        {npcs.map(npc => (
-          <div key={npc.id} className="p-4 bg-white rounded shadow">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-semibold">{npc.name}</h3>
-              <div>
-                <button
-                  onClick={() => handleEdit(npc as NPC & { id: number })}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(npc.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
+        {characters.map(character => {
+          const isCollapsed = character.id ? collapsed[character.id] ?? true : false;
+          return (
+            <div key={character.id} className="p-4 bg-white rounded shadow">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleCollapse(character.id)}
+                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
+                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
+                  </button>
+                  <h3 className="text-xl font-semibold">{character.name}</h3>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEdit(character as Character & { id: number })}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(character.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+              {!isCollapsed && (
+                <>
+                  <p className="text-gray-600 mb-2">{character.role}</p>
+                  <div className="prose mb-2">
+                    <ReactMarkdown children={character.description} />
+                  </div>
+                  <div>
+                    {(character.tags || []).map(t => (
+                      <Chip key={t} label={t} onRemove={() => {}} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-gray-600 mb-2">{npc.role}</p>
-            <div className="prose mb-2">
-              <ReactMarkdown>{npc.description}</ReactMarkdown>
-            </div>
-            <div>
-              {(npc.tags || []).map(t => (
-                <Chip key={t} label={t} onRemove={() => {}} />
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Page>
   );

@@ -34,13 +34,13 @@ router.delete('/global_notes/:id', (req: Request, res: Response) => {
 router.get('/export', (req: Request, res: Response) => {
   const adventures = db.prepare('SELECT * FROM adventures').all();
   const sessions = db.prepare('SELECT * FROM sessions').all();
-  const npcs = db.prepare('SELECT * FROM npcs').all();
+  const characters = db.prepare('SELECT * FROM characters').all();
   const locations = db.prepare('SELECT * FROM locations').all();
   const global_notes = db.prepare('SELECT * FROM global_notes').all();
   // parse tags
-  npcs.forEach((n: any) => n.tags = parseTags(n.tags));
+  characters.forEach((c: any) => c.tags = parseTags(c.tags));
   locations.forEach((l: any) => l.tags = parseTags(l.tags));
-  res.json({ adventures, sessions, npcs, locations, global_notes });
+  res.json({ adventures, sessions, characters, locations, global_notes });
 });
 
 router.post('/import', (req: Request, res: Response) => {
@@ -49,7 +49,7 @@ router.post('/import', (req: Request, res: Response) => {
 
   const tr = db.transaction(() => {
     db.prepare('DELETE FROM sessions').run();
-    db.prepare('DELETE FROM npcs').run();
+    db.prepare('DELETE FROM characters').run();
     db.prepare('DELETE FROM locations').run();
     db.prepare('DELETE FROM global_notes').run();
     db.prepare('DELETE FROM adventures').run();
@@ -60,8 +60,8 @@ router.post('/import', (req: Request, res: Response) => {
     const insSession = db.prepare('INSERT INTO sessions (adventure_id, title, date, text) VALUES (?, ?, ?, ?)');
     if (payload.sessions) payload.sessions.forEach((s: any) => insSession.run(s.adventure_id || null, s.title, s.date, s.text));
 
-    const insNpc = db.prepare('INSERT INTO npcs (adventure_id, name, role, description, tags) VALUES (?, ?, ?, ?, ?)');
-    if (payload.npcs) payload.npcs.forEach((n: any) => insNpc.run(n.adventure_id || null, n.name, n.role, n.description, JSON.stringify(n.tags || [])));
+    const insCharacter = db.prepare('INSERT INTO characters (adventure_id, name, role, description, tags) VALUES (?, ?, ?, ?, ?)');
+    if (payload.characters) payload.characters.forEach((c: any) => insCharacter.run(c.adventure_id || null, c.name, c.role, c.description, JSON.stringify(c.tags || [])));
 
     const insLoc = db.prepare('INSERT INTO locations (adventure_id, name, description, notes, tags) VALUES (?, ?, ?, ?, ?)');
     if (payload.locations) payload.locations.forEach((l: any) => insLoc.run(l.adventure_id || null, l.name, l.description, l.notes, JSON.stringify(l.tags || [])));
@@ -81,16 +81,16 @@ router.post('/import', (req: Request, res: Response) => {
 // Search
 router.get('/search', (req: Request, res: Response) => {
   const q = (String(req.query.q || '')).toLowerCase().trim();
-  if (!q) return res.json({ sessions: [], npcs: [], locations: [] });
+  if (!q) return res.json({ sessions: [], characters: [], locations: [] });
 
   const sessions = db.prepare('SELECT * FROM sessions').all().filter((s: any) => (s.title || '').toLowerCase().includes(q) || (s.text || '').toLowerCase().includes(q) || (s.date || '').toLowerCase().includes(q));
-  const npcs = db.prepare('SELECT * FROM npcs').all().filter((n: any) => (n.name || '').toLowerCase().includes(q) || (n.role || '').toLowerCase().includes(q) || (n.description || '').toLowerCase().includes(q) || (parseTags(n.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
+  const characters = db.prepare('SELECT * FROM characters').all().filter((c: any) => (c.name || '').toLowerCase().includes(q) || (c.role || '').toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q) || (parseTags(c.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
   const locations = db.prepare('SELECT * FROM locations').all().filter((l: any) => (l.name || '').toLowerCase().includes(q) || (l.description || '').toLowerCase().includes(q) || (l.notes || '').toLowerCase().includes(q) || (parseTags(l.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
   // parse tags before returning
-  npcs.forEach((n: any) => n.tags = parseTags(n.tags));
+  characters.forEach((c: any) => c.tags = parseTags(c.tags));
   locations.forEach((l: any) => l.tags = parseTags(l.tags));
 
-  res.json({ sessions, npcs, locations });
+  res.json({ sessions, characters, locations });
 });
 
 export default router;

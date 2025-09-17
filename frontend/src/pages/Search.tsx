@@ -16,7 +16,27 @@ export default function Search(): JSX.Element {
   const [npcForm, setNpcForm] = useState({ name: '', role: '', description: '', tags: [] as string[] });
   const [locationForm, setLocationForm] = useState({ name: '', description: '', notes: '', tags: [] as string[] });
   const [tagInput, setTagInput] = useState('');
+  // Collapsed states for each type
+  const [collapsedSessions, setCollapsedSessions] = useState<{ [id: number]: boolean }>({});
+  const [collapsedNpcs, setCollapsedNpcs] = useState<{ [id: number]: boolean }>({});
+  const [collapsedLocations, setCollapsedLocations] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+
+  // Toggle functions
+  const toggleCollapseSession = (id?: number) => {
+    if (!id) return;
+    setCollapsedSessions(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleCollapseNpc = (id?: number) => {
+    if (!id) return;
+    setCollapsedNpcs(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleCollapseLocation = (id?: number) => {
+    if (!id) return;
+    setCollapsedLocations(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     if (qParam) doSearch(qParam);
@@ -303,12 +323,26 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Sessions</h3>
           <button onClick={() => { setFormType('session'); setShowCreateForm(true); }} className="bg-red-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.sessions.map((s: any) => (
-          <div key={s.id} className="p-3 bg-white rounded shadow mb-2">
-            <h4 className="font-semibold">{s.title} <span className="text-sm text-gray-500">{s.date}</span></h4>
-            <div className="prose"><ReactMarkdown>{s.text}</ReactMarkdown></div>
-          </div>
-        ))}
+        {results.sessions.map((s: any) => {
+          const isCollapsed = s.id ? collapsedSessions[s.id] ?? true : false;
+          return (
+            <div key={s.id} className="p-3 bg-white rounded shadow mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => toggleCollapseSession(s.id)}
+                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                >
+                  {isCollapsed ? '+' : '-'}
+                </button>
+                <h4 className="font-semibold">{s.title} <span className="text-sm text-gray-500">{s.date}</span></h4>
+              </div>
+              {!isCollapsed && (
+                <div className="prose"><ReactMarkdown>{s.text}</ReactMarkdown></div>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       <section className="mb-6">
@@ -316,13 +350,29 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">NPCs</h3>
           <button onClick={() => { setFormType('npc'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.npcs.map((n: any) => (
-          <div key={n.id} className="p-3 bg-white rounded shadow mb-2">
-            <h4 className="font-semibold">{n.name} <span className="text-sm text-gray-500">{n.role}</span></h4>
-            <div className="prose"><ReactMarkdown>{n.description}</ReactMarkdown></div>
-            <p className="text-sm text-gray-500">Tags: {(n.tags || []).join(', ')}</p>
-          </div>
-        ))}
+        {results.npcs.map((n: any) => {
+          const isCollapsed = n.id ? collapsedNpcs[n.id] ?? true : false;
+          return (
+            <div key={n.id} className="p-3 bg-white rounded shadow mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => toggleCollapseNpc(n.id)}
+                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                >
+                  {isCollapsed ? '+' : '-'}
+                </button>
+                <h4 className="font-semibold">{n.name} <span className="text-sm text-gray-500">{n.role}</span></h4>
+              </div>
+              {!isCollapsed && (
+                <>
+                  <div className="prose"><ReactMarkdown>{n.description}</ReactMarkdown></div>
+                  <p className="text-sm text-gray-500">Tags: {(n.tags || []).join(', ')}</p>
+                </>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       <section>
@@ -330,14 +380,30 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Locations</h3>
           <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="bg-yellow-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.locations.map((l: any) => (
-          <div key={l.id} className="p-3 bg-white rounded shadow mb-2">
-            <h4 className="font-semibold">{l.name}</h4>
-            <p className="text-gray-600">{l.description}</p>
-            <div className="prose"><ReactMarkdown>{l.notes}</ReactMarkdown></div>
-            <p className="text-sm text-gray-500">Tags: {(l.tags || []).join(', ')}</p>
-          </div>
-        ))}
+        {results.locations.map((l: any) => {
+          const isCollapsed = l.id ? collapsedLocations[l.id] ?? true : false;
+          return (
+            <div key={l.id} className="p-3 bg-white rounded shadow mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => toggleCollapseLocation(l.id)}
+                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                >
+                  {isCollapsed ? '+' : '-'}
+                </button>
+                <h4 className="font-semibold">{l.name}</h4>
+              </div>
+              {!isCollapsed && (
+                <>
+                  <p className="text-gray-600">{l.description}</p>
+                  <div className="prose"><ReactMarkdown>{l.notes}</ReactMarkdown></div>
+                  <p className="text-sm text-gray-500">Tags: {(l.tags || []).join(', ')}</p>
+                </>
+              )}
+            </div>
+          );
+        })}
       </section>
     </Page>
   );

@@ -56,8 +56,9 @@ export default function Header(): JSX.Element {
 
           <h1 className="text-lg font-bold"><Link to="/">AD&D Campaign Manager</Link></h1>
           <nav className="hidden md:flex space-x-6">
+            <Link to="/adventures" className="hover:underline">Adventures</Link>
             <Link to="/sessions" className="hover:underline">Sessions</Link>
-            <Link to="/npcs" className="hover:underline">NPCs</Link>
+            <Link to="/characters" className="hover:underline">Characters</Link>
             <Link to="/locations" className="hover:underline">Locations</Link>
             <Link to="/timeline" className="hover:underline">Timeline</Link>
             <Link to="/search" className="hover:underline">Search</Link>
@@ -79,11 +80,11 @@ export default function Header(): JSX.Element {
           </select>
           {adventureCtx.selectedId && (() => {
             const ad = adventureCtx.adventures.find(x => x.id === adventureCtx.selectedId);
-            const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, npcs: 0, locations: 0 }) : null;
+            const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0 }) : null;
             return counts ? (
               <div className="flex space-x-2 text-xs">
                 <span className="bg-white/20 px-2 py-1 rounded">S:{counts.sessions}</span>
-                <span className="bg-white/20 px-2 py-1 rounded">N:{counts.npcs}</span>
+                <span className="bg-white/20 px-2 py-1 rounded">C:{counts.characters}</span>
                 <span className="bg-white/20 px-2 py-1 rounded">L:{counts.locations}</span>
               </div>
             ) : null;
@@ -113,8 +114,9 @@ export default function Header(): JSX.Element {
       {open && (
         <div className="md:hidden bg-[var(--brand-600)] px-4 py-3">
           <nav className="flex flex-col space-y-2">
+            <Link to="/adventures" className="text-white">Adventures</Link>
             <Link to="/sessions" className="text-white">Sessions</Link>
-            <Link to="/npcs" className="text-white">NPCs</Link>
+            <Link to="/characters" className="text-white">Characters</Link>
             <Link to="/locations" className="text-white">Locations</Link>
             <Link to="/timeline" className="text-white">Timeline</Link>
             <Link to="/search" className="text-white">Search</Link>
@@ -134,11 +136,11 @@ export default function Header(): JSX.Element {
             </div>
             {adventureCtx.selectedId && (() => {
               const ad = adventureCtx.adventures.find(x => x.id === adventureCtx.selectedId);
-              const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, npcs: 0, locations: 0 }) : null;
+              const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0 }) : null;
               return counts ? (
                 <div className="flex space-x-2 text-xs mb-2">
                   <span className="bg-white/20 px-2 py-1 rounded">S:{counts.sessions}</span>
-                  <span className="bg-white/20 px-2 py-1 rounded">N:{counts.npcs}</span>
+                  <span className="bg-white/20 px-2 py-1 rounded">C:{counts.characters}</span>
                   <span className="bg-white/20 px-2 py-1 rounded">L:{counts.locations}</span>
                 </div>
               ) : null;

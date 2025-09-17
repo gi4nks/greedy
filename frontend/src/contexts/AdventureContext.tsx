@@ -7,7 +7,7 @@ type AdventureContextValue = {
   adventures: Adventure[];
   selectedId: number | null;
   selectAdventure: (id: number | null) => void;
-  counts: Record<number, { sessions: number; npcs: number; locations: number } | undefined>;
+  counts: Record<number, { sessions: number; characters: number; locations: number } | undefined>;
 };
 
 const AdventureContext = createContext<AdventureContextValue | undefined>(undefined);
@@ -26,9 +26,9 @@ export function AdventureProvider({ children }: { children: React.ReactNode }) {
     axios.get('/api/export').then(res => {
       const payload = res.data || {};
       const byId: typeof counts = {};
-      (payload.adventures || []).forEach((a: any) => { if (a && a.id) byId[a.id] = { sessions: 0, npcs: 0, locations: 0 }; });
+      (payload.adventures || []).forEach((a: any) => { if (a && a.id) byId[a.id] = { sessions: 0, characters: 0, locations: 0 }; });
       (payload.sessions || []).forEach((s: any) => { if (s && s.adventure_id && byId[s.adventure_id]) byId[s.adventure_id]!.sessions += 1; });
-      (payload.npcs || []).forEach((n: any) => { if (n && n.adventure_id && byId[n.adventure_id]) byId[n.adventure_id]!.npcs += 1; });
+      (payload.characters || []).forEach((c: any) => { if (c && c.adventure_id && byId[c.adventure_id]) byId[c.adventure_id]!.characters += 1; });
       (payload.locations || []).forEach((l: any) => { if (l && l.adventure_id && byId[l.adventure_id]) byId[l.adventure_id]!.locations += 1; });
       setCounts(byId);
     }).catch(() => {});

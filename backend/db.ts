@@ -32,9 +32,9 @@ export function migrate(): void {
     )
   `).run();
 
-  // npcs
+  // characters (renamed from npcs)
   db.prepare(`
-    CREATE TABLE IF NOT EXISTS npcs (
+    CREATE TABLE IF NOT EXISTS characters (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       adventure_id INTEGER,
       name TEXT,
@@ -44,6 +44,12 @@ export function migrate(): void {
       FOREIGN KEY(adventure_id) REFERENCES adventures(id) ON DELETE SET NULL
     )
   `).run();
+
+  // Rename npcs table to characters if it exists
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='npcs'").all();
+  if (tables.length > 0) {
+    db.prepare('ALTER TABLE npcs RENAME TO characters').run();
+  }
 
   // locations
   db.prepare(`

@@ -10,7 +10,15 @@ export default function Timeline(): JSX.Element {
   const [formData, setFormData] = useState<{ title: string; date: string; text: string; adventure_id?: number | null }>({ title: '', date: '', text: '', adventure_id: null });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  // Collapsed state for each session
+  const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+
+  // Toggle collapse for a session
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     fetchSessions();
@@ -129,7 +137,7 @@ export default function Timeline(): JSX.Element {
           <div className="mb-4">
             <h4 className="font-semibold mb-2">Preview</h4>
             <div className="p-2 border rounded h-40 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown>{formData.text}</ReactMarkdown>
+              <ReactMarkdown children={formData.text} />
             </div>
           </div>
 
@@ -167,30 +175,44 @@ export default function Timeline(): JSX.Element {
       )}
 
       <div className="space-y-4">
-        {sessions.map(session => (
-          <div key={session.id} className="p-4 bg-white rounded shadow">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-semibold">{session.title} - {session.date}</h3>
-              <div>
-                <button
-                  onClick={() => handleEdit(session as { id: number; title: string; date: string; text: string })}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(session.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
+        {sessions.map(session => {
+          const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
+          return (
+            <div key={session.id} className="p-4 bg-white rounded shadow">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleCollapse(session.id)}
+                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
+                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
+                  </button>
+                  <h3 className="text-xl font-semibold">{session.title} - {session.date}</h3>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEdit(session as { id: number; title: string; date: string; text: string })}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(session.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+              {!isCollapsed && (
+                <div className="prose">
+                  <ReactMarkdown children={session.text} />
+                </div>
+              )}
             </div>
-            <div className="prose">
-              <ReactMarkdown>{session.text}</ReactMarkdown>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Page>
   );

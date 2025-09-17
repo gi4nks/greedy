@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAdventures } from '../contexts/AdventureContext';
 import Page from '../components/Page';
 
@@ -12,7 +13,15 @@ export default function Sessions(): JSX.Element {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  // Collapsed state for each session
+  const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+
+  // Toggle collapse for a session
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     // initial load: fetch sessions optionally filtered by selected adventure
@@ -65,93 +74,99 @@ export default function Sessions(): JSX.Element {
     // server returns sessions, npcs, locations — we use sessions
     setSessions(res.data.sessions || []);
   };
+  // Sort sessions by date descending (newest first)
+  const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
   return (
     <Page title="Sessions" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-red-600 text-white px-3 py-1 rounded">+</button>}>
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
-            <select
-              value={formData.adventure_id ?? (adv.selectedId ?? '')}
-              onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Global</option>
-              {adv.adventures.map(a => (
-                <option key={a.id} value={a.id}>{a.title}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mb-2">
-            <input
-              type="text"
-              placeholder="Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
-
-          <div className="mb-2">
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
-
-          <div className="mb-2">
-            <textarea
-              placeholder="Session notes (Markdown supported)"
-              value={formData.text}
-              onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-              className="w-full p-2 border rounded h-40"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <h4 className="font-semibold mb-2">Preview</h4>
-            <div className="p-2 border rounded h-40 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown>{formData.text}</ReactMarkdown>
+        <div className="mb-6">
+          <h2 className="text-lg font-bold mb-2">{editingId ? 'Edit Session' : 'Add Session'}</h2>
+          <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow">
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
+              <select
+                value={formData.adventure_id ?? (adv.selectedId ?? '')}
+                onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Global</option>
+                {adv.adventures.map(a => (
+                  <option key={a.id} value={a.id}>{a.title}</option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          <div>
-            <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
-              {editingId ? 'Update' : 'Add'} Session
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ title: '', date: '', text: '', adventure_id: null });
-                  setEditingId(null);
-                  setShowCreateForm(false);
-                }}
-                className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-              >
-                Cancel
+            <div className="mb-2">
+              <input
+                type="text"
+                placeholder="Title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+
+            <div className="mb-2">
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+
+            <div className="mb-2">
+              <textarea
+                placeholder="Session notes (Markdown supported)"
+                value={formData.text}
+                onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                className="w-full p-2 border rounded h-40"
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">Preview</h4>
+              <div className="p-2 border rounded h-40 overflow-auto bg-white prose text-gray-900">
+                <ReactMarkdown children={formData.text} />
+              </div>
+            </div>
+
+            <div>
+              <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
+                {editingId ? 'Update' : 'Add'} Session
               </button>
-            )}
-            {!editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ title: '', date: '', text: '', adventure_id: null });
-                  setShowCreateForm(false);
-                }}
-                className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ title: '', date: '', text: '', adventure_id: null });
+                    setEditingId(null);
+                    setShowCreateForm(false);
+                  }}
+                  className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+              )}
+              {!editingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ title: '', date: '', text: '', adventure_id: null });
+                    setShowCreateForm(false);
+                  }}
+                  className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
       )}
 
       <div className="mb-4">
@@ -166,32 +181,53 @@ export default function Sessions(): JSX.Element {
         </form>
       </div>
 
+      <h2 className="text-lg font-bold mb-2">Session List</h2>
       <div className="space-y-4">
-        {sessions.map(session => (
-          <div key={session.id} className="p-4 bg-white rounded shadow">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-semibold">{session.title}</h3>
-              <div>
-                <button
-                  onClick={() => handleEdit(session as Session & { id: number })}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(session.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
+        {sortedSessions.map(session => {
+          const isEditing = editingId === session.id;
+          const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
+          return (
+            <div
+              key={session.id}
+              className={`p-4 bg-white rounded shadow transition-all border-2 ${isEditing ? 'border-yellow-400 bg-yellow-50' : 'border-transparent'}`}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleCollapse(session.id)}
+                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
+                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
+                  </button>
+                  <h3 className="text-xl font-semibold">{session.title}</h3>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEdit(session as Session & { id: number })}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(session.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+              {!isCollapsed && (
+                <>
+                  <p className="text-gray-600 mb-2">{session.date}</p>
+                  <div className="prose">
+                    <ReactMarkdown children={session.text} />
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-gray-600 mb-2">{session.date}</p>
-            <div className="prose">
-              <ReactMarkdown>{session.text}</ReactMarkdown>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Page>
   );
