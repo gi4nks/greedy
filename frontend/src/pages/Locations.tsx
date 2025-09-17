@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import Page from '../components/Page';
+import { useAdventures } from '../contexts/AdventureContext';
 
-function Chip({ label, onRemove }) {
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded mr-2 mb-2">
       {label}
@@ -11,12 +13,16 @@ function Chip({ label, onRemove }) {
   );
 }
 
-function Locations() {
-  const [locations, setLocations] = useState([]);
-  const [formData, setFormData] = useState({ name: '', description: '', notes: '', tags: [] });
-  const [editingId, setEditingId] = useState(null);
+type Location = { id?: number; name: string; description: string; notes: string; tags?: string[] };
+
+export default function Locations(): JSX.Element {
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [formData, setFormData] = useState<Location>({ name: '', description: '', notes: '', tags: [] });
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const tagInputRef = useRef();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const tagInputRef = useRef<HTMLInputElement | null>(null);
+  const adv = useAdventures();
 
   useEffect(() => {
     fetchLocations();
@@ -29,17 +35,17 @@ function Locations() {
   const handleAddTag = () => {
     const v = (tagInputRef.current?.value || '').trim();
     if (!v) return;
-    if (!formData.tags.includes(v)) {
-      setFormData({ ...formData, tags: [...formData.tags, v] });
+    if (!formData.tags?.includes(v)) {
+      setFormData({ ...formData, tags: [...(formData.tags || []), v] });
     }
-    tagInputRef.current.value = '';
+    if (tagInputRef.current) tagInputRef.current.value = '';
   };
 
-  const handleRemoveTag = (tag) => {
-    setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+  const handleRemoveTag = (tag: string) => {
+    setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const data = { ...formData };
     if (editingId) {
@@ -47,21 +53,25 @@ function Locations() {
         fetchLocations();
         setFormData({ name: '', description: '', notes: '', tags: [] });
         setEditingId(null);
+        setShowCreateForm(false);
       });
     } else {
       axios.post('/api/locations', data).then(() => {
         fetchLocations();
         setFormData({ name: '', description: '', notes: '', tags: [] });
+        setShowCreateForm(false);
       });
     }
   };
 
-  const handleEdit = (location) => {
+  const handleEdit = (location: Location & { id: number }) => {
     setFormData({ name: location.name, description: location.description, notes: location.notes, tags: location.tags || [] });
     setEditingId(location.id);
+    setShowCreateForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id?: number) => {
+    if (!id) return;
     if (window.confirm('Are you sure you want to delete this location?')) {
       axios.delete(`/api/locations/${id}`).then(() => {
         fetchLocations();
@@ -69,28 +79,30 @@ function Locations() {
     }
   };
 
-  const filteredLocations = locations.filter(location =>
-    location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    location.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    location.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (location.tags || []).some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const doSearch = async (term: string) => {
+    const params = new URLSearchParams();
+    params.set('q', term);
+    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
+    const res = await axios.get(`/api/search?${params.toString()}`);
+    setLocations(res.data.locations || []);
+  };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Locations</h2>
-
+    <Page title="Locations" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-yellow-600 text-white px-3 py-1 rounded">+</button>}>
       <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search locations..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
+        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+          <input
+            type="text"
+            placeholder="Search locations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border rounded"
+          />
+        </form>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
+      {(showCreateForm || editingId) && (
+        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
         <h3 className="text-lg font-semibold mb-2">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
         <div className="mb-2">
           <input
@@ -139,13 +151,13 @@ function Locations() {
             <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-1 rounded">Add Tag</button>
           </div>
           <div className="mt-2">
-            {formData.tags.map(tag => (
+            {(formData.tags || []).map(tag => (
               <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
             ))}
           </div>
         </div>
 
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+        <button type="submit" className="bg-yellow-600 text-white px-4 py-2 rounded">
           {editingId ? 'Update' : 'Add'} Location
         </button>
         {editingId && (
@@ -154,6 +166,19 @@ function Locations() {
             onClick={() => {
               setFormData({ name: '', description: '', notes: '', tags: [] });
               setEditingId(null);
+              setShowCreateForm(false);
+            }}
+            className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+        )}
+        {!editingId && (
+          <button
+            type="button"
+            onClick={() => {
+              setFormData({ name: '', description: '', notes: '', tags: [] });
+              setShowCreateForm(false);
             }}
             className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
           >
@@ -161,15 +186,16 @@ function Locations() {
           </button>
         )}
       </form>
+      )}
 
       <div className="space-y-4">
-        {filteredLocations.map(location => (
+        {locations.map(location => (
           <div key={location.id} className="p-4 bg-white rounded shadow">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-xl font-semibold">{location.name}</h3>
               <div>
                 <button
-                  onClick={() => handleEdit(location)}
+                  onClick={() => handleEdit(location as Location & { id: number })}
                   className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
                 >
                   Edit
@@ -194,8 +220,6 @@ function Locations() {
           </div>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }
-
-export default Locations;

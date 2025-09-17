@@ -1,0 +1,31 @@
+import express, { Express } from 'express';
+import cors from 'cors';
+import { migrate } from '../db';
+
+import adventures from './routes/adventures';
+import sessions from './routes/sessions';
+import npcs from './routes/npcs';
+import locations from './routes/locations';
+import misc from './routes/misc';
+
+export function createApp(): Express {
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+
+  migrate();
+
+  // lightweight health endpoint for orchestration checks
+  app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+  app.use('/api/adventures', adventures);
+  app.use('/api/sessions', sessions);
+  app.use('/api/npcs', npcs);
+  app.use('/api/locations', locations);
+  // misc handles /api/global_notes, /api/export, /api/import, /api/search
+  app.use('/api', misc);
+
+  return app;
+}
+
+export default createApp;

@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--brand-500: #7c3aed; /* violet-600 */
+	--brand-600: #6d28d9; /* violet-700 */
+	--brand-400: #a78bfa; /* violet-400 */
+	--brand-300: #c4b5fd; /* violet-300 */
+	--muted-700: #374151;
+	--card-bg: #ffffff;
+	
+	/* Additional colors for sections */
+	--sessions-color: #dc2626; /* red-600 */
+	--npcs-color: #ea580c; /* orange-600 */
+	--locations-color: #ca8a04; /* yellow-600 */
+	--timeline-color: #16a34a; /* green-600 */
+	--search-color: #0891b2; /* cyan-600 */
+	
+	/* Gradient backgrounds */
+	--header-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+	--card-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* small helpers for cards and container */
+.card {
+	@apply bg-white rounded shadow p-4;
+}
+
+.app-container {
+	max-width: 1100px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* improve typography for markdown previews */
+.prose {
+	@apply max-w-none;
+}

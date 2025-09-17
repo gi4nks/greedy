@@ -1,6 +1,6 @@
-const { createApp } = require('./src/app');
+import { createApp } from './src/app';
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 const app = createApp();
 

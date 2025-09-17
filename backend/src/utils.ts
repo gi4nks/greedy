@@ -1,10 +1,8 @@
-function parseTags(s) {
+export function parseTags(s?: string): string[] {
   if (!s) return [];
   try { return JSON.parse(s); } catch (e) { return []; }
 }
 
-function stringifyTags(arr) {
+export function stringifyTags(arr?: string[]): string {
   return JSON.stringify(arr || []);
 }
-
-module.exports = { parseTags, stringifyTags };

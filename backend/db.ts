@@ -1,17 +1,15 @@
-const path = require('path');
-const fs = require('fs');
-const Database = require('better-sqlite3');
+import path from 'path';
+import fs from 'fs';
+import Database from 'better-sqlite3';
 
 const DB_PATH = process.env.DB_FILE ? path.resolve(process.env.DB_FILE) : path.join(__dirname, 'campaign.db');
 // Ensure directory exists where DB will be created
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-const exists = fs.existsSync(DB_PATH);
-
 const db = new Database(DB_PATH);
 
-function migrate() {
+export function migrate(): void {
   // adventures
   db.prepare(`
     CREATE TABLE IF NOT EXISTS adventures (
@@ -71,7 +69,7 @@ function migrate() {
   `).run();
 
   // Seed sample adventures if none exist
-  const count = db.prepare('SELECT COUNT(*) as c FROM adventures').get().c;
+  const count = db.prepare('SELECT COUNT(*) as c FROM adventures').get().c as number;
   if (count === 0) {
     const insert = db.prepare('INSERT INTO adventures (slug, title, description) VALUES (?, ?, ?)');
     insert.run('saltmarsh', 'Ghosts of Saltmarsh', 'A coastal adventure.');
@@ -79,4 +77,4 @@ function migrate() {
   }
 }
 
-module.exports = { db, migrate };
+export { db };
