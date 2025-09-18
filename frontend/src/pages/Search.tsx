@@ -323,7 +323,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Sessions</h3>
           <button onClick={() => { setFormType('session'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.sessions.map((s: any) => {
+        {(results.sessions || []).map((s: any) => {
           const isCollapsed = s.id ? collapsedSessions[s.id] ?? true : false;
           return (
             <div key={s.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">
@@ -350,7 +350,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">NPCs</h3>
           <button onClick={() => { setFormType('npc'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.npcs.map((n: any) => {
+        {(results.npcs || []).map((n: any) => {
           const isCollapsed = n.id ? collapsedNpcs[n.id] ?? true : false;
           return (
             <div key={n.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">
@@ -380,7 +380,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Locations</h3>
           <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
-        {results.locations.map((l: any) => {
+        {(results.locations || []).map((l: any) => {
           const isCollapsed = l.id ? collapsedLocations[l.id] ?? true : false;
           return (
             <div key={l.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">

@@ -29,8 +29,16 @@ export default function MagicItems(): JSX.Element {
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState<number | null>(null);
   const [charSearch, setCharSearch] = useState('');
+  // Collapsed state for each magic item
+  const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
   const toast = useToast();
+
+  // Toggle collapse for a magic item
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
+  };
 
   useEffect(() => { fetchItems(); }, []);
 
@@ -221,65 +229,118 @@ export default function MagicItems(): JSX.Element {
       )}
 
       <div className="space-y-6">
-        {items.map(item => (
-          <div key={item.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
-              <div>
-                <h3 className="text-2xl font-bold">{item.name}</h3>
-                <div className="text-sm text-gray-600 mt-1">{item.rarity} — {item.type}</div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleEdit(item as MagicItem & { id: number })} className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">Edit</button>
-                <button onClick={() => handleDelete(item.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Delete</button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="prose prose-sm max-w-none text-gray-900"><ReactMarkdown children={item.description || ''} /></div>
-              <div>
-                <h4 className="font-semibold mb-2">Owners</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(item.owners || []).map(o => (
-                    <div key={o.id} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                      <span>{o.name}</span>
-                      <button onClick={() => unassignFromCharacter(item.id!, o.id)} className="text-red-600">×</button>
+        {items.map(item => {
+          const isCollapsed = item.id ? collapsed[item.id] ?? true : false;
+          return (
+            <div key={item.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleCollapse(item.id)}
+                      className="w-8 h-8 flex items-center justify-center border-2 border-purple-200 rounded-full bg-purple-50 hover:bg-purple-100 hover:border-purple-300 transition-colors duration-200"
+                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    >
+                      <span className="text-lg font-bold text-purple-600">{isCollapsed ? '+' : '−'}</span>
+                    </button>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{item.name}</h3>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                        {item.rarity && <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                          {item.rarity}
+                        </span>}
+                        {item.type && <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                          {item.type}
+                        </span>}
+                      </div>
                     </div>
-                  ))}
-                  <button onClick={() => openAssignModal(item.id!)} className="bg-green-600 text-white px-3 py-1 rounded">Assign</button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(item as MagicItem & { id: number })}
+                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>✏️</span>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>🗑️</span>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {!isCollapsed && (
+                <div className="p-6 space-y-4">
+                  <div className="prose prose-sm max-w-none text-gray-900"><ReactMarkdown children={item.description || ''} /></div>
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <span className="text-purple-600">👥</span>
+                      Owners ({(item.owners || []).length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {(item.owners || []).map(o => (
+                        <div key={o.id} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                          <span>{o.name}</span>
+                          <button
+                            onClick={() => unassignFromCharacter(item.id!, o.id)}
+                            className="text-red-600 hover:text-red-800"
+                            disabled={unassigning === o.id}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => openAssignModal(item.id!)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+                      >
+                        <span>+</span>
+                        Assign
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-        {assignModalItem !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-full max-w-2xl p-6 rounded shadow-lg border">
-              <h3 className="text-lg font-semibold mb-3">Assign Characters</h3>
-              <div className="mb-3 flex gap-2">
-                <input className="flex-1 p-2 border rounded" placeholder="Search characters..." value={charSearch} onChange={(e) => setCharSearch(e.target.value)} />
-                <button onClick={() => { setSelectedCharIds(characters.map(c => c.id)); }} className="bg-gray-200 px-3 rounded">Select All</button>
-                <button onClick={() => { setSelectedCharIds([]); }} className="bg-gray-200 px-3 rounded">Clear</button>
-              </div>
-              <div className="max-h-64 overflow-auto border rounded p-2 mb-4">
-                {filteredCharacters.map(c => (
-                  <label key={c.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
-                    <input type="checkbox" checked={selectedCharIds.includes(c.id)} onChange={(e) => {
-                      if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id]);
-                      else setSelectedCharIds(prev => prev.filter(id => id !== c.id));
-                    }} />
-                    <span>{c.name}</span>
-                  </label>
-                ))}
-                {filteredCharacters.length === 0 && <div className="text-sm text-gray-500 p-2">No characters found</div>}
-              </div>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setAssignModalItem(null)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
-                <button onClick={saveAssignments} disabled={assigning} className="bg-orange-600 text-white px-4 py-2 rounded">{assigning ? 'Saving...' : 'Save'}</button>
-              </div>
-            </div>
-          </div>
-        )}
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {assignModalItem !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white w-full max-w-2xl p-6 rounded shadow-lg border">
+            <h3 className="text-lg font-semibold mb-3">Assign Characters</h3>
+            <div className="mb-3 flex gap-2">
+              <input className="flex-1 p-2 border rounded" placeholder="Search characters..." value={charSearch} onChange={(e) => setCharSearch(e.target.value)} />
+              <button onClick={() => { setSelectedCharIds(characters.map(c => c.id)); }} className="bg-gray-200 px-3 rounded">Select All</button>
+              <button onClick={() => { setSelectedCharIds([]); }} className="bg-gray-200 px-3 rounded">Clear</button>
+            </div>
+            <div className="max-h-64 overflow-auto border rounded p-2 mb-4">
+              {filteredCharacters.map(c => (
+                <label key={c.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                  <input type="checkbox" checked={selectedCharIds.includes(c.id)} onChange={(e) => {
+                    if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id]);
+                    else setSelectedCharIds(prev => prev.filter(id => id !== c.id));
+                  }} />
+                  <span>{c.name}</span>
+                </label>
+              ))}
+              {filteredCharacters.length === 0 && <div className="text-sm text-gray-500 p-2">No characters found</div>}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setAssignModalItem(null)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
+              <button onClick={saveAssignments} disabled={assigning} className="bg-orange-600 text-white px-4 py-2 rounded">{assigning ? 'Saving...' : 'Save'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Page>
   );
 }

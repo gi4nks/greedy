@@ -226,16 +226,35 @@ export function migrate(): void {
     `).run();
   }
 
-  // join table for many-to-many relationship between characters and magic items
+  // quests/objectives
   db.prepare(`
-    CREATE TABLE IF NOT EXISTS character_magic_items (
+    CREATE TABLE IF NOT EXISTS quests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      character_id INTEGER NOT NULL,
-      magic_item_id INTEGER NOT NULL,
-      attuned INTEGER DEFAULT 0,
-      FOREIGN KEY(character_id) REFERENCES characters(id) ON DELETE CASCADE,
-      FOREIGN KEY(magic_item_id) REFERENCES magic_items(id) ON DELETE CASCADE,
-      UNIQUE(character_id, magic_item_id)
+      adventure_id INTEGER,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT DEFAULT 'active',
+      priority TEXT DEFAULT 'medium',
+      type TEXT DEFAULT 'main',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      due_date TEXT,
+      assigned_to TEXT,
+      tags TEXT,
+      FOREIGN KEY(adventure_id) REFERENCES adventures(id) ON DELETE SET NULL
+    )
+  `).run();
+
+  // quest objectives (sub-tasks)
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS quest_objectives (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      quest_id INTEGER NOT NULL,
+      description TEXT NOT NULL,
+      completed INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(quest_id) REFERENCES quests(id) ON DELETE CASCADE
     )
   `).run();
 
@@ -247,8 +266,11 @@ export function migrate(): void {
   db.prepare('CREATE INDEX IF NOT EXISTS idx_locations_adventure ON locations(adventure_id)').run();
   db.prepare('CREATE INDEX IF NOT EXISTS idx_magic_items_rarity ON magic_items(rarity)').run();
   db.prepare('CREATE INDEX IF NOT EXISTS idx_magic_items_type ON magic_items(type)').run();
-  db.prepare('CREATE INDEX IF NOT EXISTS idx_character_magic_items_character ON character_magic_items(character_id)').run();
-  db.prepare('CREATE INDEX IF NOT EXISTS idx_character_magic_items_item ON character_magic_items(magic_item_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_quests_adventure ON quests(adventure_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_quests_status ON quests(status)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_quests_priority ON quests(priority)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_quests_type ON quests(type)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_quest_objectives_quest ON quest_objectives(quest_id)').run();
   const countResult = db.prepare('SELECT COUNT(*) as c FROM adventures').get() as { c: number };
   const count = countResult.c;
   if (count === 0) {

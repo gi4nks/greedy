@@ -1,14 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import axios from 'axios';
-import { useToast } from './Toast';
 import { useAdventures } from '../contexts/AdventureContext';
 
 export default function Header(): JSX.Element {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [dropdownTimeout, setDropdownTimeout] = useState<number | null>(null);
   const navigate = useNavigate();
-  const toast = useToast();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,71 +21,149 @@ export default function Header(): JSX.Element {
 
   const adventureCtx = useAdventures();
 
-  const handleExport = async () => {
-    const res = await axios.get('/api/export');
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(res.data, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', 'campaign-data.json');
-    dlAnchor.click();
+  const openDropdown = (name: string) => {
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout);
+      setDropdownTimeout(null);
+    }
+    setDropdownOpen(name);
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      await axios.post('/api/import', json);
-      toast.push('Import successful — refresh pages to see changes.');
-    } catch (err) {
-      toast.push('Invalid JSON import', { type: 'error' });
-    }
+  const closeDropdown = () => {
+    const timeout = setTimeout(() => {
+      setDropdownOpen(null);
+    }, 150); // Small delay to prevent flickering
+    setDropdownTimeout(timeout);
   };
 
   return (
-    <header className="text-white" style={{ background: 'var(--header-gradient)' }}>
+    <header className="text-white relative" style={{ background: 'var(--header-gradient)' }}>
       <div className="app-container flex items-center justify-between py-3">
-        <div className="flex items-center space-x-4">
-          <button className="md:hidden p-2 rounded bg-white/10" onClick={() => setOpen(!open)} aria-label="Toggle menu">
+        <div className="flex items-center space-x-6">
+          <button className="md:hidden p-2 rounded bg-white/10 hover:bg-white/20 transition-colors" onClick={() => setOpen(!open)} aria-label="Toggle menu">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={open ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
             </svg>
           </button>
 
-          <h1 className="text-lg font-bold"><Link to="/">AD&D Campaign Manager</Link></h1>
-          <nav className="hidden md:flex space-x-6">
-            <Link to="/adventures" className="hover:underline">Adventures</Link>
-            <Link to="/characters" className="hover:underline">Characters</Link>
-            <Link to="/magic-items" className="hover:underline">Magic Items</Link>
-            <Link to="/sessions" className="hover:underline">Sessions</Link>
-            <Link to="/locations" className="hover:underline">Locations</Link>
-            <Link to="/timeline" className="hover:underline">Timeline</Link>
-            <Link to="/search" className="hover:underline">Search</Link>
+          <h1 className="text-xl font-bold"><Link to="/" className="hover:text-white/80 transition-colors">⚔️ AD&D Campaign Manager</Link></h1>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {/* Campaign Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => openDropdown('campaign')}
+                onMouseLeave={closeDropdown}
+                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+              >
+                <span>📚 Campaign</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {dropdownOpen === 'campaign' && (
+                <div
+                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  onMouseEnter={() => openDropdown('campaign')}
+                  onMouseLeave={closeDropdown}
+                >
+                  <Link to="/adventures" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🏰 Adventures</Link>
+                  <Link to="/sessions" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">📖 Sessions</Link>
+                  <Link to="/quests" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🎯 Quests</Link>
+                  <Link to="/timeline" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">⏰ Timeline</Link>
+                </div>
+              )}
+            </div>
+
+            {/* Entities Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => openDropdown('entities')}
+                onMouseLeave={closeDropdown}
+                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+              >
+                <span>👥 Entities</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {dropdownOpen === 'entities' && (
+                <div
+                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  onMouseEnter={() => openDropdown('entities')}
+                  onMouseLeave={closeDropdown}
+                >
+                  <Link to="/characters" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🧙 Characters</Link>
+                  <Link to="/npcs" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">👤 NPCs</Link>
+                  <Link to="/magic-items" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">💍 Magic Items</Link>
+                  <Link to="/locations" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🗺️ Locations</Link>
+                </div>
+              )}
+            </div>
+
+            {/* Tools Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => openDropdown('tools')}
+                onMouseLeave={closeDropdown}
+                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+              >
+                <span>🛠️ Tools</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {dropdownOpen === 'tools' && (
+                <div
+                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  onMouseEnter={() => openDropdown('tools')}
+                  onMouseLeave={closeDropdown}
+                >
+                  <Link to="/dice-roller" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🎲 Dice Roller</Link>
+                  <Link to="/combat-tracker" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">⚔️ Combat Tracker</Link>
+                  <Link to="/search" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🔍 Search</Link>
+                </div>
+              )}
+            </div>
           </nav>
         </div>
       </div>
 
-      <div className="app-container flex items-center justify-between py-3 border-t border-white/20">
+      {/* Secondary Bar */}
+      <div className="app-container flex items-center justify-between py-2 border-t border-white/20">
         <div className="flex items-center space-x-4">
-          <select
-            value={adventureCtx.selectedId ?? ''}
-            onChange={(e) => adventureCtx.selectAdventure(e.target.value ? Number(e.target.value) : null)}
-            className="rounded px-3 py-1 text-black text-sm"
-          >
-            <option value="">Global</option>
-            {adventureCtx.adventures.map(a => (
-              <option key={a.id} value={a.id}>{a.title}</option>
-            ))}
-          </select>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-white/80">Adventure:</span>
+            <select
+              value={adventureCtx.selectedId ?? ''}
+              onChange={(e) => adventureCtx.selectAdventure(e.target.value ? Number(e.target.value) : null)}
+              className="rounded px-3 py-1 text-black text-sm bg-white"
+            >
+              <option value="">🌍 Global</option>
+              {adventureCtx.adventures.map(a => (
+                <option key={a.id} value={a.id}>📖 {a.title}</option>
+              ))}
+            </select>
+          </div>
+
           {adventureCtx.selectedId && (() => {
             const ad = adventureCtx.adventures.find(x => x.id === adventureCtx.selectedId);
             const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0 }) : null;
             return counts ? (
               <div className="flex space-x-2 text-xs">
-                <span className="bg-white/20 px-2 py-1 rounded">S:{counts.sessions}</span>
-                <span className="bg-white/20 px-2 py-1 rounded">C:{counts.characters}</span>
-                <span className="bg-white/20 px-2 py-1 rounded">L:{counts.locations}</span>
+                <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                  <span>📖</span>
+                  <span>{counts.sessions}</span>
+                </span>
+                <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                  <span>👥</span>
+                  <span>{counts.characters}</span>
+                </span>
+                <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                  <span>🗺️</span>
+                  <span>{counts.locations}</span>
+                </span>
               </div>
             ) : null;
           })()}
@@ -95,77 +172,103 @@ export default function Header(): JSX.Element {
         <div className="flex items-center space-x-3">
           <form onSubmit={handleSearch} className="flex">
             <input
-              className="px-3 py-1 rounded-l text-black w-48"
-              placeholder="Search..."
+              className="px-3 py-1 rounded-l text-black w-48 focus:outline-none focus:ring-2 focus:ring-white/50"
+              placeholder="Search campaign..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <button className="bg-white text-[var(--brand-500)] px-3 py-1 rounded-r">Go</button>
+            <button className="bg-white text-[var(--brand-500)] px-3 py-1 rounded-r hover:bg-gray-100 transition-colors">🔍</button>
           </form>
-
-          <button onClick={handleExport} className="bg-white text-[var(--brand-500)] px-3 py-1 rounded text-sm">Export</button>
-          <label className="bg-white text-[var(--brand-500)] px-3 py-1 rounded text-sm cursor-pointer">
-            Import
-            <input type="file" accept="application/json" onChange={handleImport} className="hidden" />
-          </label>
         </div>
       </div>
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden bg-[var(--brand-600)] px-4 py-3">
-          <nav className="flex flex-col space-y-2">
-            <Link to="/adventures" className="text-white">Adventures</Link>
-            <Link to="/characters" className="text-white">Characters</Link>
-            <Link to="/sessions" className="text-white">Sessions</Link>
-            <Link to="/locations" className="text-white">Locations</Link>
-            <Link to="/timeline" className="text-white">Timeline</Link>
-            <Link to="/search" className="text-white">Search</Link>
-          </nav>
-          <div className="mt-4 pt-4 border-t border-white/20">
-            <div className="flex items-center space-x-2 mb-2">
+        <div className="md:hidden bg-[var(--brand-600)] px-4 py-4 border-t border-white/20">
+          {/* Mobile Navigation Groups */}
+          <div className="space-y-4">
+            {/* Campaign Section */}
+            <div>
+              <h3 className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">📚 Campaign</h3>
+              <nav className="flex flex-col space-y-1 pl-4">
+                <Link to="/adventures" className="text-white hover:text-white/80 py-1">🏰 Adventures</Link>
+                <Link to="/sessions" className="text-white hover:text-white/80 py-1">📖 Sessions</Link>
+                <Link to="/quests" className="text-white hover:text-white/80 py-1">🎯 Quests</Link>
+                <Link to="/timeline" className="text-white hover:text-white/80 py-1">⏰ Timeline</Link>
+              </nav>
+            </div>
+
+            {/* Entities Section */}
+            <div>
+              <h3 className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">👥 Entities</h3>
+              <nav className="flex flex-col space-y-1 pl-4">
+                <Link to="/characters" className="text-white hover:text-white/80 py-1">🧙 Characters</Link>
+                <Link to="/npcs" className="text-white hover:text-white/80 py-1">👤 NPCs</Link>
+                <Link to="/magic-items" className="text-white hover:text-white/80 py-1">💍 Magic Items</Link>
+                <Link to="/locations" className="text-white hover:text-white/80 py-1">🗺️ Locations</Link>
+              </nav>
+            </div>
+
+            {/* Tools Section */}
+            <div>
+              <h3 className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">🛠️ Tools</h3>
+              <nav className="flex flex-col space-y-1 pl-4">
+                <Link to="/dice-roller" className="text-white hover:text-white/80 py-1">🎲 Dice Roller</Link>
+                <Link to="/combat-tracker" className="text-white hover:text-white/80 py-1">⚔️ Combat Tracker</Link>
+                <Link to="/search" className="text-white hover:text-white/80 py-1">🔍 Search</Link>
+              </nav>
+            </div>
+          </div>
+
+          {/* Mobile Secondary Controls */}
+          <div className="mt-6 pt-4 border-t border-white/20">
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="text-sm text-white/80">Adventure:</span>
               <select
                 value={adventureCtx.selectedId ?? ''}
                 onChange={(e) => adventureCtx.selectAdventure(e.target.value ? Number(e.target.value) : null)}
                 className="rounded px-2 py-1 text-black text-sm flex-1"
               >
-                <option value="">Global</option>
+                <option value="">🌍 Global</option>
                 {adventureCtx.adventures.map(a => (
-                  <option key={a.id} value={a.id}>{a.title}</option>
+                  <option key={a.id} value={a.id}>📖 {a.title}</option>
                 ))}
               </select>
             </div>
+
             {adventureCtx.selectedId && (() => {
               const ad = adventureCtx.adventures.find(x => x.id === adventureCtx.selectedId);
               const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0 }) : null;
               return counts ? (
-                <div className="flex space-x-2 text-xs mb-2">
-                  <span className="bg-white/20 px-2 py-1 rounded">S:{counts.sessions}</span>
-                  <span className="bg-white/20 px-2 py-1 rounded">C:{counts.characters}</span>
-                  <span className="bg-white/20 px-2 py-1 rounded">L:{counts.locations}</span>
+                <div className="flex space-x-2 text-xs mb-3">
+                  <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                    <span>📖</span>
+                    <span>{counts.sessions}</span>
+                  </span>
+                  <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                    <span>👥</span>
+                    <span>{counts.characters}</span>
+                  </span>
+                  <span className="bg-white/20 px-2 py-1 rounded flex items-center space-x-1">
+                    <span>🗺️</span>
+                    <span>{counts.locations}</span>
+                  </span>
                 </div>
               ) : null;
             })()}
-            <form onSubmit={handleSearch} className="flex mb-2">
+
+            <form onSubmit={handleSearch} className="flex mb-3">
               <input
                 className="px-2 py-1 rounded-l text-black flex-1"
                 placeholder="Search..."
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-              <button className="bg-white text-[var(--brand-500)] px-2 py-1 rounded-r text-sm">Go</button>
+              <button className="bg-white text-[var(--brand-500)] px-2 py-1 rounded-r text-sm">🔍</button>
             </form>
-            <div className="flex space-x-2">
-              <button onClick={handleExport} className="bg-white text-[var(--brand-500)] px-2 py-1 rounded text-sm flex-1">Export</button>
-              <label className="bg-white text-[var(--brand-500)] px-2 py-1 rounded text-sm cursor-pointer flex-1 text-center">
-                Import
-                <input type="file" accept="application/json" onChange={handleImport} className="hidden" />
-              </label>
-            </div>
           </div>
         </div>
       )}
     </header>
   );
 }
-

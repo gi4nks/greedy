@@ -43,7 +43,7 @@ export default function Locations(): JSX.Element {
   // Toggle collapse for a location
   const toggleCollapse = (id?: number) => {
     if (!id) return;
-    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   useEffect(() => {

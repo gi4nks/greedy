@@ -8,6 +8,8 @@ import characters from './routes/characters';
 import locations from './routes/locations';
 import misc from './routes/misc';
 import magicItems from './routes/magicItems';
+import npcs from './routes/npcs';
+import quests from './routes/quests';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 export function createApp(): Express {
@@ -24,6 +26,8 @@ export function createApp(): Express {
   app.use('/api/sessions', sessions);
   app.use('/api/characters', characters);
   app.use('/api/locations', locations);
+  app.use('/api/npcs', npcs);
+  app.use('/api/quests', quests);
   app.use('/api/magic-items', magicItems);
   // misc handles /api/global_notes, /api/export, /api/import, /api/search
   app.use('/api', misc);

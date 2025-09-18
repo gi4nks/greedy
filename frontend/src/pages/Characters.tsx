@@ -1161,45 +1161,6 @@ export default function Characters(): JSX.Element {
                     </div>
                   )}
 
-                  {/* Items Section */}
-                  {character.items && character.items.length > 0 && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-2xl">🎒</span>
-                        Items & Equipment ({character.items.length})
-                      </h4>
-                      <div className="space-y-3">
-                        {character.items.slice(0, 5).map((item, idx) => (
-                          <div key={idx} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`font-semibold ${item.equipped ? 'text-green-700' : 'text-gray-900'}`}>
-                                    {item.name}
-                                  </span>
-                                  {item.equipped && <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Equipped</span>}
-                                  {item.quantity && item.quantity > 1 && (
-                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                                      Qty: {item.quantity}
-                                    </span>
-                                  )}
-                                </div>
-                                {item.description && (
-                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {character.items.length > 5 && (
-                          <div className="text-center text-gray-500 text-sm">
-                            ...and {character.items.length - 5} more items
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Spells Section */}
                   {character.spells && character.spells.length > 0 && (
                     <div className="bg-gray-50 rounded-xl p-6">

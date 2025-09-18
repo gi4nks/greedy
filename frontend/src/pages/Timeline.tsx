@@ -174,40 +174,49 @@ export default function Timeline(): JSX.Element {
         </form>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {sessions.map(session => {
           const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
           return (
-            <div key={session.id} className="p-4 bg-white rounded shadow">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleCollapse(session.id)}
-                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
-                  >
-                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
-                  </button>
-                  <h3 className="text-xl font-semibold">{session.title} - {session.date}</h3>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleEdit(session as { id: number; title: string; date: string; text: string })}
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(session.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+            <div key={session.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleCollapse(session.id)}
+                      className="w-8 h-8 flex items-center justify-center border-2 border-green-200 rounded-full bg-green-50 hover:bg-green-100 hover:border-green-300 transition-colors duration-200"
+                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    >
+                      <span className="text-lg font-bold text-green-600">{isCollapsed ? '+' : '−'}</span>
+                    </button>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{session.title} - {session.date}</h3>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(session as { id: number; title: string; date: string; text: string })}
+                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>✏️</span>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(session.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>🗑️</span>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+
               {!isCollapsed && (
-                <div className="prose">
-                  <ReactMarkdown children={session.text} />
+                <div className="p-6 space-y-4">
+                  <div className="prose">
+                    <ReactMarkdown children={session.text} />
+                  </div>
                 </div>
               )}
             </div>
