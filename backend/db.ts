@@ -38,6 +38,45 @@ export function migrate(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       adventure_id INTEGER,
       name TEXT,
+      race TEXT,
+      class TEXT,
+      level INTEGER DEFAULT 1,
+      background TEXT,
+      alignment TEXT,
+      experience INTEGER DEFAULT 0,
+      -- Ability Scores
+      strength INTEGER DEFAULT 10,
+      dexterity INTEGER DEFAULT 10,
+      constitution INTEGER DEFAULT 10,
+      intelligence INTEGER DEFAULT 10,
+      wisdom INTEGER DEFAULT 10,
+      charisma INTEGER DEFAULT 10,
+      -- Combat Stats
+      hit_points INTEGER DEFAULT 0,
+      max_hit_points INTEGER DEFAULT 0,
+      armor_class INTEGER DEFAULT 10,
+      initiative INTEGER DEFAULT 0,
+      speed INTEGER DEFAULT 30,
+      proficiency_bonus INTEGER DEFAULT 2,
+      -- Saving Throws (stored as JSON)
+      saving_throws TEXT,
+      -- Skills (stored as JSON)
+      skills TEXT,
+      -- Equipment & Inventory (stored as JSON)
+      equipment TEXT,
+      weapons TEXT,
+      -- Spells (stored as JSON)
+      spells TEXT,
+      spellcasting_ability TEXT,
+      spell_save_dc INTEGER,
+      spell_attack_bonus INTEGER,
+      -- Background & Personality (stored as JSON/text)
+      personality_traits TEXT,
+      ideals TEXT,
+      bonds TEXT,
+      flaws TEXT,
+      backstory TEXT,
+      -- Legacy fields (keeping for backward compatibility)
       role TEXT,
       description TEXT,
       tags TEXT,
@@ -45,10 +84,65 @@ export function migrate(): void {
     )
   `).run();
 
-  // Rename npcs table to characters if it exists
+  // Add new columns to existing characters table if they don't exist
+  const tableInfo = db.prepare("PRAGMA table_info(characters)").all() as any[];
+  const existingColumns = tableInfo.map(col => col.name);
+
+  const newColumns = [
+    { name: 'race', type: 'TEXT' },
+    { name: 'class', type: 'TEXT' },
+    { name: 'level', type: 'INTEGER DEFAULT 1' },
+    { name: 'background', type: 'TEXT' },
+    { name: 'alignment', type: 'TEXT' },
+    { name: 'experience', type: 'INTEGER DEFAULT 0' },
+    { name: 'classes', type: 'TEXT' },
+    { name: 'items', type: 'TEXT' },
+    { name: 'strength', type: 'INTEGER DEFAULT 10' },
+    { name: 'dexterity', type: 'INTEGER DEFAULT 10' },
+    { name: 'constitution', type: 'INTEGER DEFAULT 10' },
+    { name: 'intelligence', type: 'INTEGER DEFAULT 10' },
+    { name: 'wisdom', type: 'INTEGER DEFAULT 10' },
+    { name: 'charisma', type: 'INTEGER DEFAULT 10' },
+    { name: 'hit_points', type: 'INTEGER DEFAULT 0' },
+    { name: 'max_hit_points', type: 'INTEGER DEFAULT 0' },
+    { name: 'armor_class', type: 'INTEGER DEFAULT 10' },
+    { name: 'initiative', type: 'INTEGER DEFAULT 0' },
+    { name: 'speed', type: 'INTEGER DEFAULT 30' },
+    { name: 'proficiency_bonus', type: 'INTEGER DEFAULT 2' },
+    { name: 'saving_throws', type: 'TEXT' },
+    { name: 'skills', type: 'TEXT' },
+    { name: 'equipment', type: 'TEXT' },
+    { name: 'weapons', type: 'TEXT' },
+    { name: 'spells', type: 'TEXT' },
+    { name: 'spellcasting_ability', type: 'TEXT' },
+    { name: 'spell_save_dc', type: 'INTEGER' },
+    { name: 'spell_attack_bonus', type: 'INTEGER' },
+    { name: 'personality_traits', type: 'TEXT' },
+    { name: 'ideals', type: 'TEXT' },
+    { name: 'bonds', type: 'TEXT' },
+    { name: 'flaws', type: 'TEXT' },
+    { name: 'backstory', type: 'TEXT' }
+  ];
+
+  for (const col of newColumns) {
+    if (!existingColumns.includes(col.name)) {
+      db.prepare(`ALTER TABLE characters ADD COLUMN ${col.name} ${col.type}`).run();
+    }
+  }
+
+  // Rename npcs table to characters if it exists (for migration)
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='npcs'").all();
   if (tables.length > 0) {
-    db.prepare('ALTER TABLE npcs RENAME TO characters').run();
+    db.prepare('ALTER TABLE npcs RENAME TO characters_temp').run();
+    // Copy data from old table to new table
+    const oldData = db.prepare('SELECT * FROM characters_temp').all();
+    for (const row of oldData as any[]) {
+      db.prepare(`
+        INSERT INTO characters (id, adventure_id, name, role, description, tags)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(row.id, row.adventure_id, row.name, row.role, row.description, row.tags);
+    }
+    db.prepare('DROP TABLE characters_temp').run();
   }
 
   // locations
@@ -74,8 +168,37 @@ export function migrate(): void {
     )
   `).run();
 
+  // magic items
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS magic_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      rarity TEXT,
+      type TEXT,
+      description TEXT,
+      properties TEXT,
+      attunement_required INTEGER DEFAULT 0,
+      adventure_id INTEGER,
+      FOREIGN KEY(adventure_id) REFERENCES adventures(id) ON DELETE SET NULL
+    )
+  `).run();
+
+  // join table for many-to-many relationship between characters and magic items
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS character_magic_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      character_id INTEGER NOT NULL,
+      magic_item_id INTEGER NOT NULL,
+      attuned INTEGER DEFAULT 0,
+      FOREIGN KEY(character_id) REFERENCES characters(id) ON DELETE CASCADE,
+      FOREIGN KEY(magic_item_id) REFERENCES magic_items(id) ON DELETE CASCADE,
+      UNIQUE(character_id, magic_item_id)
+    )
+  `).run();
+
   // Seed sample adventures if none exist
-  const count = db.prepare('SELECT COUNT(*) as c FROM adventures').get().c as number;
+  const countResult = db.prepare('SELECT COUNT(*) as c FROM adventures').get() as { c: number };
+  const count = countResult.c;
   if (count === 0) {
     const insert = db.prepare('INSERT INTO adventures (slug, title, description) VALUES (?, ?, ?)');
     insert.run('saltmarsh', 'Ghosts of Saltmarsh', 'A coastal adventure.');

@@ -57,8 +57,9 @@ export default function Header(): JSX.Element {
           <h1 className="text-lg font-bold"><Link to="/">AD&D Campaign Manager</Link></h1>
           <nav className="hidden md:flex space-x-6">
             <Link to="/adventures" className="hover:underline">Adventures</Link>
-            <Link to="/sessions" className="hover:underline">Sessions</Link>
             <Link to="/characters" className="hover:underline">Characters</Link>
+            <Link to="/magic-items" className="hover:underline">Magic Items</Link>
+            <Link to="/sessions" className="hover:underline">Sessions</Link>
             <Link to="/locations" className="hover:underline">Locations</Link>
             <Link to="/timeline" className="hover:underline">Timeline</Link>
             <Link to="/search" className="hover:underline">Search</Link>
@@ -115,8 +116,8 @@ export default function Header(): JSX.Element {
         <div className="md:hidden bg-[var(--brand-600)] px-4 py-3">
           <nav className="flex flex-col space-y-2">
             <Link to="/adventures" className="text-white">Adventures</Link>
-            <Link to="/sessions" className="text-white">Sessions</Link>
             <Link to="/characters" className="text-white">Characters</Link>
+            <Link to="/sessions" className="text-white">Sessions</Link>
             <Link to="/locations" className="text-white">Locations</Link>
             <Link to="/timeline" className="text-white">Timeline</Link>
             <Link to="/search" className="text-white">Search</Link>

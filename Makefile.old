@@ -1,0 +1,80 @@
+.PHONY: build build-dev up start stop down clean dev-up dev-start dev-frontend dev-backend rebuild-frontend rebuild-backend logs help
+
+# Production build (explicit prod services)
+build:
+    @echo "🔨 Building production images (no-cache, verbose)..."
+    docker-compose build --no-cache --progress=plain frontend-prod backend-prod
+
+# Development build (uses dev profile)
+build-dev:
+    @echo "🔨 Building development images (no-cache, verbose)..."
+    docker-compose --profile dev build --no-cache --progress=plain
+
+# Start services in foreground (shows logs)
+up:
+    docker-compose up --build
+
+# Start services detached
+start:
+    docker-compose up -d
+
+# Stop and remove containers
+stop:
+    docker-compose down
+
+# Stop, remove containers and volumes
+down:
+    docker-compose down -v --remove-orphans
+
+# Clean (full)
+clean:
+    docker-compose down -v --rmi all --remove-orphans
+
+# Start development stack (foreground, uses dev profile)
+dev-up:
+    docker-compose --profile dev up --build
+
+# Start development stack detached
+dev-start:
+    docker-compose --profile dev up -d --build
+
+# Start only frontend in dev profile (foreground)
+dev-frontend:
+    docker-compose --profile dev up --build frontend
+
+# Start only backend in dev profile (foreground)
+dev-backend:
+    docker-compose --profile dev up --build backend
+
+# Rebuild and restart only frontend (dev)
+rebuild-frontend:
+    @echo "🔁 Rebuilding frontend (dev profile)..."
+    docker-compose --profile dev build --no-cache --progress=plain frontend
+    docker-compose --profile dev up -d --no-deps frontend
+
+# Rebuild and restart only backend (dev)
+rebuild-backend:
+    @echo "🔁 Rebuilding backend (dev profile)..."
+    docker-compose --profile dev build --no-cache --progress=plain backend
+    docker-compose --profile dev up -d --no-deps backend
+
+# Follow logs (use dev profile by default)
+logs:
+    docker-compose --profile dev logs -f --tail=200
+
+help:
+    @echo "Available targets:"
+    @echo "  build             - Build production images"
+    @echo "  build-dev         - Build development images"
+    @echo "  up                - Start services (foreground)"
+    @echo "  start             - Start services (detached)"
+    @echo "  stop              - Stop services"
+    @echo "  down              - Stop & remove containers"
+    @echo "  clean             - Remove containers, images, volumes"
+    @echo "  dev-up            - Start dev stack (foreground)"
+    @echo "  dev-start         - Start dev stack (detached)"
+    @echo "  dev-frontend      - Start frontend (dev)"
+    @echo "  dev-backend       - Start backend (dev)"
+    @echo "  rebuild-frontend  - Rebuild and restart frontend (dev)"
+    @echo "  rebuild-backend   - Rebuild and restart backend (dev)"
+    @echo "  logs              - Follow logs (dev profile)"

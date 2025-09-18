@@ -1,3 +1,21 @@
+# Development stage
+FROM node:18-bullseye as development
+
+RUN apt-get update && apt-get install -y python3 build-essential g++ make wget ca-certificates --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --no-audit --no-fund
+
+COPY . .
+
+EXPOSE 3001
+
+CMD ["npm", "run", "dev"]
+
+# Builder stage
 FROM node:18-bullseye AS builder
 
 RUN apt-get update && apt-get install -y python3 build-essential g++ make wget ca-certificates --no-install-recommends \
@@ -13,7 +31,8 @@ RUN npm install --no-audit --no-fund
 COPY . .
 RUN npm run build || true
 
-FROM node:18-bullseye-slim
+# Production stage
+FROM node:18-bullseye-slim as production
 WORKDIR /app
 
 # Copy only runtime deps and built files

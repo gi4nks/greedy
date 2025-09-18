@@ -1,80 +1,86 @@
-.PHONY: build up start stop down clean dev install-frontend install-backend install logs restart test help
+.PHONY: build build-dev up start stop status down clean dev-up dev-start dev-frontend dev-backend rebuild-frontend rebuild-backend logs help
 
-# Build the Docker images
+# Build all images (no-cache, verbose)
 build:
-	docker-compose build
+	@echo "🔨 Building images (no-cache, verbose)..."
+	docker compose --progress auto --profile dev build --no-cache
 
-# Start the services in the foreground
+# Development build (uses dev profile)
+build-dev:
+	@echo "🔨 Building development images (no-cache, verbose)..."
+	docker compose --progress auto --profile dev build --no-cache
+
+# Start services in foreground (shows logs)
 up:
-	docker-compose up
+	docker compose --profile dev up --build
 
-# Start the services in detached mode
-
-# Start the services using the scripts in ./scripts
+# Start services detached
 start:
-	@echo "🚀 Starting application via scripts/docker-start.sh"
-	@chmod +x scripts/docker-start.sh
-	@./scripts/docker-start.sh
+	docker compose --profile dev up -d
 
-# Stop the services using the helper script
+# Stop and remove containers
 stop:
-	@echo "🛑 Stopping application via scripts/docker-stop.sh"
-	@chmod +x scripts/docker-stop.sh
-	@./scripts/docker-stop.sh
+	docker compose --profile dev down
 
-# Stop services and remove containers, networks
+# Show status of containers
+status:
+	@echo "📊 Container Status:"
+	docker compose --profile dev ps
+
+# Stop, remove containers and volumes
+down:
+	docker compose --profile dev down -v --remove-orphans
+
+# Clean (full)
 clean:
-	docker-compose down --volumes --remove-orphans
-	docker system prune -f
+	docker compose --profile dev down -v --rmi all --remove-orphans
 
-# Run in development mode (without Docker)
-# Starts backend in background and frontend in the foreground
-dev: install-frontend install-backend
-	@echo "Starting backend in background (host)..."
-	@cd backend && npm run dev &
-	@echo "Starting frontend in foreground..."
-	@cd frontend && npm run dev
+# Start development stack (foreground, uses dev profile)
+dev-up:
+	docker compose --profile dev up --build
 
-# Install frontend dependencies (local)
-install-frontend:
-	cd frontend && npm ci
+# Start development stack detached
+dev-start:
+	docker compose --profile dev up -d --build
 
-# Install backend dependencies.
-# Installing backend deps on macOS can fail for native modules; prefer using Docker.
-# This target will run npm install inside a Debian-based Node container which
-# compiles native modules for Linux (suitable if you run backend in Docker).
-install-backend:
-	@echo "Installing backend dependencies inside a Node Debian container (recommended)..."
-	docker run --rm -v "$(PWD)/backend":/app -w /app node:18-bullseye bash -lc "npm ci --ignore-scripts || npm install --no-audit --no-fund"
+# Start only frontend in dev profile (foreground)
+dev-frontend:
+	docker compose --profile dev up --build frontend
 
-# Install all dependencies
-install: install-frontend install-backend
+# Start only backend in dev profile (foreground)
+dev-backend:
+	docker compose --profile dev up --build backend
 
-# View logs
+# Rebuild and restart only frontend (dev)
+rebuild-frontend:
+	@echo "🔁 Rebuilding frontend (dev profile)..."
+	docker compose --progress auto --profile dev build --no-cache frontend
+	docker compose --profile dev up -d --no-deps frontend
+
+# Rebuild and restart only backend (dev)
+rebuild-backend:
+	@echo "🔁 Rebuilding backend (dev profile)..."
+	docker compose --progress auto --profile dev build --no-cache backend
+	docker compose --profile dev up -d --no-deps backend
+
+# Follow logs (use dev profile by default)
 logs:
-	docker-compose logs -f
+	docker compose --profile dev logs -f --tail=200
 
-# Rebuild and restart
-restart: down build start
-
-# Run tests (if any)
-test:
-	@echo "No tests defined yet"
-
-# Help
 help:
-	@echo "Available commands:"
-	@echo "  build                - Build Docker images"
-	@echo "  up                   - Start services (foreground)"
-	@echo "  start                - Start services (detached)"
-	@echo "  stop                 - Stop services (uses ./scripts/docker-stop.sh)"
-	@echo "  down                 - Stop services (docker-compose down)"
-	@echo "  clean                - Stop and clean up (remove volumes)"
-	@echo "  dev                  - Run backend and frontend locally for development"
-	@echo "  install              - Install all dependencies (frontend + backend via Docker)"
-	@echo "  install-frontend     - Install frontend dependencies locally"
-	@echo "  install-backend      - Install backend dependencies inside Docker (recommended)"
-	@echo "  logs                 - View docker-compose logs"
-	@echo "  restart              - Rebuild images and restart services"
-	@echo "  test                 - Run tests"
-	@echo "  help                 - Show this help"
+	@echo "Available targets:"
+	@echo "  build             - Build all images"
+	@echo "  build-dev         - Build development images"
+	@echo "  up                - Start services (foreground)"
+	@echo "  start             - Start services (detached)"
+	@echo "  stop              - Stop services"
+	@echo "  status            - Show container status"
+	@echo "  down              - Stop & remove containers"
+	@echo "  clean             - Remove containers, images, volumes"
+	@echo "  dev-up            - Start dev stack (foreground)"
+	@echo "  dev-start         - Start dev stack (detached)"
+	@echo "  dev-frontend      - Start frontend (dev)"
+	@echo "  dev-backend       - Start backend (dev)"
+	@echo "  rebuild-frontend  - Rebuild and restart frontend (dev)"
+	@echo "  rebuild-backend   - Rebuild and restart backend (dev)"
+	@echo "  logs              - Follow logs (dev profile)"
