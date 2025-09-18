@@ -1,0 +1,23 @@
+{
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "backend/**/*.{ts,js}": [
+      "cd backend && eslint --fix",
+      "cd backend && prettier --write"
+    ],
+    "frontend/**/*.{ts,tsx,js,jsx}": [
+      "cd frontend && eslint --fix",
+      "cd frontend && prettier --write"
+    ],
+    "shared/**/*.{ts,js}": [
+      "cd shared && eslint --fix",
+      "cd shared && prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6"
+  }
+}

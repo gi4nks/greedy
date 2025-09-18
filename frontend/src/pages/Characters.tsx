@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { Character, CharacterForm, CharacterItem, MagicItem } from '@greedy/shared';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -14,107 +15,12 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
-type Character = {
-  id?: number;
-  name: string;
-  race?: string;
-  // Multiclassing support - array of class/level combinations
-  classes?: Array<{
-    className: string;
-    level: number;
-    experience?: number;
-  }>;
-  // Legacy single class/level for backward compatibility
-  class?: string;
-  level?: number;
-  background?: string;
-  alignment?: string;
-  experience?: number;
-  // Adventure assignment
-  adventure_id?: number;
-  // Items/Equipment management
-  items?: Array<{
-    id?: number;
-    name: string;
-    description: string;
-    quantity?: number;
-    equipped?: boolean;
-  }>;
-  // Ability Scores
-  strength?: number;
-  dexterity?: number;
-  constitution?: number;
-  intelligence?: number;
-  wisdom?: number;
-  charisma?: number;
-  // Combat Stats
-  hitPoints?: number;
-  maxHitPoints?: number;
-  armorClass?: number;
-  initiative?: number;
-  speed?: number;
-  proficiencyBonus?: number;
-  // Saving Throws
-  savingThrows?: {
-    strength: boolean;
-    dexterity: boolean;
-    constitution: boolean;
-    intelligence: boolean;
-    wisdom: boolean;
-    charisma: boolean;
-  };
-  // Skills
-  skills?: {
-    acrobatics: boolean;
-    animalHandling: boolean;
-    arcana: boolean;
-    athletics: boolean;
-    deception: boolean;
-    history: boolean;
-    insight: boolean;
-    intimidation: boolean;
-    investigation: boolean;
-    medicine: boolean;
-    nature: boolean;
-    perception: boolean;
-    performance: boolean;
-    persuasion: boolean;
-    religion: boolean;
-    sleightOfHand: boolean;
-    stealth: boolean;
-    survival: boolean;
-  };
-  // Equipment & Inventory (legacy)
-  equipment?: string[];
-  weapons?: Array<{
-    name: string;
-    attackBonus: number;
-    damage: string;
-  }>;
-  // Spells (for spellcasters)
-  spellcastingAbility?: string;
-  spellSaveDC?: number;
-  spellAttackBonus?: number;
-  spells?: Array<{
-    level: number;
-    name: string;
-    prepared: boolean;
-  }>;
-  // Background & Personality
-  personalityTraits?: string;
-  ideals?: string;
-  bonds?: string;
-  flaws?: string;
-  backstory?: string;
-  // Legacy fields (keeping for backward compatibility)
-  role?: string;
-  description?: string;
-  tags?: string[];
-};
-
 export default function Characters(): JSX.Element {
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [formData, setFormData] = useState<Character>({
+  const [magicItems, setMagicItems] = useState<MagicItem[]>([]);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<CharacterForm>({
     name: '',
     race: '',
     classes: [],
@@ -124,7 +30,6 @@ export default function Characters(): JSX.Element {
     alignment: '',
     experience: 0,
     adventure_id: undefined,
-    items: [],
     strength: 10,
     dexterity: 10,
     constitution: 10,
@@ -189,7 +94,6 @@ export default function Characters(): JSX.Element {
     alignment: '',
     experience: 0,
     adventure_id: undefined,
-    items: [],
     strength: 10,
     dexterity: 10,
     constitution: 10,
@@ -259,10 +163,15 @@ export default function Characters(): JSX.Element {
 
   useEffect(() => {
     fetchCharacters();
+    fetchMagicItems();
   }, []);
 
   const fetchCharacters = () => {
     axios.get('/api/characters').then(res => setCharacters(res.data));
+  };
+
+  const fetchMagicItems = () => {
+    axios.get('/api/magic-items').then(res => setMagicItems(res.data));
   };
 
   const handleAddTag = () => {
@@ -302,7 +211,6 @@ export default function Characters(): JSX.Element {
       ...character,
       // Ensure all required fields have defaults
       classes: character.classes || [],
-      items: character.items || [],
       savingThrows: character.savingThrows || {
         strength: false,
         dexterity: false,
@@ -709,86 +617,98 @@ export default function Characters(): JSX.Element {
 
           {activeTab === 'items' && (
             <div className="space-y-6">
-              <h4 className="text-lg font-semibold mb-3">Items & Equipment</h4>
-              <div className="mb-4">
-                <h5 className="text-md font-medium mb-2">Character Items</h5>
-                {(formData.items || []).map((item, index) => (
-                  <div key={index} className="flex items-start gap-2 mb-2 p-3 bg-gray-50 rounded border">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Item name"
-                        value={item.name}
-                        onChange={(e) => {
-                          const newItems = [...(formData.items || [])];
-                          newItems[index] = { ...newItems[index], name: e.target.value };
-                          setFormData({ ...formData, items: newItems });
-                        }}
-                        className="w-full p-2 border rounded mb-2"
-                      />
-                      <textarea
-                        placeholder="Item description"
-                        value={item.description}
-                        onChange={(e) => {
-                          const newItems = [...(formData.items || [])];
-                          newItems[index] = { ...newItems[index], description: e.target.value };
-                          setFormData({ ...formData, items: newItems });
-                        }}
-                        className="w-full p-2 border rounded mb-2"
-                        rows={2}
-                      />
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={item.equipped || false}
-                            onChange={(e) => {
-                              const newItems = [...(formData.items || [])];
-                              newItems[index] = { ...newItems[index], equipped: e.target.checked };
-                              setFormData({ ...formData, items: newItems });
+              <h4 className="text-lg font-semibold mb-3">Magical Items</h4>
+
+              {/* Magical Items Section */}
+              <div className="mb-6">
+                <h5 className="text-md font-medium mb-3 flex items-center gap-2">
+                  <span className="text-purple-600">✨</span>
+                  Magical Items
+                </h5>
+                <div className="mb-4">
+                  <h6 className="text-sm font-medium text-gray-700 mb-2">Assigned Magical Items</h6>
+                  <div className="space-y-2">
+                    {magicItems
+                      .filter(item => item.owners?.some(owner => owner.id === editingId))
+                      .map(item => (
+                        <div key={item.id} className="flex items-center justify-between bg-purple-50 p-3 rounded border border-purple-200">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-purple-800">{item.name}</span>
+                              {item.rarity && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                  {item.rarity}
+                                </span>
+                              )}
+                              {item.type && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                  {item.type}
+                                </span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.id && editingId) {
+                                axios.post(`/api/magic-items/${item.id}/unassign`, { characterId: editingId })
+                                  .then(() => {
+                                    fetchMagicItems();
+                                    fetchCharacters();
+                                  });
+                              }
                             }}
-                            className="mr-2"
-                          />
-                          Equipped
-                        </label>
-                        <div className="flex items-center">
-                          <label className="mr-2">Quantity:</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity || 1}
-                            onChange={(e) => {
-                              const newItems = [...(formData.items || [])];
-                              newItems[index] = { ...newItems[index], quantity: parseInt(e.target.value) || 1 };
-                              setFormData({ ...formData, items: newItems });
-                            }}
-                            className="w-16 p-1 border rounded"
-                          />
+                            className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                          >
+                            Remove
+                          </button>
                         </div>
+                      ))}
+                    {magicItems.filter(item => item.owners?.some(owner => owner.id === editingId)).length === 0 && (
+                      <div className="text-gray-500 italic text-sm p-3 bg-gray-50 rounded">
+                        No magical items assigned
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newItems = (formData.items || []).filter((_, i) => i !== index);
-                        setFormData({ ...formData, items: newItems });
-                      }}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Remove
-                    </button>
+                    )}
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newItems = [...(formData.items || []), { name: '', description: '', quantity: 1, equipped: false }];
-                    setFormData({ ...formData, items: newItems });
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  Add Item
-                </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAssignModal(true)}
+                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                  >
+                    Assign a Magical Item
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Create a new magical item and assign it to the character
+                      const itemName = prompt('Enter magical item name:');
+                      if (itemName && editingId) {
+                        axios.post('/api/magic-items', {
+                          name: itemName,
+                          description: 'New magical item',
+                          rarity: 'common',
+                          type: 'Wondrous item',
+                          attunement_required: false
+                        }).then((response) => {
+                          const newItemId = response.data.id;
+                          return axios.post(`/api/magic-items/${newItemId}/assign`, { characterId: editingId });
+                        }).then(() => {
+                          fetchMagicItems();
+                          fetchCharacters();
+                        });
+                      }
+                    }}
+                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                  >
+                    Create & Assign Magical Item
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -992,6 +912,71 @@ export default function Characters(): JSX.Element {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Assign Magical Item Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-bold mb-4">Assign Magical Item</h3>
+            <div className="space-y-2">
+              {magicItems
+                .filter(item => !item.owners?.some(owner => owner.id === editingId))
+                .map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{item.name}</span>
+                        {item.rarity && (
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                            {item.rarity}
+                          </span>
+                        )}
+                        {item.type && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            {item.type}
+                          </span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.id && editingId) {
+                          axios.post(`/api/magic-items/${item.id}/assign`, { characterId: editingId })
+                            .then(() => {
+                              fetchMagicItems();
+                              fetchCharacters();
+                              setShowAssignModal(false);
+                            });
+                        }
+                      }}
+                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 ml-2"
+                    >
+                      Assign
+                    </button>
+                  </div>
+                ))}
+              {magicItems.filter(item => !item.owners?.some(owner => owner.id === editingId)).length === 0 && (
+                <div className="text-gray-500 italic text-sm p-4 text-center">
+                  No available magical items to assign
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="space-y-6">

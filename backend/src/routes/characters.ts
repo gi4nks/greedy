@@ -1,6 +1,9 @@
 import express, { Request, Response } from 'express';
 import { db } from '../../db';
 import { parseTags, stringifyTags } from '../utils';
+import { validateBody, validateId, characterSchema } from '../middleware/validation';
+import { asyncHandler, APIError } from '../middleware/errorHandler';
+import { Character } from '@greedy/shared';
 
 const router = express.Router();
 
@@ -13,7 +16,6 @@ router.get('/', (req: Request, res: Response) => {
     r.tags = parseTags(r.tags);
     // Parse JSON fields
     if (r.classes) r.classes = JSON.parse(r.classes);
-    if (r.items) r.items = JSON.parse(r.items);
     if (r.saving_throws) r.saving_throws = JSON.parse(r.saving_throws);
     if (r.skills) r.skills = JSON.parse(r.skills);
     if (r.equipment) r.equipment = JSON.parse(r.equipment);
@@ -23,10 +25,10 @@ router.get('/', (req: Request, res: Response) => {
   res.json(rows);
 });
 
-router.post('/', (req: Request, res: Response) => {
+router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request, res: Response) => {
   const {
     adventure_id, name, race, class: charClass, level, background, alignment, experience,
-    classes, items,
+    classes,
     strength, dexterity, constitution, intelligence, wisdom, charisma,
     hitPoints, maxHitPoints, armorClass, initiative, speed, proficiencyBonus,
     savingThrows, skills, equipment, weapons, spells,
@@ -43,7 +45,7 @@ router.post('/', (req: Request, res: Response) => {
       saving_throws, skills, equipment, weapons, spells,
       spellcasting_ability, spell_save_dc, spell_attack_bonus,
       personality_traits, ideals, bonds, flaws, backstory,
-      role, description, tags, classes, items
+      role, description, tags, classes
     ) VALUES (
       $id, $adventure_id, $name, $race, $class, $level, $background, $alignment, $experience,
       $strength, $dexterity, $constitution, $intelligence, $wisdom, $charisma,
@@ -51,7 +53,7 @@ router.post('/', (req: Request, res: Response) => {
       $saving_throws, $skills, $equipment, $weapons, $spells,
       $spellcasting_ability, $spell_save_dc, $spell_attack_bonus,
       $personality_traits, $ideals, $bonds, $flaws, $backstory,
-      $role, $description, $tags, $classes, $items
+      $role, $description, $tags, $classes
     )
   `).run({
     id: null,
@@ -91,15 +93,13 @@ router.post('/', (req: Request, res: Response) => {
     role: role || null,
     description: description || null,
     tags: stringifyTags(tags),
-    classes: classes ? JSON.stringify(classes) : null,
-    items: items ? JSON.stringify(items) : null
+    classes: classes ? JSON.stringify(classes) : null
   });
 
   const row = db.prepare('SELECT * FROM characters WHERE id = ?').get(info.lastInsertRowid) as any;
   // Parse JSON fields for response
   row.tags = parseTags(row.tags);
   if (row.classes) row.classes = JSON.parse(row.classes);
-  if (row.items) row.items = JSON.parse(row.items);
   if (row.saving_throws) row.saving_throws = JSON.parse(row.saving_throws);
   if (row.skills) row.skills = JSON.parse(row.skills);
   if (row.equipment) row.equipment = JSON.parse(row.equipment);
@@ -107,12 +107,12 @@ router.post('/', (req: Request, res: Response) => {
   if (row.spells) row.spells = JSON.parse(row.spells);
 
   res.json(row);
-});
+}));
 
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', validateId, validateBody(characterSchema), asyncHandler(async (req: Request, res: Response) => {
   const {
     name, race, class: charClass, level, background, alignment, experience,
-    classes, items,
+    classes,
     strength, dexterity, constitution, intelligence, wisdom, charisma,
     hitPoints, maxHitPoints, armorClass, initiative, speed, proficiencyBonus,
     savingThrows, skills, equipment, weapons, spells,
@@ -129,7 +129,7 @@ router.put('/:id', (req: Request, res: Response) => {
       saving_throws = $saving_throws, skills = $skills, equipment = $equipment, weapons = $weapons, spells = $spells,
       spellcasting_ability = $spellcasting_ability, spell_save_dc = $spell_save_dc, spell_attack_bonus = $spell_attack_bonus,
       personality_traits = $personality_traits, ideals = $ideals, bonds = $bonds, flaws = $flaws, backstory = $backstory,
-      role = $role, description = $description, tags = $tags, classes = $classes, items = $items
+      role = $role, description = $description, tags = $tags, classes = $classes
     WHERE id = $id
   `).run({
     id: req.params.id as any,
@@ -169,15 +169,13 @@ router.put('/:id', (req: Request, res: Response) => {
     role: role || null,
     description: description || null,
     tags: stringifyTags(tags),
-    classes: classes ? JSON.stringify(classes) : null,
-    items: items ? JSON.stringify(items) : null
+    classes: classes ? JSON.stringify(classes) : null
   });
 
   const row = db.prepare('SELECT * FROM characters WHERE id = ?').get(req.params.id as any) as any;
   // Parse JSON fields for response
   row.tags = parseTags(row.tags);
   if (row.classes) row.classes = JSON.parse(row.classes);
-  if (row.items) row.items = JSON.parse(row.items);
   if (row.saving_throws) row.saving_throws = JSON.parse(row.saving_throws);
   if (row.skills) row.skills = JSON.parse(row.skills);
   if (row.equipment) row.equipment = JSON.parse(row.equipment);
@@ -185,11 +183,11 @@ router.put('/:id', (req: Request, res: Response) => {
   if (row.spells) row.spells = JSON.parse(row.spells);
 
   res.json(row);
-});
+}));
 
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', validateId, asyncHandler(async (req: Request, res: Response) => {
   db.prepare('DELETE FROM characters WHERE id = ?').run(req.params.id as any);
   res.json({ message: 'Character deleted' });
-});
+}));
 
 export default router;

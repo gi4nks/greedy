@@ -25,17 +25,17 @@ export default function Search(): JSX.Element {
   // Toggle functions
   const toggleCollapseSession = (id?: number) => {
     if (!id) return;
-    setCollapsedSessions(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsedSessions(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   const toggleCollapseNpc = (id?: number) => {
     if (!id) return;
-    setCollapsedNpcs(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsedNpcs(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   const toggleCollapseLocation = (id?: number) => {
     if (!id) return;
-    setCollapsedLocations(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsedLocations(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   useEffect(() => {
@@ -53,8 +53,8 @@ export default function Search(): JSX.Element {
   const renderForm = () => {
     if (formType === 'session') {
       return (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
-          <h3 className="text-lg font-semibold mb-2">Add New Session</h3>
+        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
+          <h3 className="text-xl font-bold mb-4 text-center">Add New Session</h3>
           <div className="mb-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
             <select
@@ -103,7 +103,7 @@ export default function Search(): JSX.Element {
             </div>
           </div>
           <div>
-            <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">Add Session</button>
+            <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded">Add Session</button>
             <button
               type="button"
               onClick={() => { setShowCreateForm(false); setFormType(null); }}
@@ -116,8 +116,8 @@ export default function Search(): JSX.Element {
       );
     } else if (formType === 'npc') {
       return (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
-          <h3 className="text-lg font-semibold mb-2">Add New NPC</h3>
+        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
+          <h3 className="text-xl font-bold mb-4 text-center">Add New NPC</h3>
           <div className="mb-2">
             <input
               type="text"
@@ -185,8 +185,8 @@ export default function Search(): JSX.Element {
       );
     } else if (formType === 'location') {
       return (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
-          <h3 className="text-lg font-semibold mb-2">Add New Location</h3>
+        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
+          <h3 className="text-xl font-bold mb-4 text-center">Add New Location</h3>
           <div className="mb-2">
             <input
               type="text"
@@ -247,7 +247,7 @@ export default function Search(): JSX.Element {
               ))}
             </div>
           </div>
-          <button type="submit" className="bg-yellow-600 text-white px-4 py-2 rounded">Add Location</button>
+          <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded">Add Location</button>
           <button
             type="button"
             onClick={() => { setShowCreateForm(false); setFormType(null); }}
@@ -321,16 +321,16 @@ export default function Search(): JSX.Element {
       <section className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-xl font-semibold">Sessions</h3>
-          <button onClick={() => { setFormType('session'); setShowCreateForm(true); }} className="bg-red-600 text-white px-3 py-1 rounded">+</button>
+          <button onClick={() => { setFormType('session'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
         {results.sessions.map((s: any) => {
           const isCollapsed = s.id ? collapsedSessions[s.id] ?? true : false;
           return (
-            <div key={s.id} className="p-3 bg-white rounded shadow mb-2">
+            <div key={s.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <button
                   onClick={() => toggleCollapseSession(s.id)}
-                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  className="w-8 h-8 border-2 border-orange-200 rounded-full bg-orange-50 flex items-center justify-center text-sm hover:bg-orange-100"
                   aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                 >
                   {isCollapsed ? '+' : '-'}
@@ -353,11 +353,11 @@ export default function Search(): JSX.Element {
         {results.npcs.map((n: any) => {
           const isCollapsed = n.id ? collapsedNpcs[n.id] ?? true : false;
           return (
-            <div key={n.id} className="p-3 bg-white rounded shadow mb-2">
+            <div key={n.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <button
                   onClick={() => toggleCollapseNpc(n.id)}
-                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  className="w-8 h-8 border-2 border-orange-200 rounded-full bg-orange-50 flex items-center justify-center text-sm hover:bg-orange-100"
                   aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                 >
                   {isCollapsed ? '+' : '-'}
@@ -378,16 +378,16 @@ export default function Search(): JSX.Element {
       <section>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-xl font-semibold">Locations</h3>
-          <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="bg-yellow-600 text-white px-3 py-1 rounded">+</button>
+          <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>
         </div>
         {results.locations.map((l: any) => {
           const isCollapsed = l.id ? collapsedLocations[l.id] ?? true : false;
           return (
-            <div key={l.id} className="p-3 bg-white rounded shadow mb-2">
+            <div key={l.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <button
                   onClick={() => toggleCollapseLocation(l.id)}
-                  className="w-6 h-6 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
+                  className="w-8 h-8 border-2 border-orange-200 rounded-full bg-orange-50 flex items-center justify-center text-sm hover:bg-orange-100"
                   aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                 >
                   {isCollapsed ? '+' : '-'}

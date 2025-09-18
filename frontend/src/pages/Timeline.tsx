@@ -17,7 +17,7 @@ export default function Timeline(): JSX.Element {
   // Toggle collapse for a session
   const toggleCollapse = (id?: number) => {
     if (!id) return;
-    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   useEffect(() => {

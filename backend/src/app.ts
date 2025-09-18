@@ -8,6 +8,7 @@ import characters from './routes/characters';
 import locations from './routes/locations';
 import misc from './routes/misc';
 import magicItems from './routes/magicItems';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 export function createApp(): Express {
   const app = express();
@@ -26,6 +27,10 @@ export function createApp(): Express {
   app.use('/api/magic-items', magicItems);
   // misc handles /api/global_notes, /api/export, /api/import, /api/search
   app.use('/api', misc);
+
+  // Error handling middleware (must be last)
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 }

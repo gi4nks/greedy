@@ -20,7 +20,7 @@ export default function Sessions(): JSX.Element {
   // Toggle collapse for a session
   const toggleCollapse = (id?: number) => {
     if (!id) return;
-    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   useEffect(() => {
@@ -78,11 +78,10 @@ export default function Sessions(): JSX.Element {
   const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return (
-    <Page title="Sessions" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-red-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); console.log('Sessions + button clicked'); setShowCreateForm(true); }} onClick={() => { console.log('Sessions + onClick fired'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
       {(showCreateForm || editingId) && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold mb-2">{editingId ? 'Edit Session' : 'Add Session'}</h2>
-          <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow">
+        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
+          <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit Session' : 'Add Session'}</h3>
             <div className="mb-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
               <select
@@ -135,39 +134,24 @@ export default function Sessions(): JSX.Element {
               </div>
             </div>
 
-            <div>
-              <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
-                {editingId ? 'Update' : 'Add'} Session
+            <div className="flex justify-end space-x-2 mt-4">
+              <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
+                {editingId ? 'Update Session' : 'Add Session'}
               </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData({ title: '', date: '', text: '', adventure_id: null });
-                    setEditingId(null);
-                    setShowCreateForm(false);
-                  }}
-                  className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-              )}
-              {!editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData({ title: '', date: '', text: '', adventure_id: null });
-                    setShowCreateForm(false);
-                  }}
-                  className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ title: '', date: '', text: '', adventure_id: null });
+                  setEditingId(null);
+                  setShowCreateForm(false);
+                }}
+                className="bg-gray-500 text-white px-6 py-2 rounded"
+              >
+                Cancel
+              </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
 
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
@@ -182,48 +166,51 @@ export default function Sessions(): JSX.Element {
       </div>
 
       <h2 className="text-lg font-bold mb-2">Session List</h2>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {sortedSessions.map(session => {
-          const isEditing = editingId === session.id;
           const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
           return (
-            <div
-              key={session.id}
-              className={`p-4 bg-white rounded shadow transition-all border-2 ${isEditing ? 'border-yellow-400 bg-yellow-50' : 'border-transparent'}`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleCollapse(session.id)}
-                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
-                  >
-                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
-                  </button>
-                  <h3 className="text-xl font-semibold">{session.title}</h3>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleEdit(session as Session & { id: number })}
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(session.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+            <div key={session.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleCollapse(session.id)}
+                      className="w-8 h-8 flex items-center justify-center border-2 border-orange-200 rounded-full bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-200"
+                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    >
+                      <span className="text-lg font-bold text-orange-600">{isCollapsed ? '+' : '−'}</span>
+                    </button>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{session.title}</h3>
+                      <div className="text-sm text-gray-600 mt-1">{session.date}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(session as Session & { id: number })}
+                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>✏️</span>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(session.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>🗑️</span>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+
               {!isCollapsed && (
-                <>
-                  <p className="text-gray-600 mb-2">{session.date}</p>
-                  <div className="prose">
+                <div className="p-6 space-y-4">
+                  <div className="prose prose-sm max-w-none text-gray-900">
                     <ReactMarkdown children={session.text} />
                   </div>
-                </>
+                </div>
               )}
             </div>
           );

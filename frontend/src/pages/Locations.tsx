@@ -27,6 +27,19 @@ export default function Locations(): JSX.Element {
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const adv = useAdventures();
 
+  const openCreateForm = (e: React.PointerEvent | React.MouseEvent) => {
+    try {
+      // stop default to avoid any form submit interplay
+      e.preventDefault();
+    } catch (err) {
+      // ignore
+    }
+    // small debug to help diagnose flaky clicks in browser console
+    // eslint-disable-next-line no-console
+    console.debug('Locations: openCreateForm', e.type);
+    setShowCreateForm(true);
+  };
+
   // Toggle collapse for a location
   const toggleCollapse = (id?: number) => {
     if (!id) return;
@@ -97,7 +110,7 @@ export default function Locations(): JSX.Element {
   };
 
   return (
-    <Page title="Locations" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-yellow-600 text-white px-3 py-1 rounded">+</button>}>
+  <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={openCreateForm as any} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
@@ -111,19 +124,19 @@ export default function Locations(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-100 rounded">
-        <h3 className="text-lg font-semibold mb-4">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
-        
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
+          <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
 
         {/* Tab Navigation */}
         <div className="mb-4">
@@ -153,108 +166,115 @@ export default function Locations(): JSX.Element {
           </div>
         </div>
 
-        {/* Tab Content */}
-        <div className="mb-4">
-          {activeTab === 'description' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <textarea
-                  placeholder="Description (Markdown supported)"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2 border rounded h-64"
-                  required
-                />
+          {/* Tab Content */}
+          <div className="mb-4">
+            {activeTab === 'description' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <textarea
+                    placeholder="Description (Markdown supported)"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full p-2 border rounded h-64"
+                    required
+                  />
+                </div>
+                <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
+                  <ReactMarkdown children={formData.description} />
+                </div>
               </div>
-              <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
-                <ReactMarkdown children={formData.description} />
-              </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'notes' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <textarea
-                  placeholder="Notes (Markdown supported)"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full p-2 border rounded h-64"
-                  required
-                />
+            {activeTab === 'notes' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <textarea
+                    placeholder="Notes (Markdown supported)"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full p-2 border rounded h-64"
+                    required
+                  />
+                </div>
+                <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
+                  <ReactMarkdown children={formData.notes} />
+                </div>
               </div>
-              <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
-                <ReactMarkdown children={formData.notes} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <div className="flex items-center">
-            <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2" />
-            <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-1 rounded">Add Tag</button>
+            )}
           </div>
-          <div className="mt-2">
-            {(formData.tags || []).map(tag => (
-              <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
-            ))}
-          </div>
-        </div>
 
-        <div className="flex gap-2">
-          <button type="submit" className="bg-yellow-600 text-white px-4 py-2 rounded">
-            {editingId ? 'Update' : 'Add'} Location
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFormData({ name: '', description: '', notes: '', tags: [] });
-              setEditingId(null);
-              setShowCreateForm(false);
-              setActiveTab('description');
-            }}
-            className="bg-gray-500 text-white px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+          <div className="mb-4">
+            <div className="flex items-center">
+              <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2" />
+              <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-1 rounded">Add Tag</button>
+            </div>
+            <div className="mt-2">
+              {(formData.tags || []).map(tag => (
+                <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 mt-4">
+            <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
+              {editingId ? 'Update Location' : 'Add Location'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({ name: '', description: '', notes: '', tags: [] });
+                setEditingId(null);
+                setShowCreateForm(false);
+                setActiveTab('description');
+              }}
+              className="bg-gray-500 text-white px-6 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {locations.map(location => {
           const isCollapsed = location.id ? collapsed[location.id] ?? true : false;
           return (
-            <div key={location.id} className="p-4 bg-white rounded shadow">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleCollapse(location.id)}
-                    className="w-7 h-7 flex items-center justify-center border rounded-full bg-gray-100 hover:bg-gray-200 mr-2"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
-                  >
-                    <span className="text-lg">{isCollapsed ? '+' : '-'}</span>
-                  </button>
-                  <h3 className="text-xl font-semibold">{location.name}</h3>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleEdit(location as Location & { id: number })}
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(location.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+            <div key={location.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleCollapse(location.id)}
+                      className="w-8 h-8 flex items-center justify-center border-2 border-orange-200 rounded-full bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-200"
+                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    >
+                      <span className="text-lg font-bold text-orange-600">{isCollapsed ? '+' : '−'}</span>
+                    </button>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{location.name}</h3>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(location as Location & { id: number })}
+                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>✏️</span>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(location.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <span>🗑️</span>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
+
               {!isCollapsed && (
-                <>
+                <div className="p-6 space-y-4">
                   <p className="text-gray-600 mb-2">{location.description}</p>
                   <div className="prose mb-2">
                     <ReactMarkdown children={location.notes} />
@@ -264,7 +284,7 @@ export default function Locations(): JSX.Element {
                       <Chip key={t} label={t} onRemove={() => {}} />
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </div>
           );

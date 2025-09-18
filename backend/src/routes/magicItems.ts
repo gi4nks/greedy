@@ -4,9 +4,8 @@ import { parseTags, stringifyTags } from '../utils';
 
 const router = express.Router();
 
-// List magic items; optional filter by adventure or owner character
+// List magic items; optional filter by owner character
 router.get('/', (req: Request, res: Response) => {
-  const adventure = req.query.adventure || null;
   const owner = req.query.owner || null;
   let rows;
   if (owner) {
@@ -15,8 +14,7 @@ router.get('/', (req: Request, res: Response) => {
       JOIN character_magic_items cmi ON cmi.magic_item_id = mi.id
       WHERE cmi.character_id = ?
     `).all(owner as any);
-  } else if (adventure) rows = db.prepare('SELECT * FROM magic_items WHERE adventure_id = ?').all(adventure as any);
-  else rows = db.prepare('SELECT * FROM magic_items').all();
+  } else rows = db.prepare('SELECT * FROM magic_items').all();
 
   rows.forEach((r: any) => {
     if (r.properties) r.properties = JSON.parse(r.properties);
@@ -33,13 +31,13 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.post('/', (req: Request, res: Response) => {
-  const { name, rarity, type, description, properties, attunement_required, adventure_id } = req.body;
+  const { name, rarity, type, description, properties, attunement_required } = req.body;
 
   const info = db.prepare(`
     INSERT INTO magic_items (
-      id, name, rarity, type, description, properties, attunement_required, adventure_id
+      id, name, rarity, type, description, properties, attunement_required
     ) VALUES (
-      $id, $name, $rarity, $type, $description, $properties, $attunement_required, $adventure_id
+      $id, $name, $rarity, $type, $description, $properties, $attunement_required
     )
   `).run({
     id: null,
@@ -48,8 +46,7 @@ router.post('/', (req: Request, res: Response) => {
     type: type || null,
     description: description || null,
     properties: properties ? JSON.stringify(properties) : null,
-    attunement_required: attunement_required ? 1 : 0,
-    adventure_id: adventure_id || null
+    attunement_required: attunement_required ? 1 : 0
   });
 
   const row = db.prepare('SELECT * FROM magic_items WHERE id = ?').get(info.lastInsertRowid) as any;
@@ -59,11 +56,10 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
-  const { name, rarity, type, description, properties, attunement_required, adventure_id } = req.body;
+  const { name, rarity, type, description, properties, attunement_required } = req.body;
   db.prepare(`
     UPDATE magic_items SET
-      name = $name, rarity = $rarity, type = $type, description = $description, properties = $properties, attunement_required = $attunement_required,
-      adventure_id = $adventure_id
+      name = $name, rarity = $rarity, type = $type, description = $description, properties = $properties, attunement_required = $attunement_required
     WHERE id = $id
   `).run({
     id: req.params.id as any,
@@ -72,8 +68,7 @@ router.put('/:id', (req: Request, res: Response) => {
     type: type || null,
     description: description || null,
     properties: properties ? JSON.stringify(properties) : null,
-    attunement_required: attunement_required ? 1 : 0,
-    adventure_id: adventure_id || null
+    attunement_required: attunement_required ? 1 : 0
   });
 
   const row = db.prepare('SELECT * FROM magic_items WHERE id = ?').get(req.params.id as any) as any;

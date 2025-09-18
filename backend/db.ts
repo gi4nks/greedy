@@ -169,19 +169,62 @@ export function migrate(): void {
   `).run();
 
   // magic items
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS magic_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      rarity TEXT,
-      type TEXT,
-      description TEXT,
-      properties TEXT,
-      attunement_required INTEGER DEFAULT 0,
-      adventure_id INTEGER,
-      FOREIGN KEY(adventure_id) REFERENCES adventures(id) ON DELETE SET NULL
-    )
-  `).run();
+  // If the existing table has an adventure_id column, migrate to a schema
+  // that no longer stores adventure_id on magic items (many-to-many is handled
+  // by character_magic_items). Migration copies existing rows preserving ids.
+  const magicInfo = db.prepare("PRAGMA table_info(magic_items)").all() as any[];
+  const magicHasAdventure = magicInfo.some(c => c.name === 'adventure_id');
+  if (magicInfo.length === 0) {
+    // table doesn't exist yet; create with desired schema
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS magic_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        rarity TEXT,
+        type TEXT,
+        description TEXT,
+        properties TEXT,
+        attunement_required INTEGER DEFAULT 0
+      )
+    `).run();
+  } else if (magicHasAdventure) {
+    // perform safe migration: create new table, copy data, drop old, rename
+    db.prepare('PRAGMA foreign_keys = OFF').run();
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS magic_items_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        rarity TEXT,
+        type TEXT,
+        description TEXT,
+        properties TEXT,
+        attunement_required INTEGER DEFAULT 0
+      )
+    `).run();
+
+    // copy rows preserving id
+    db.prepare(`
+      INSERT OR REPLACE INTO magic_items_new (id, name, rarity, type, description, properties, attunement_required)
+      SELECT id, name, rarity, type, description, properties, attunement_required FROM magic_items
+    `).run();
+
+    db.prepare('DROP TABLE magic_items').run();
+    db.prepare('ALTER TABLE magic_items_new RENAME TO magic_items').run();
+    db.prepare('PRAGMA foreign_keys = ON').run();
+  } else {
+    // table exists and already has desired schema; ensure it's created (no-op)
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS magic_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        rarity TEXT,
+        type TEXT,
+        description TEXT,
+        properties TEXT,
+        attunement_required INTEGER DEFAULT 0
+      )
+    `).run();
+  }
 
   // join table for many-to-many relationship between characters and magic items
   db.prepare(`
@@ -196,7 +239,16 @@ export function migrate(): void {
     )
   `).run();
 
-  // Seed sample adventures if none exist
+  // Create indexes for better performance
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_characters_adventure ON characters(adventure_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_characters_name ON characters(name)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_sessions_adventure ON sessions(adventure_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_locations_adventure ON locations(adventure_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_magic_items_rarity ON magic_items(rarity)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_magic_items_type ON magic_items(type)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_character_magic_items_character ON character_magic_items(character_id)').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_character_magic_items_item ON character_magic_items(magic_item_id)').run();
   const countResult = db.prepare('SELECT COUNT(*) as c FROM adventures').get() as { c: number };
   const count = countResult.c;
   if (count === 0) {

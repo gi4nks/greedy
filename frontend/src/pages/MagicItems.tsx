@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
+import { useToast } from '../components/Toast';
+import Modal from '../components/Modal';
+import { logError } from '../utils/logger';
 import { useAdventures } from '../contexts/AdventureContext';
 
 type MagicItem = {
@@ -12,31 +15,61 @@ type MagicItem = {
   description?: string;
   properties?: any;
   attunement_required?: number;
-  adventure_id?: number;
   owners?: any[];
 };
 
 export default function MagicItems(): JSX.Element {
   const [items, setItems] = useState<MagicItem[]>([]);
+  const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([]);
   const [form, setForm] = useState<MagicItem>({ name: '', description: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [assignModalItem, setAssignModalItem] = useState<number | null>(null);
+  const [selectedCharIds, setSelectedCharIds] = useState<number[]>([]);
+  const [assigning, setAssigning] = useState(false);
+  const [unassigning, setUnassigning] = useState<number | null>(null);
+  const [charSearch, setCharSearch] = useState('');
   const adv = useAdventures();
+  const toast = useToast();
 
   useEffect(() => { fetchItems(); }, []);
 
+  useEffect(() => { fetchCharacters(); }, []);
   const fetchItems = async () => {
     const res = await axios.get('/api/magic-items');
     setItems(res.data);
+  };
+
+  const fetchCharacters = async () => {
+    try {
+      const res = await axios.get('/api/characters');
+      setCharacters((res.data || []).map((c: any) => ({ id: c.id, name: c.name })));
+    } catch (err) {
+      setCharacters([]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form };
     if (editingId) {
-      await axios.put(`/api/magic-items/${editingId}`, payload);
+      try {
+        await axios.put(`/api/magic-items/${editingId}`, payload);
+        toast.push('Magic item updated');
+      } catch (err) {
+        logError(err, 'update-magic-item');
+        toast.push('Failed to update magic item', { type: 'error' });
+        return;
+      }
     } else {
-      await axios.post('/api/magic-items', payload);
+      try {
+        await axios.post('/api/magic-items', payload);
+        toast.push('Magic item created');
+      } catch (err) {
+        logError(err, 'create-magic-item');
+        toast.push('Failed to create magic item', { type: 'error' });
+        return;
+      }
     }
     setForm({ name: '', description: '' });
     setEditingId(null);
@@ -45,7 +78,7 @@ export default function MagicItems(): JSX.Element {
   };
 
   const handleEdit = (it: MagicItem & { id: number }) => {
-    setForm({ name: it.name, description: it.description || '', rarity: it.rarity, type: it.type, adventure_id: it.adventure_id });
+    setForm({ name: it.name, description: it.description || '', rarity: it.rarity, type: it.type });
     setEditingId(it.id);
     setShowForm(true);
   };
@@ -53,25 +86,110 @@ export default function MagicItems(): JSX.Element {
   const handleDelete = async (id?: number) => {
     if (!id) return;
     if (!window.confirm('Delete this magic item?')) return;
-    await axios.delete(`/api/magic-items/${id}`);
-    fetchItems();
+    try {
+      await axios.delete(`/api/magic-items/${id}`);
+      toast.push('Magic item deleted');
+    } catch (err) {
+      logError(err, 'delete-magic-item');
+      toast.push('Failed to delete magic item', { type: 'error' });
+    } finally {
+      fetchItems();
+    }
   };
 
-  const assignToCharacter = async (itemId: number) => {
-    const charId = prompt('Assign to character id (number):');
-    if (!charId) return;
-    await axios.post(`/api/magic-items/${itemId}/assign`, { characterId: Number(charId) });
-    fetchItems();
+  const [assigningItem, setAssigningItem] = useState<number | null>(null);
+
+  const assignToCharacter = async (itemId: number, charId: number) => {
+    // optimistic update
+    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: [...(it.owners || []), { id: charId, name: characters.find(c => c.id === charId)?.name || 'Unknown' }] } : it));
+    setAssigning(true);
+    try {
+      await axios.post(`/api/magic-items/${itemId}/assign`, { characterId: Number(charId) });
+      toast.push(`Assigned to ${characters.find(c => c.id === charId)?.name || 'character'}`);
+      await fetchItems();
+    } catch (err) {
+      logError(err, 'assign-item');
+      toast.push('Failed to assign item', { type: 'error' });
+      await fetchItems();
+    } finally {
+      setAssigning(false);
+      setAssigningItem(null);
+    }
   };
 
   const unassignFromCharacter = async (itemId: number, charId: number) => {
     if (!confirm('Unassign this item from character?')) return;
-    await axios.post(`/api/magic-items/${itemId}/unassign`, { characterId: charId });
-    fetchItems();
+    // optimistic remove
+    setUnassigning(charId);
+    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: (it.owners || []).filter((o:any) => o.id !== charId) } : it));
+    try {
+      await axios.post(`/api/magic-items/${itemId}/unassign`, { characterId: charId });
+      // Add Undo action to toast: reassign if clicked
+      toast.push('Unassigned', {
+        actions: [
+          {
+            label: 'Undo',
+            onClick: async () => {
+              try {
+                await axios.post(`/api/magic-items/${itemId}/assign`, { characterId: charId });
+                fetchItems();
+              } catch (e) {
+                logError(e, 'undo-unassign');
+                toast.push('Undo failed', { type: 'error' });
+              }
+            }
+          }
+        ]
+      });
+      await fetchItems();
+    } catch (err) {
+      logError(err, 'unassign-item');
+      toast.push('Failed to unassign', { type: 'error' });
+      await fetchItems();
+    } finally {
+      setUnassigning(null);
+    }
+  };
+
+  const openAssignModal = (itemId: number) => {
+    setAssignModalItem(itemId);
+    const it = items.find(i => i.id === itemId);
+    setSelectedCharIds((it?.owners || []).map((o:any) => o.id));
+    setCharSearch('');
+  };
+
+  const filteredCharacters = useMemo(() => {
+    const q = charSearch.trim().toLowerCase();
+    if (!q) return characters;
+    return characters.filter(c => c.name.toLowerCase().includes(q));
+  }, [characters, charSearch]);
+
+  const saveAssignments = async () => {
+    if (assignModalItem == null) return;
+    setAssigning(true);
+    try {
+      // send assignment requests: compute to-add and to-remove
+      const it = items.find(i => i.id === assignModalItem);
+      const current = (it?.owners || []).map((o:any) => o.id);
+      const toAdd = selectedCharIds.filter(id => !current.includes(id));
+      const toRemove = current.filter(id => !selectedCharIds.includes(id));
+      await Promise.all([
+        ...toAdd.map(id => axios.post(`/api/magic-items/${assignModalItem}/assign`, { characterId: id })),
+        ...toRemove.map(id => axios.post(`/api/magic-items/${assignModalItem}/unassign`, { characterId: id }))
+      ]);
+      await fetchItems();
+      toast.push('Assignments updated');
+      setAssignModalItem(null);
+    } catch (err) {
+      toast.push('Failed to update assignments', { type: 'error' });
+      await fetchItems();
+    } finally {
+      setAssigning(false);
+    }
   };
 
   return (
-    <Page title="Magic Items" toolbar={<button onClick={() => setShowForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="Magic Items" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowForm(true); }} onClick={() => setShowForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
       {(showForm || editingId) && (
         <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
           <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit Magic Item' : 'Create Magic Item'}</h3>
@@ -88,13 +206,7 @@ export default function MagicItems(): JSX.Element {
               <label className="block text-sm font-medium mb-1">Type</label>
               <input value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full p-2 border rounded" />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Adventure</label>
-              <select value={form.adventure_id ?? ''} onChange={(e) => setForm({ ...form, adventure_id: e.target.value ? Number(e.target.value) : undefined })} className="w-full p-2 border rounded">
-                <option value="">No Adventure</option>
-                {adv.adventures.map(a => (<option key={a.id} value={a.id}>{a.title}</option>))}
-              </select>
-            </div>
+            {/* adventure field removed: magic items are no longer tied to adventures */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Description / Properties (Markdown)</label>
               <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full p-2 border rounded h-32" />
@@ -133,10 +245,38 @@ export default function MagicItems(): JSX.Element {
                       <button onClick={() => unassignFromCharacter(item.id!, o.id)} className="text-red-600">×</button>
                     </div>
                   ))}
-                  <button onClick={() => assignToCharacter(item.id!)} className="bg-green-600 text-white px-3 py-1 rounded">Assign</button>
+                  <button onClick={() => openAssignModal(item.id!)} className="bg-green-600 text-white px-3 py-1 rounded">Assign</button>
                 </div>
               </div>
             </div>
+        {assignModalItem !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white w-full max-w-2xl p-6 rounded shadow-lg border">
+              <h3 className="text-lg font-semibold mb-3">Assign Characters</h3>
+              <div className="mb-3 flex gap-2">
+                <input className="flex-1 p-2 border rounded" placeholder="Search characters..." value={charSearch} onChange={(e) => setCharSearch(e.target.value)} />
+                <button onClick={() => { setSelectedCharIds(characters.map(c => c.id)); }} className="bg-gray-200 px-3 rounded">Select All</button>
+                <button onClick={() => { setSelectedCharIds([]); }} className="bg-gray-200 px-3 rounded">Clear</button>
+              </div>
+              <div className="max-h-64 overflow-auto border rounded p-2 mb-4">
+                {filteredCharacters.map(c => (
+                  <label key={c.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                    <input type="checkbox" checked={selectedCharIds.includes(c.id)} onChange={(e) => {
+                      if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id]);
+                      else setSelectedCharIds(prev => prev.filter(id => id !== c.id));
+                    }} />
+                    <span>{c.name}</span>
+                  </label>
+                ))}
+                {filteredCharacters.length === 0 && <div className="text-sm text-gray-500 p-2">No characters found</div>}
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setAssignModalItem(null)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
+                <button onClick={saveAssignments} disabled={assigning} className="bg-orange-600 text-white px-4 py-2 rounded">{assigning ? 'Saving...' : 'Save'}</button>
+              </div>
+            </div>
+          </div>
+        )}
           </div>
         ))}
       </div>
