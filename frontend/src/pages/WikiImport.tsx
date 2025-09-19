@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Page from '../components/Page';
 import { WikiDataService, WikiArticle } from '../services/WikiDataService';
 
-type ContentType = 'monster' | 'spell' | 'magic-item' | 'race' | 'class' | 'location' | 'note';
+type ContentType = 'monster' | 'spell' | 'magic-item' | 'race' | 'class' | 'location' | 'note' | 'parking-lot';
 
 export default function WikiImport(): JSX.Element {
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,8 +12,6 @@ export default function WikiImport(): JSX.Element {
   const [selectedArticle, setSelectedArticle] = useState<WikiArticle | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
   const [fullContentArticles, setFullContentArticles] = useState<Map<number, any>>(new Map());
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [importContentType, setImportContentType] = useState<ContentType>('note');
 
   const categories = [
     { id: 'all', name: 'All Content', searchFn: null },
@@ -89,7 +87,7 @@ export default function WikiImport(): JSX.Element {
           setLoading(false);
         }
       }
-      
+
       // Expand the article
       setExpandedArticles(prev => new Set(prev).add(article.id));
     }
@@ -98,14 +96,14 @@ export default function WikiImport(): JSX.Element {
   const handleShowDetails = async (article: WikiArticle) => {
     try {
       setLoading(true);
-      
+
       // Get full content
       const fullContent = await WikiDataService.getArticleFullContent(article.id);
       setFullContentArticles(prev => new Map(prev).set(article.id, fullContent));
-      
+
       // Also expand to show the content
       setExpandedArticles(prev => new Set(prev).add(article.id));
-      
+
     } catch (error) {
       console.error('Failed to load full article content:', error);
       alert('Failed to load full article content. Please try again.');
@@ -136,74 +134,51 @@ export default function WikiImport(): JSX.Element {
       return;
     }
 
-    // Auto-detect content type as suggestion
+    // Auto-detect content type
     const content = articleDetail.isFullContent ? articleDetail.content : articleDetail.extract;
-    const suggestedType = detectContentType(article.title, content || '');
+    const detectedType = detectContentType(article.title, content || '');
 
-    // Show import dialog
-    setSelectedArticle(article);
-    setImportContentType(suggestedType as ContentType);
-    setShowImportDialog(true);
-  };
-
-  const handleConfirmImport = async () => {
-    if (!selectedArticle) return;
-
+    // Import automatically based on detected type
     try {
       setLoading(true);
-      setShowImportDialog(false);
+      setSelectedArticle(article);
 
-      console.log(`Starting import for article: ${selectedArticle.title} (ID: ${selectedArticle.id})`);
+      console.log(`Starting automatic import for article: ${article.title} (ID: ${article.id})`);
+      console.log(`Detected content type: ${detectedType}`);
 
-      // Get article details - fetch if not available
-      let articleDetail = fullContentArticles.get(selectedArticle.id);
-      if (!articleDetail) {
-        console.log('Article details not cached, fetching...');
-        const details = await WikiDataService.getArticleDetails([selectedArticle.id]);
-        articleDetail = details[selectedArticle.id];
-      }
-
-      if (!articleDetail) {
-        throw new Error(`Could not retrieve details for "${selectedArticle.title}". The article might not exist or there might be an API issue.`);
-      }
-
-      const content = articleDetail.isFullContent ? articleDetail.content : articleDetail.extract;
-
-      console.log(`Importing as content type: ${importContentType}`);
-
-      switch (importContentType) {
+      switch (detectedType) {
         case 'monster':
-          await importMonster(selectedArticle, content);
+          await importMonster(article, content);
           break;
         case 'spell':
-          await importSpell(selectedArticle, content);
+          await importSpell(article, content);
           break;
         case 'magic-item':
-          await importMagicItem(selectedArticle, content);
+          await importMagicItem(article, content);
           break;
         case 'race':
-          await importRace(selectedArticle, content);
+          await importToParkingLot(article, content, 'race');
           break;
         case 'class':
-          await importClass(selectedArticle, content);
+          await importToParkingLot(article, content, 'class');
           break;
         case 'location':
-          await importLocation(selectedArticle, content);
+          await importLocation(article, content);
           break;
         default:
-          // For unknown types, create a generic note
-          await importGenericNote(selectedArticle, content);
+          // For unknown types, send to parking lot
+          await importToParkingLot(article, content, 'generic');
       }
 
     } catch (error: any) {
-      console.error('Import failed for article', selectedArticle.id, ':', error);
+      console.error('Import failed for article', article.id, ':', error);
 
       // Provide more specific error messages
       let errorMessage = 'Failed to import data. Please try again.';
 
       if (error.response) {
         if (error.response.status === 404) {
-          errorMessage = `❌ Article "${selectedArticle.title}" not found on the wiki.`;
+          errorMessage = `❌ Article "${article.title}" not found on the wiki.`;
         } else if (error.response.status === 408) {
           errorMessage = `❌ Request timed out. Please try again.`;
         } else if (error.response.status >= 500) {
@@ -234,7 +209,7 @@ export default function WikiImport(): JSX.Element {
   };
 
   // Content type detection - improved logic
-  const detectContentType = (title: string, content: string): string => {
+  const detectContentType = (title: string, content: string): ContentType => {
     const lowerTitle = title.toLowerCase();
     const lowerContent = content.toLowerCase();
 
@@ -258,8 +233,11 @@ export default function WikiImport(): JSX.Element {
     if (lowerTitle.includes('class') || lowerContent.includes('hit die') || lowerContent.includes('weapon proficiency') || lowerContent.includes('non-weapon proficiency')) {
       return 'class';
     }
+    if (lowerTitle.includes('location') || lowerTitle.includes('place') || lowerTitle.includes('city') || lowerTitle.includes('town') || lowerTitle.includes('castle') || lowerTitle.includes('dungeon')) {
+      return 'location';
+    }
 
-    return 'generic';
+    return 'note';
   };
 
   // Import functions for different content types
@@ -328,7 +306,7 @@ export default function WikiImport(): JSX.Element {
     }
   };
 
-    const importMagicItem = async (article: WikiArticle, content: string) => {
+  const importMagicItem = async (article: WikiArticle, content: string) => {
     const parsedData = WikiDataService.parseMagicItemData(content);
 
     const itemData = {
@@ -351,56 +329,6 @@ export default function WikiImport(): JSX.Element {
       alert(`✅ Magic Item "${article.title}" imported successfully to Magic Items section!`);
     } else {
       throw new Error('Failed to import magic item');
-    }
-  };
-
-  const importRace = async (article: WikiArticle, content: string) => {
-    const raceData = {
-      adventure_id: null,
-      name: article.title,
-      role: 'Race',
-      description: content || 'Imported from AD&D 2nd Edition Wiki',
-      tags: ['race', 'wiki-import'],
-      race: article.title, // Store race name in race field
-      wiki_url: WikiDataService.getFullUrl(article.url)
-    };
-
-    // Import as character with role="Race"
-    const response = await fetch('/api/characters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(raceData)
-    });
-
-    if (response.ok) {
-      alert(`✅ Race "${article.title}" imported successfully to Characters section!`);
-    } else {
-      throw new Error('Failed to import race');
-    }
-  };
-
-  const importClass = async (article: WikiArticle, content: string) => {
-    const classData = {
-      adventure_id: null,
-      name: article.title,
-      role: 'Class',
-      description: content || 'Imported from AD&D 2nd Edition Wiki',
-      tags: ['class', 'wiki-import'],
-      class: article.title, // Store class name in class field
-      wiki_url: WikiDataService.getFullUrl(article.url)
-    };
-
-    // Import as character with role="Class"
-    const response = await fetch('/api/characters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(classData)
-    });
-
-    if (response.ok) {
-      alert(`✅ Class "${article.title}" imported successfully to Characters section!`);
-    } else {
-      throw new Error('Failed to import class');
     }
   };
 
@@ -427,27 +355,26 @@ export default function WikiImport(): JSX.Element {
     }
   };
 
-  const importGenericNote = async (article: WikiArticle, content: string) => {
-    const noteData = {
-      adventure_id: null,
-      name: article.title,
-      description: content || 'Imported from AD&D 2nd Edition Wiki',
-      notes: 'Generic wiki article imported',
-      tags: ['wiki-import'],
-      wiki_url: WikiDataService.getFullUrl(article.url)
+  const importToParkingLot = async (article: WikiArticle, content: string, contentType: string) => {
+    const parkingLotData = {
+      title: article.title,
+      content: content || 'Imported from AD&D 2nd Edition Wiki',
+      content_type: contentType,
+      wiki_url: WikiDataService.getFullUrl(article.url),
+      tags: ['wiki-import', contentType],
+      imported_at: new Date().toISOString()
     };
 
-    // Import as location (generic articles stored as locations)
-    const response = await fetch('/api/locations', {
+    const response = await fetch('/api/parking-lot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(noteData)
+      body: JSON.stringify(parkingLotData)
     });
 
     if (response.ok) {
-      alert(`✅ Article "${article.title}" imported successfully to Locations section!`);
+      alert(`✅ "${article.title}" (${contentType}) added to Parking Lot for future organization!`);
     } else {
-      throw new Error('Failed to import article');
+      throw new Error('Failed to add to parking lot');
     }
   };
 
@@ -504,7 +431,7 @@ export default function WikiImport(): JSX.Element {
           <div className="text-sm text-gray-600">
             <p>
               Search the official AD&D 2nd Edition wiki for monsters, spells, magic items, races, classes, and more.
-              Import data directly into your campaign or reference official game content.
+              Content is automatically imported to the appropriate section or parking lot.
             </p>
           </div>
         </div>
@@ -520,7 +447,7 @@ export default function WikiImport(): JSX.Element {
               {searchResults.map((article) => {
                 const isExpanded = expandedArticles.has(article.id);
                 const articleData = fullContentArticles.get(article.id);
-                
+
                 return (
                   <div key={article.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                     <div className="flex justify-between items-start">
@@ -546,111 +473,11 @@ export default function WikiImport(): JSX.Element {
                               <span>•</span>
                               <span>ID: {article.id}</span>
                             </div>
-      </div>
-    </div>
+                          </div>
+                        </div>
+                      </div>
 
-    {/* Import Dialog */}
-    {showImportDialog && selectedArticle && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <h3 className="text-lg font-semibold mb-4">Import Article</h3>
-          <p className="text-gray-600 mb-4">
-            Import "{selectedArticle.title}" as:
-          </p>
-
-          <div className="space-y-2 mb-6">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="monster"
-                checked={importContentType === 'monster'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Monster/NPC
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="spell"
-                checked={importContentType === 'spell'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Spell
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="magic-item"
-                checked={importContentType === 'magic-item'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Magic Item
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="race"
-                checked={importContentType === 'race'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Race
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="class"
-                checked={importContentType === 'class'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Class
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="location"
-                checked={importContentType === 'location'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Location
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="note"
-                checked={importContentType === 'note'}
-                onChange={(e) => setImportContentType(e.target.value as ContentType)}
-                className="mr-2"
-              />
-              Generic Note
-            </label>
-          </div>
-
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => setShowImportDialog(false)}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirmImport}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Importing...' : 'Import'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-);                      <div className="flex gap-2 ml-4">
+                      <div className="flex flex-col gap-2 ml-4">
                         <button
                           onClick={() => handleShowDetails(article)}
                           className="px-3 py-1 text-purple-600 hover:text-purple-800 text-sm font-medium border border-purple-200 rounded hover:bg-purple-50"
@@ -667,7 +494,7 @@ export default function WikiImport(): JSX.Element {
                           onClick={() => handleImport(article)}
                           className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700"
                         >
-                          Import Data
+                          Auto Import
                         </button>
                       </div>
                     </div>
@@ -683,8 +510,8 @@ export default function WikiImport(): JSX.Element {
                                 {articleData.isFullContent ? 'Full Article Content' : 'Article Summary'}
                               </h5>
                               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                articleData.isFullContent 
-                                  ? 'bg-purple-100 text-purple-800' 
+                                articleData.isFullContent
+                                  ? 'bg-purple-100 text-purple-800'
                                   : 'bg-blue-100 text-blue-800'
                               }`}>
                                 {articleData.isFullContent ? 'Full' : 'Summary'}
@@ -711,7 +538,7 @@ export default function WikiImport(): JSX.Element {
                               </button>
                             </div>
                           </div>
-                          
+
                           <div className="p-6 max-h-[600px] overflow-y-auto">
                             <div className="fandom-content">
                               {(() => {
@@ -759,24 +586,24 @@ export default function WikiImport(): JSX.Element {
 
         {/* Info Section */}
         <div className="bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">ℹ️ About Wiki Integration</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">ℹ️ About Automatic Wiki Import</h3>
           <div className="text-blue-800 space-y-2">
             <p>
               <strong>Data Source:</strong> Official AD&D 2nd Edition Wiki on Fandom
             </p>
             <p>
-              <strong>Import Destinations:</strong>
+              <strong>Automatic Import Destinations:</strong>
             </p>
             <ul className="list-disc list-inside ml-4 space-y-1">
+              <li><strong>Monsters</strong> → Characters section (as monster entries)</li>
               <li><strong>Spells</strong> → Characters section (as spell entries)</li>
               <li><strong>Magic Items</strong> → Magic Items section</li>
-              <li><strong>Monsters</strong> → Characters section (as monster entries)</li>
-              <li><strong>Races</strong> → Characters section (as race entries)</li>
-              <li><strong>Classes</strong> → Characters section (as class entries)</li>
-              <li><strong>Other Content</strong> → Locations section</li>
+              <li><strong>Locations</strong> → Locations section</li>
+              <li><strong>Races & Classes</strong> → Parking Lot (for future organization)</li>
+              <li><strong>Other Content</strong> → Parking Lot</li>
             </ul>
             <p>
-              <strong>Note:</strong> Always verify imported data against your campaign's house rules
+              <strong>Note:</strong> Content is automatically categorized. Check the Parking Lot for items that need manual organization.
             </p>
           </div>
         </div>

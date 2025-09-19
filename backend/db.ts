@@ -262,6 +262,20 @@ export function migrate(): void {
   db.prepare('CREATE INDEX IF NOT EXISTS idx_quests_type ON quests(type)').run();
   db.prepare('CREATE INDEX IF NOT EXISTS idx_quest_objectives_quest ON quest_objectives(quest_id)').run();
   const countResult = db.prepare('SELECT COUNT(*) as c FROM adventures').get() as { c: number };
+
+  // parking lot for imported content that doesn't have a dedicated section
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS parking_lot (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      wiki_url TEXT,
+      tags TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
   const count = countResult.c;
   if (count === 0) {
     const insert = db.prepare('INSERT INTO adventures (slug, title, description) VALUES (?, ?, ?)');

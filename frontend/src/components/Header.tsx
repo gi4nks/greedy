@@ -161,6 +161,7 @@ export default function Header(): JSX.Element {
                   <Link to="/dice-roller" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🎲 Dice Roller</Link>
                   <Link to="/combat-tracker" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>⚔️ Combat Tracker</Link>
                   <Link to="/wiki-import" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>📚 Wiki Import</Link>
+                  <Link to="/parking-lot" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🅿️ Parking Lot</Link>
                   <Link to="/search" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🔍 Search</Link>
                 </div>
               )}
@@ -255,6 +256,7 @@ export default function Header(): JSX.Element {
                 <Link to="/dice-roller" className="text-white hover:text-white/80 py-1">🎲 Dice Roller</Link>
                 <Link to="/combat-tracker" className="text-white hover:text-white/80 py-1">⚔️ Combat Tracker</Link>
                 <Link to="/wiki-import" className="text-white hover:text-white/80 py-1">📚 Wiki Import</Link>
+                <Link to="/parking-lot" className="text-white hover:text-white/80 py-1">🅿️ Parking Lot</Link>
                 <Link to="/search" className="text-white hover:text-white/80 py-1">🔍 Search</Link>
               </nav>
             </div>

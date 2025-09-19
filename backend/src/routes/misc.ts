@@ -325,4 +325,165 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Parking Lot routes
+router.get('/parking-lot', (req: Request, res: Response) => {
+  try {
+    const items = db.prepare('SELECT * FROM parking_lot ORDER BY created_at DESC').all();
+    // Parse tags for each item
+    items.forEach((item: any) => {
+      item.tags = item.tags ? JSON.parse(item.tags) : [];
+    });
+    res.json(items);
+  } catch (error: any) {
+    console.error('Failed to fetch parking lot items:', error);
+    res.status(500).json({ error: 'Failed to fetch parking lot items' });
+  }
+});
+
+router.post('/parking-lot', (req: Request, res: Response) => {
+  try {
+    const { name, description, contentType, wikiUrl, tags } = req.body;
+
+    if (!name || !description || !contentType) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO parking_lot (name, description, content_type, wiki_url, tags, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      name,
+      description,
+      contentType,
+      wikiUrl || '',
+      JSON.stringify(tags || []),
+      new Date().toISOString()
+    );
+
+    res.json({ id: result.lastInsertRowid, message: 'Item added to parking lot' });
+  } catch (error: any) {
+    console.error('Failed to add item to parking lot:', error);
+    res.status(500).json({ error: 'Failed to add item to parking lot' });
+  }
+});
+
+router.delete('/parking-lot/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const stmt = db.prepare('DELETE FROM parking_lot WHERE id = ?');
+    const result = stmt.run(id);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    res.json({ message: 'Item deleted from parking lot' });
+  } catch (error: any) {
+    console.error('Failed to delete item from parking lot:', error);
+    res.status(500).json({ error: 'Failed to delete item from parking lot' });
+  }
+});
+
+router.post('/parking-lot/:id/move', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { targetSection } = req.body;
+
+    if (!targetSection) {
+      return res.status(400).json({ error: 'Target section is required' });
+    }
+
+    // Get the item from parking lot
+    const item = db.prepare('SELECT * FROM parking_lot WHERE id = ?').get(id);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Parse tags
+    const tags = item.tags ? JSON.parse(item.tags) : [];
+
+    // Move to target section based on content type and target section
+    let targetTable = '';
+    let insertData: any = {};
+
+    switch (targetSection) {
+      case 'characters':
+        targetTable = 'characters';
+        insertData = {
+          adventure_id: null,
+          name: item.name,
+          role: item.content_type === 'monster' ? 'Monster' :
+                item.content_type === 'spell' ? 'Spell' :
+                item.content_type === 'race' ? 'Race' :
+                item.content_type === 'class' ? 'Class' : 'Character',
+          description: item.description,
+          tags: JSON.stringify(tags),
+          wiki_url: item.wiki_url
+        };
+        break;
+
+      case 'locations':
+        targetTable = 'locations';
+        insertData = {
+          adventure_id: null,
+          name: item.name,
+          description: item.description,
+          notes: `Moved from parking lot (${item.content_type})`,
+          tags: JSON.stringify(tags),
+          wiki_url: item.wiki_url
+        };
+        break;
+
+      case 'magic-items':
+        targetTable = 'magic_items';
+        insertData = {
+          name: item.name,
+          description: item.description,
+          rarity: 'Unknown',
+          type: item.content_type,
+          tags: JSON.stringify(tags),
+          wiki_url: item.wiki_url
+        };
+        break;
+
+      case 'quests':
+        targetTable = 'quests';
+        insertData = {
+          adventure_id: null,
+          title: item.name,
+          description: item.description,
+          status: 'active',
+          priority: 'medium',
+          type: item.content_type,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          tags: JSON.stringify(tags)
+        };
+        break;
+
+      default:
+        return res.status(400).json({ error: 'Invalid target section' });
+    }
+
+    // Insert into target table
+    const columns = Object.keys(insertData).join(', ');
+    const placeholders = Object.keys(insertData).map(() => '?').join(', ');
+    const values = Object.values(insertData);
+
+    const insertStmt = db.prepare(`INSERT INTO ${targetTable} (${columns}) VALUES (${placeholders})`);
+    insertStmt.run(...values);
+
+    // Delete from parking lot
+    const deleteStmt = db.prepare('DELETE FROM parking_lot WHERE id = ?');
+    deleteStmt.run(id);
+
+    res.json({ message: `Item moved to ${targetSection}` });
+  } catch (error: any) {
+    console.error('Failed to move item:', error);
+    res.status(500).json({ error: 'Failed to move item' });
+  }
+});
+
 export default router;

@@ -11,6 +11,7 @@ import { Quests } from './pages/Quests';
 import DiceRoller from './pages/DiceRoller';
 import CombatTracker from './pages/CombatTracker';
 import WikiImport from './pages/WikiImport';
+import ParkingLot from './pages/ParkingLot';
 import Header from './components/Header';
 import { AdventureProvider } from './contexts/AdventureContext';
 
@@ -34,6 +35,7 @@ function App(): JSX.Element {
               <Route path="/dice-roller" element={<DiceRoller />} />
               <Route path="/combat-tracker" element={<CombatTracker />} />
               <Route path="/wiki-import" element={<WikiImport />} />
+              <Route path="/parking-lot" element={<ParkingLot />} />
               <Route path="/" element={<Sessions />} />
             </Routes>
           </main>
