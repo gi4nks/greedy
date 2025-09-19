@@ -158,16 +158,6 @@ export function migrate(): void {
     )
   `).run();
 
-  // global notes (not linked to adventures)
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS global_notes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT,
-      text TEXT,
-      created_at TEXT
-    )
-  `).run();
-
   // magic items
   // If the existing table has an adventure_id column, migrate to a schema
   // that no longer stores adventure_id on magic items (many-to-many is handled

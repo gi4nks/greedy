@@ -24,6 +24,439 @@
 
 /* small helpers for cards and container */
 .card {
+	background-color: white;
+	border-radius: 0.25rem;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+	padding: 1rem;
+}
+
+.app-container {
+	max-width: 1100px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* improve typography for markdown previews */
+.prose {
+	max-width: none;
+}
+
+/* Enhanced wiki content styling */
+.wiki-content {
+	color: #1a1a1a;
+	line-height: 1.625;
+}
+
+.wiki-content h1 {
+	font-size: 2.25rem;
+	font-weight: bold;
+	color: #111827;
+	margin-top: 3rem;
+	margin-bottom: 1.5rem;
+	border-bottom: 4px solid #3b82f6;
+	padding-bottom: 0.75rem;
+}
+
+.wiki-content h2 {
+	font-size: 1.875rem;
+	font-weight: bold;
+	color: #111827;
+	margin-top: 2.5rem;
+	margin-bottom: 1.25rem;
+	border-bottom: 2px solid #60a5fa;
+	padding-bottom: 0.5rem;
+}
+
+.wiki-content h3 {
+	font-size: 1.5rem;
+	font-weight: bold;
+	color: #111827;
+	margin-top: 2rem;
+	margin-bottom: 1rem;
+	border-bottom: 2px solid #9ca3af;
+	padding-bottom: 0.5rem;
+}
+
+.wiki-content h4 {
+	font-weight: 600;
+	color: #1f2937;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid #d1d5db;
+	padding-bottom: 0.25rem;
+}
+
+.wiki-content h5 {
+	font-weight: 600;
+	color: #1f2937;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 0.25rem;
+}
+
+.wiki-content p {
+	margin-bottom: 1rem;
+	line-height: 1.625;
+	color: #374151;
+}
+
+.wiki-content ul, .wiki-content ol {
+	margin-bottom: 1rem;
+}
+
+.wiki-content li {
+	color: #374151;
+	line-height: 1.625;
+}
+
+.wiki-content strong {
+	font-weight: bold;
+	color: #111827;
+}
+
+.wiki-content em {
+	font-style: italic;
+	color: #374151;
+}
+
+.wiki-content a {
+	transition: color 0.2s;
+	font-weight: 500;
+}
+
+.wiki-content a:hover {
+	text-decoration: underline;
+}
+
+.wiki-content table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+}
+
+.wiki-content th {
+	background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.wiki-content td {
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	transition: background-color 0.15s;
+}
+
+.wiki-content .infobox {
+	background: linear-gradient(to right, #eff6ff, #e0e7ff);
+	padding: 1.5rem;
+	border-radius: 0.75rem;
+	border-left: 4px solid #3b82f6;
+	margin-bottom: 1.5rem;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.wiki-content .infobox h4 {
+	font-weight: bold;
+	color: #1e40af;
+	margin-bottom: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.wiki-content h1 {
+		font-size: 1.875rem;
+	}
+	
+	.wiki-content h2 {
+		font-size: 1.5rem;
+	}
+	
+	.wiki-content h3 {
+		font-size: 1.25rem;
+	}
+	
+	.wiki-content table {
+		font-size: 0.875rem;
+	}
+	
+	.wiki-content th, .wiki-content td {
+		padding: 0.5rem;
+	}
+}
+
+/* Fandom-style wiki content rendering */
+.fandom-content {
+	color: #1a1a1a;
+	line-height: 1.6;
+	max-width: none;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Fandom headings */
+.fandom-content .fandom-heading {
+	font-weight: bold;
+	color: #1a1a1a;
+	margin-bottom: 1rem;
+	margin-top: 2rem;
+	border-bottom: 2px solid #e5e7eb;
+	padding-bottom: 0.5rem;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.fandom-content h1.fandom-heading {
+	font-size: 1.875rem;
+	border-bottom: 4px solid #3b82f6;
+	padding-bottom: 0.75rem;
+	margin-bottom: 1.5rem;
+	margin-top: 3rem;
+}
+
+.fandom-content h2.fandom-heading {
+	font-size: 1.5rem;
+	border-bottom: 3px solid #60a5fa;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1.25rem;
+	margin-top: 2.5rem;
+}
+
+.fandom-content h3.fandom-heading {
+	font-size: 1.25rem;
+	border-bottom: 2px solid #9ca3af;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1rem;
+	margin-top: 2rem;
+}
+
+.fandom-content h4.fandom-heading {
+	font-size: 1.125rem;
+	border-bottom: 1px solid #d1d5db;
+	padding-bottom: 0.25rem;
+	margin-bottom: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+.fandom-content h5.fandom-heading {
+	font-size: 1rem;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 0.25rem;
+	margin-bottom: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+/* Fandom links */
+.fandom-content .fandom-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+	border-bottom: 1px dotted #3366bb;
+}
+
+.fandom-content .fandom-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+	text-decoration-color: #3366bb;
+}
+
+.fandom-content .external-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+}
+
+.fandom-content .external-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+}
+
+.fandom-content .external-icon {
+	font-size: 0.75rem;
+	opacity: 0.7;
+	margin-left: 0.25rem;
+}
+
+/* Fandom lists */
+.fandom-content .fandom-list {
+	margin-bottom: 1rem;
+	margin-left: 1.5rem;
+}
+
+.fandom-content .fandom-list-item {
+	color: #374151;
+	line-height: 1.625;
+}
+
+.fandom-content .fandom-list .fandom-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+.fandom-content .nested-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+/* Fandom tables */
+.fandom-content .fandom-table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+	background-color: white;
+	font-size: 0.9em;
+}
+
+.fandom-content .fandom-table-header {
+	background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.fandom-content .fandom-table-cell {
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	transition: background-color 0.15s;
+}
+
+.fandom-content .fandom-table-cell:hover {
+	background-color: #f9fafb;
+}
+
+/* Fandom templates and special elements */
+.fandom-content .quote {
+	border-left: 4px solid #60a5fa;
+	padding-left: 1rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+	margin: 1rem 0;
+	background-color: #eff6ff;
+	font-style: italic;
+	color: #374151;
+}
+
+.fandom-content .template-box {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-size: 0.875rem;
+	font-family: monospace;
+}
+
+.fandom-content .main-page-link {
+	background-color: #eff6ff;
+	border: 1px solid #93c5fd;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	color: #1e40af;
+	font-weight: 500;
+}
+
+.fandom-content .error-message {
+	background-color: #fef2f2;
+	border: 1px solid #fca5a5;
+	border-radius: 0.25rem;
+	padding: 1rem;
+	margin: 1rem 0;
+	color: #dc2626;
+}
+
+/* Fandom preformatted text */
+.fandom-content .fandom-pre {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-family: monospace;
+	font-size: 0.875rem;
+	overflow-x: auto;
+	white-space: pre-wrap;
+}
+
+/* Fandom horizontal rules */
+.fandom-content .fandom-hr {
+	border-top: 2px solid #d1d5db;
+	margin: 2rem 0;
+}
+
+/* Fandom definition lists */
+.fandom-content dt {
+	font-weight: 600;
+	color: #111827;
+	margin-bottom: 0.25rem;
+}
+
+.fandom-content dd {
+	margin-left: 1rem;
+	margin-bottom: 0.75rem;
+	color: #374151;
+}
+
+/* Fandom paragraphs */
+.fandom-content p {
+	margin-bottom: 1rem;
+	line-height: 1.625;
+	color: #374151;
+}
+
+/* Fandom bold and italic */
+.fandom-content strong {
+	font-weight: bold;
+	color: #111827;
+}
+
+.fandom-content em {
+	font-style: italic;
+	color: #374151;
+}
+
+/* Responsive adjustments for Fandom content */
+@media (max-width: 768px) {
+	.fandom-content .fandom-table {
+		font-size: 0.8em;
+	}
+	
+	.fandom-content .fandom-table-header,
+	.fandom-content .fandom-table-cell {
+		padding: 0.5rem;
+	}
+	
+	.fandom-content .fandom-list {
+		margin-left: 1em;
+	}
+	
+	.fandom-content .nested-list {
+		margin-left: 1em;
+	}
+}
+
+/* small helpers for cards and container */
+.card {
 	@apply bg-white rounded shadow p-4;
 }
 
@@ -36,4 +469,753 @@
 /* improve typography for markdown previews */
 .prose {
 	@apply max-w-none;
+}
+
+/* Enhanced wiki content styling */
+/* Wiki content styling */
+.wiki-content {
+	background-color: white;
+	border-radius: 0.5rem;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	padding: 1rem;
+}
+
+.wiki-content img {
+	max-width: 100%;
+	height: auto;
+}
+
+.wiki-content h1 {
+	font-size: 2.25rem;
+	font-weight: 700;
+	color: #111827;
+	margin-top: 3rem;
+	margin-bottom: 1.5rem;
+	border-bottom: 4px solid #3b82f6;
+	padding-bottom: 0.75rem;
+	line-height: 1.2;
+}
+
+.wiki-content h2 {
+	font-size: 1.875rem;
+	font-weight: 700;
+	color: #111827;
+	margin-top: 2.5rem;
+	margin-bottom: 1.25rem;
+	border-bottom: 2px solid #60a5fa;
+	padding-bottom: 0.5rem;
+	line-height: 1.3;
+}
+
+.wiki-content h3 {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #111827;
+	margin-top: 2rem;
+	margin-bottom: 1rem;
+	border-bottom: 2px solid #9ca3af;
+	padding-bottom: 0.5rem;
+	line-height: 1.4;
+}
+
+.wiki-content h4 {
+	font-weight: 600;
+	color: #1f2937;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid #d1d5db;
+	padding-bottom: 0.25rem;
+}
+
+.wiki-content h5 {
+	font-weight: 600;
+	color: #1f2937;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 0.25rem;
+}
+
+.wiki-content p {
+	margin-bottom: 1rem;
+	line-height: 1.625;
+	color: #374151;
+}
+
+.wiki-content ul, .wiki-content ol {
+	margin-bottom: 1rem;
+	padding-left: 1.5rem;
+	line-height: 1.625;
+}
+
+.wiki-content li {
+	margin-bottom: 0.5rem;
+	line-height: 1.625;
+}
+
+.wiki-content strong {
+	font-weight: 700;
+	color: #111827;
+}
+
+.wiki-content em {
+	font-style: italic;
+	color: #374151;
+}
+
+.wiki-content a {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s ease;
+}
+
+.wiki-content a:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+}
+
+.wiki-content table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+}
+
+.wiki-content th {
+	background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.wiki-content td {
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	transition: background-color 0.15s ease;
+}
+
+.wiki-content tr:nth-child(even) {
+	background-color: #f9fafb;
+}
+
+.wiki-content tr:hover {
+	background-color: #eff6ff;
+}
+
+.wiki-content .info-box {
+	background: linear-gradient(to right, #eff6ff, #e0e7ff);
+	padding: 1.5rem;
+	border-radius: 0.75rem;
+	border-left: 4px solid #3b82f6;
+	margin-bottom: 1.5rem;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.wiki-content .info-box h4 {
+	font-weight: 700;
+	color: #1e3a8a;
+	margin-bottom: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.wiki-content h1 {
+		font-size: 1.875rem;
+	}
+	
+	.wiki-content h2 {
+		font-size: 1.5rem;
+	}
+	
+	.wiki-content h3 {
+		font-size: 1.25rem;
+	}
+	
+	.wiki-content table {
+		font-size: 0.875rem;
+	}
+	
+	.wiki-content th, .wiki-content td {
+		padding: 0.5rem 0.75rem;
+	}
+}
+
+/* Fandom-style wiki content rendering */
+.fandom-content {
+	color: #1a1a1a;
+	line-height: 1.6;
+	max-width: none;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Fandom headings */
+.fandom-content .fandom-heading {
+	font-weight: bold;
+	color: #1a1a1a;
+	margin-bottom: 1rem;
+	margin-top: 2rem;
+	border-bottom: 2px solid #e5e7eb;
+	padding-bottom: 0.5rem;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.fandom-content h1.fandom-heading {
+	font-size: 1.875rem;
+	border-bottom: 4px solid #3b82f6;
+	padding-bottom: 0.75rem;
+	margin-bottom: 1.5rem;
+	margin-top: 3rem;
+}
+
+.fandom-content h2.fandom-heading {
+	font-size: 1.5rem;
+	border-bottom: 3px solid #60a5fa;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1.25rem;
+	margin-top: 2.5rem;
+}
+
+.fandom-content h3.fandom-heading {
+	font-size: 1.25rem;
+	border-bottom: 2px solid #9ca3af;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1rem;
+	margin-top: 2rem;
+}
+
+.fandom-content h4.fandom-heading {
+	font-size: 1.125rem;
+	border-bottom: 1px solid #d1d5db;
+	padding-bottom: 0.25rem;
+	margin-bottom: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+.fandom-content h5.fandom-heading {
+	font-size: 1rem;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 0.25rem;
+	margin-bottom: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+/* Fandom links */
+.fandom-content .fandom-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+	border-bottom: 1px dotted #3366bb;
+}
+
+.fandom-content .fandom-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+	text-decoration-color: #3366bb;
+}
+
+.fandom-content .external-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+}
+
+.fandom-content .external-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+}
+
+.fandom-content .external-icon {
+	font-size: 0.75rem;
+	opacity: 0.7;
+	margin-left: 0.25rem;
+}
+
+/* Fandom lists */
+.fandom-content .fandom-list {
+	margin-bottom: 1rem;
+	margin-left: 1.5rem;
+}
+
+.fandom-content .fandom-list-item {
+	color: #374151;
+	line-height: 1.625;
+}
+
+.fandom-content .fandom-list .fandom-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+.fandom-content .nested-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+/* Fandom tables */
+.fandom-content .fandom-table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+	background-color: white;
+	font-size: 0.9em;
+}
+
+.fandom-content .fandom-table-header {
+	background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.fandom-content .fandom-table-cell {
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	transition: background-color 0.15s;
+}
+
+.fandom-content .fandom-table-cell:hover {
+	background-color: #f9fafb;
+}
+
+/* Fandom templates and special elements */
+.fandom-content .quote {
+	border-left: 4px solid #60a5fa;
+	padding-left: 1rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+	margin: 1rem 0;
+	background-color: #eff6ff;
+	font-style: italic;
+	color: #374151;
+}
+
+.fandom-content .template-box {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-size: 0.875rem;
+	font-family: monospace;
+}
+
+.fandom-content .main-page-link {
+	background-color: #eff6ff;
+	border: 1px solid #93c5fd;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	color: #1e40af;
+	font-weight: 500;
+}
+
+.fandom-content .error-message {
+	background-color: #fef2f2;
+	border: 1px solid #fca5a5;
+	border-radius: 0.25rem;
+	padding: 1rem;
+	margin: 1rem 0;
+	color: #dc2626;
+}
+
+/* Fandom preformatted text */
+.fandom-content .fandom-pre {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-family: monospace;
+	font-size: 0.875rem;
+	overflow-x: auto;
+	white-space: pre-wrap;
+}
+
+/* Fandom horizontal rules */
+.fandom-content .fandom-hr {
+	border-top: 2px solid #d1d5db;
+	margin: 2rem 0;
+}
+
+/* Fandom definition lists */
+.fandom-content dt {
+	font-weight: 600;
+	color: #111827;
+	margin-bottom: 0.25rem;
+}
+
+.fandom-content dd {
+	margin-left: 1rem;
+	margin-bottom: 0.75rem;
+	color: #374151;
+}
+
+/* Fandom paragraphs */
+.fandom-content p {
+	margin-bottom: 1rem;
+	line-height: 1.625;
+	color: #374151;
+}
+
+/* Fandom bold and italic */
+.fandom-content strong {
+	font-weight: bold;
+	color: #111827;
+}
+
+.fandom-content em {
+	font-style: italic;
+	color: #374151;
+}
+
+/* Responsive adjustments for Fandom content */
+@media (max-width: 768px) {
+	.fandom-content .fandom-table {
+		font-size: 0.8em;
+	}
+	
+	.fandom-content .fandom-table-header,
+	.fandom-content .fandom-table-cell {
+		padding: 0.5rem;
+	}
+	
+	.fandom-content .fandom-list {
+		margin-left: 1em;
+	}
+	
+	.fandom-content .nested-list {
+		margin-left: 1em;
+	}
+}
+
+/* Fandom links */
+.fandom-content .fandom-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+	border-bottom: 1px dotted #3366bb;
+}
+
+.fandom-content .fandom-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+	text-decoration-color: #3366bb;
+}
+
+.fandom-content .external-link {
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+}
+
+.fandom-content .external-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+}
+
+.fandom-content .external-icon {
+	font-size: 0.75rem;
+	opacity: 0.7;
+	margin-left: 0.25rem;
+}
+
+/* Fandom lists */
+.fandom-content .fandom-list {
+	margin-bottom: 1rem;
+	margin-left: 1.5rem;
+	line-height: 1.5;
+}
+
+.fandom-content .fandom-list-item {
+	color: #374151;
+	line-height: 1.625;
+}
+
+.fandom-content .fandom-list .fandom-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+.fandom-content .nested-list {
+	margin-bottom: 0.5rem;
+	margin-top: 0.5rem;
+	margin-left: 1.5rem;
+}
+
+/* Fandom tables */
+.fandom-content .fandom-table {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+	background-color: white;
+	font-size: 0.9em;
+}
+
+.fandom-content .fandom-table-header {
+	background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	color: #1f2937;
+	font-weight: 600;
+}
+
+.fandom-content .fandom-table-cell {
+	border: 1px solid #d1d5db;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	transition: background-color 0.15s;
+}
+
+/* Fandom templates and special elements */
+.fandom-content .quote {
+	border-left: 4px solid #60a5fa;
+	padding-left: 1rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+	margin: 1rem 0;
+	background-color: #eff6ff;
+	font-style: italic;
+	color: #374151;
+	font-style: italic;
+}
+
+.fandom-content .template-box {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-size: 0.875rem;
+	font-family: monospace;
+}
+
+.fandom-content .main-page-link {
+	background-color: #eff6ff;
+	border: 1px solid #93c5fd;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	color: #1e40af;
+	font-weight: 500;
+}
+
+.fandom-content .error-message {
+	background-color: #fef2f2;
+	border: 1px solid #fca5a5;
+	border-radius: 0.25rem;
+	padding: 1rem;
+	margin: 1rem 0;
+	color: #dc2626;
+}
+
+/* Fandom preformatted text */
+.fandom-content .fandom-pre {
+	background-color: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 0.25rem;
+	padding: 0.75rem;
+	margin: 1rem 0;
+	font-family: monospace;
+	font-size: 0.875rem;
+	overflow-x: auto;
+	white-space: pre-wrap;
+}
+
+/* Fandom horizontal rules */
+.fandom-content .fandom-hr {
+	border-top: 2px solid #d1d5db;
+	margin: 2rem 0;
+}
+
+/* Fandom definition lists */
+.fandom-content dt {
+	font-weight: 600;
+	color: #111827;
+	margin-bottom: 0.25rem;
+}
+
+.fandom-content dd {
+	margin-left: 1rem;
+	margin-bottom: 0.75rem;
+	color: #374151;
+}
+
+/* Fandom paragraphs */
+.fandom-content p {
+	margin-bottom: 1rem;
+	line-height: 1.625;
+	color: #374151;
+}
+
+/* Fandom bold and italic */
+.fandom-content strong {
+	font-weight: bold;
+	color: #111827;
+}
+
+.fandom-content em {
+	font-style: italic;
+	color: #374151;
+}
+
+/* Responsive adjustments for Fandom content */
+@media (max-width: 768px) {
+	.fandom-content .fandom-table {
+		font-size: 0.75rem;
+		font-size: 0.8em;
+	}
+	
+	.fandom-content .fandom-table-header,
+	.fandom-content .fandom-table-cell {
+		padding: 0.5rem;
+	}
+	
+	.fandom-content .fandom-list {
+		margin-left: 1rem;
+	}
+	
+	.fandom-content .nested-list {
+		margin-left: 1rem;
+	}
+}
+
+/* Spell Infobox Styling */
+.spell-infobox {
+	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	border: 2px solid #cbd5e1;
+	border-radius: 12px;
+	padding: 1.5rem;
+	margin: 1.5rem 0;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.spell-name {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #1e293b;
+	margin-bottom: 1rem;
+	text-align: center;
+	border-bottom: 2px solid #3b82f6;
+	padding-bottom: 0.5rem;
+}
+
+.spell-reversible {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #7c3aed;
+	font-style: italic;
+	margin-left: 0.5rem;
+}
+
+.spell-details {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.75rem;
+}
+
+.spell-details > div {
+	background: white;
+	padding: 0.75rem;
+	border-radius: 6px;
+	border: 1px solid #e2e8f0;
+	font-size: 0.875rem;
+}
+
+.spell-details strong {
+	color: #374151;
+	font-weight: 600;
+}
+
+/* Generic Infobox Styling */
+.generic-infobox {
+	background: linear-gradient(135deg, #fefefe 0%, #f1f5f9 100%);
+	border: 2px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 1rem;
+	margin: 1rem 0;
+	box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+.infobox-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #1e293b;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid #cbd5e1;
+	padding-bottom: 0.25rem;
+}
+
+.infobox-row {
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #e2e8f0;
+	font-size: 0.875rem;
+}
+
+.infobox-row:last-child {
+	border-bottom: none;
+}
+
+.infobox-row strong {
+	color: #374151;
+	font-weight: 600;
+	margin-right: 0.5rem;
+}
+
+/* Table Caption Styling */
+.fandom-table-caption {
+	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	border: 1px solid #cbd5e1;
+	border-bottom: 2px solid #3b82f6;
+	padding: 0.75rem 1rem;
+	font-weight: 600;
+	color: #1e293b;
+	text-align: center;
+	font-size: 1.1rem;
+	margin-bottom: 0.5rem;
+	border-radius: 6px 6px 0 0;
+}
+
+/* Enhanced Table Cell Styling */
+.fandom-content .fandom-table-cell {
+	text-align: center;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	min-width: 80px;
+}
+
+.fandom-content .fandom-table-cell:empty::before,
+.fandom-content .fandom-table-cell:contains("—") {
+	content: "—";
+	color: #9ca3af;
+	font-style: italic;
 }

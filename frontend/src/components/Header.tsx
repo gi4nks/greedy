@@ -1,13 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAdventures } from '../contexts/AdventureContext';
 
 export default function Header(): JSX.Element {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
-  const [dropdownTimeout, setDropdownTimeout] = useState<number | null>(null);
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,19 +21,33 @@ export default function Header(): JSX.Element {
 
   const adventureCtx = useAdventures();
 
-  const openDropdown = (name: string) => {
-    if (dropdownTimeout) {
-      clearTimeout(dropdownTimeout);
-      setDropdownTimeout(null);
-    }
-    setDropdownOpen(name);
-  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(null);
+      }
+    };
 
-  const closeDropdown = () => {
-    const timeout = setTimeout(() => {
-      setDropdownOpen(null);
-    }, 150); // Small delay to prevent flickering
-    setDropdownTimeout(timeout);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close dropdown on escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(null);
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const toggleDropdown = (dropdown: string) => {
+    setDropdownOpen(dropdownOpen === dropdown ? null : dropdown);
   };
 
   return (
@@ -49,29 +63,37 @@ export default function Header(): JSX.Element {
           <h1 className="text-xl font-bold"><Link to="/" className="hover:text-white/80 transition-colors">⚔️ AD&D Campaign Manager</Link></h1>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center space-x-1" ref={dropdownRef}>
             {/* Campaign Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => openDropdown('campaign')}
-                onMouseLeave={closeDropdown}
-                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+                onClick={() => toggleDropdown('campaign')}
+                className={`flex items-center space-x-1 px-3 py-2 rounded transition-colors ${
+                  dropdownOpen === 'campaign' 
+                    ? 'bg-white/20 text-white' 
+                    : 'hover:bg-white/10 text-white/90'
+                }`}
+                aria-expanded={dropdownOpen === 'campaign'}
+                aria-haspopup="true"
               >
                 <span>📚 Campaign</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    dropdownOpen === 'campaign' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {dropdownOpen === 'campaign' && (
-                <div
-                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                  onMouseEnter={() => openDropdown('campaign')}
-                  onMouseLeave={closeDropdown}
-                >
-                  <Link to="/adventures" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🏰 Adventures</Link>
-                  <Link to="/sessions" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">📖 Sessions</Link>
-                  <Link to="/quests" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🎯 Quests</Link>
-                  <Link to="/timeline" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">⏰ Timeline</Link>
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <Link to="/adventures" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🏰 Adventures</Link>
+                  <Link to="/sessions" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>📖 Sessions</Link>
+                  <Link to="/quests" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🎯 Quests</Link>
+                  <Link to="/timeline" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>⏰ Timeline</Link>
                 </div>
               )}
             </div>
@@ -79,25 +101,33 @@ export default function Header(): JSX.Element {
             {/* Entities Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => openDropdown('entities')}
-                onMouseLeave={closeDropdown}
-                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+                onClick={() => toggleDropdown('entities')}
+                className={`flex items-center space-x-1 px-3 py-2 rounded transition-colors ${
+                  dropdownOpen === 'entities' 
+                    ? 'bg-white/20 text-white' 
+                    : 'hover:bg-white/10 text-white/90'
+                }`}
+                aria-expanded={dropdownOpen === 'entities'}
+                aria-haspopup="true"
               >
                 <span>👥 Entities</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    dropdownOpen === 'entities' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {dropdownOpen === 'entities' && (
-                <div
-                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                  onMouseEnter={() => openDropdown('entities')}
-                  onMouseLeave={closeDropdown}
-                >
-                  <Link to="/characters" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🧙 Characters</Link>
-                  <Link to="/npcs" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">👤 NPCs</Link>
-                  <Link to="/magic-items" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">💍 Magic Items</Link>
-                  <Link to="/locations" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🗺️ Locations</Link>
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <Link to="/characters" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🧙 Characters</Link>
+                  <Link to="/npcs" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>👤 NPCs</Link>
+                  <Link to="/magic-items" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>💍 Magic Items</Link>
+                  <Link to="/locations" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🗺️ Locations</Link>
                 </div>
               )}
             </div>
@@ -105,24 +135,33 @@ export default function Header(): JSX.Element {
             {/* Tools Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => openDropdown('tools')}
-                onMouseLeave={closeDropdown}
-                className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-white/10 transition-colors"
+                onClick={() => toggleDropdown('tools')}
+                className={`flex items-center space-x-1 px-3 py-2 rounded transition-colors ${
+                  dropdownOpen === 'tools' 
+                    ? 'bg-white/20 text-white' 
+                    : 'hover:bg-white/10 text-white/90'
+                }`}
+                aria-expanded={dropdownOpen === 'tools'}
+                aria-haspopup="true"
               >
                 <span>🛠️ Tools</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    dropdownOpen === 'tools' ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {dropdownOpen === 'tools' && (
-                <div
-                  className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                  onMouseEnter={() => openDropdown('tools')}
-                  onMouseLeave={closeDropdown}
-                >
-                  <Link to="/dice-roller" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🎲 Dice Roller</Link>
-                  <Link to="/combat-tracker" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">⚔️ Combat Tracker</Link>
-                  <Link to="/search" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">🔍 Search</Link>
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <Link to="/dice-roller" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🎲 Dice Roller</Link>
+                  <Link to="/combat-tracker" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>⚔️ Combat Tracker</Link>
+                  <Link to="/wiki-import" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>📚 Wiki Import</Link>
+                  <Link to="/search" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setDropdownOpen(null)}>🔍 Search</Link>
                 </div>
               )}
             </div>
@@ -215,6 +254,7 @@ export default function Header(): JSX.Element {
               <nav className="flex flex-col space-y-1 pl-4">
                 <Link to="/dice-roller" className="text-white hover:text-white/80 py-1">🎲 Dice Roller</Link>
                 <Link to="/combat-tracker" className="text-white hover:text-white/80 py-1">⚔️ Combat Tracker</Link>
+                <Link to="/wiki-import" className="text-white hover:text-white/80 py-1">📚 Wiki Import</Link>
                 <Link to="/search" className="text-white hover:text-white/80 py-1">🔍 Search</Link>
               </nav>
             </div>
