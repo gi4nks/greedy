@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useToast } from '../components/Toast';
-import Modal from '../components/Modal';
 import { logError } from '../utils/logger';
-import { useAdventures } from '../contexts/AdventureContext';
+import { Character } from '../../../shared/types';
 
 type MagicItem = {
   id?: number;
@@ -13,9 +12,9 @@ type MagicItem = {
   rarity?: string;
   type?: string;
   description?: string;
-  properties?: any;
+  properties?: Record<string, unknown>;
   attunement_required?: number;
-  owners?: any[];
+  owners?: Character[];
 };
 
 export default function MagicItems(): JSX.Element {
@@ -31,7 +30,6 @@ export default function MagicItems(): JSX.Element {
   const [charSearch, setCharSearch] = useState('');
   // Collapsed state for each magic item
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
-  const adv = useAdventures();
   const toast = useToast();
 
   // Toggle collapse for a magic item
@@ -40,19 +38,19 @@ export default function MagicItems(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => { void fetchItems(); }, []);
 
-  useEffect(() => { fetchCharacters(); }, []);
+  useEffect(() => { void fetchCharacters(); }, []);
   const fetchItems = async () => {
-    const res = await axios.get('/api/magic-items');
+    const res = await axios.get<MagicItem[]>('/api/magic-items');
     setItems(res.data);
   };
 
   const fetchCharacters = async () => {
     try {
-      const res = await axios.get('/api/characters');
-      setCharacters((res.data || []).map((c: any) => ({ id: c.id, name: c.name })));
-    } catch (err) {
+      const res = await axios.get<Character[]>('/api/characters');
+      setCharacters((res.data || []).filter(c => c.id !== undefined).map((c: Character) => ({ id: c.id!, name: c.name })));
+    } catch {
       setCharacters([]);
     }
   };
@@ -82,7 +80,7 @@ export default function MagicItems(): JSX.Element {
     setForm({ name: '', description: '' });
     setEditingId(null);
     setShowForm(false);
-    fetchItems();
+    void fetchItems();
   };
 
   const handleEdit = (it: MagicItem & { id: number }) => {
@@ -101,27 +99,7 @@ export default function MagicItems(): JSX.Element {
       logError(err, 'delete-magic-item');
       toast.push('Failed to delete magic item', { type: 'error' });
     } finally {
-      fetchItems();
-    }
-  };
-
-  const [assigningItem, setAssigningItem] = useState<number | null>(null);
-
-  const assignToCharacter = async (itemId: number, charId: number) => {
-    // optimistic update
-    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: [...(it.owners || []), { id: charId, name: characters.find(c => c.id === charId)?.name || 'Unknown' }] } : it));
-    setAssigning(true);
-    try {
-      await axios.post(`/api/magic-items/${itemId}/assign`, { characterId: Number(charId) });
-      toast.push(`Assigned to ${characters.find(c => c.id === charId)?.name || 'character'}`);
-      await fetchItems();
-    } catch (err) {
-      logError(err, 'assign-item');
-      toast.push('Failed to assign item', { type: 'error' });
-      await fetchItems();
-    } finally {
-      setAssigning(false);
-      setAssigningItem(null);
+      void fetchItems();
     }
   };
 
@@ -129,7 +107,7 @@ export default function MagicItems(): JSX.Element {
     if (!confirm('Unassign this item from character?')) return;
     // optimistic remove
     setUnassigning(charId);
-    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: (it.owners || []).filter((o:any) => o.id !== charId) } : it));
+    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: (it.owners || []).filter((o: Character) => o.id !== charId) } : it));
     try {
       await axios.post(`/api/magic-items/${itemId}/unassign`, { characterId: charId });
       // Add Undo action to toast: reassign if clicked
@@ -162,7 +140,7 @@ export default function MagicItems(): JSX.Element {
   const openAssignModal = (itemId: number) => {
     setAssignModalItem(itemId);
     const it = items.find(i => i.id === itemId);
-    setSelectedCharIds((it?.owners || []).map((o:any) => o.id));
+    setSelectedCharIds((it?.owners || []).map((o: Character) => o.id!).filter(Boolean));
     setCharSearch('');
   };
 
@@ -178,7 +156,7 @@ export default function MagicItems(): JSX.Element {
     try {
       // send assignment requests: compute to-add and to-remove
       const it = items.find(i => i.id === assignModalItem);
-      const current = (it?.owners || []).map((o:any) => o.id);
+      const current = (it?.owners || []).map((o: Character) => o.id!).filter((id): id is number => id !== undefined);
       const toAdd = selectedCharIds.filter(id => !current.includes(id));
       const toRemove = current.filter(id => !selectedCharIds.includes(id));
       await Promise.all([
@@ -205,20 +183,20 @@ export default function MagicItems(): JSX.Element {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Name</label>
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input input-bordered w-full" required />
+                  <label htmlFor="magic-item-name" className="block text-sm font-medium text-base-content mb-2">Name</label>
+                  <input id="magic-item-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input input-bordered w-full" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Rarity</label>
-                  <input value={form.rarity || ''} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="input input-bordered w-full" />
+                  <label htmlFor="magic-item-rarity" className="block text-sm font-medium text-base-content mb-2">Rarity</label>
+                  <input id="magic-item-rarity" value={form.rarity || ''} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="input input-bordered w-full" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Type</label>
-                  <input value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })} className="input input-bordered w-full" />
+                  <label htmlFor="magic-item-type" className="block text-sm font-medium text-base-content mb-2">Type</label>
+                  <input id="magic-item-type" value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })} className="input input-bordered w-full" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-base-content mb-2">Description / Properties (Markdown)</label>
-                  <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="textarea textarea-bordered w-full h-32" />
+                  <label htmlFor="magic-item-description" className="block text-sm font-medium text-base-content mb-2">Description / Properties (Markdown)</label>
+                  <textarea id="magic-item-description" value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="textarea textarea-bordered w-full h-32" />
                 </div>
               </div>
             </div>
@@ -242,7 +220,7 @@ export default function MagicItems(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(item.id)}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -262,13 +240,13 @@ export default function MagicItems(): JSX.Element {
                   </div>
                   <div className="card-actions">
                     <button
-                      onClick={() => handleEdit(item as MagicItem & { id: number })}
+                      onClick={() => { void handleEdit(item as MagicItem & { id: number }); }}
                       className="btn btn-secondary btn-sm"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => { void handleDelete(item.id); }}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -278,7 +256,7 @@ export default function MagicItems(): JSX.Element {
 
                 {!isCollapsed && (
                   <div className="space-y-4 mt-6">
-                    <div className="prose prose-sm max-w-none"><ReactMarkdown children={item.description || ''} /></div>
+                    <div className="prose prose-sm max-w-none"><ReactMarkdown>{item.description || ''}</ReactMarkdown></div>
                     <div>
                       <h4 className="font-semibold mb-2 flex items-center gap-2">
                         <span className="text-secondary">👥</span>
@@ -289,7 +267,7 @@ export default function MagicItems(): JSX.Element {
                           <div key={o.id} className="badge badge-secondary gap-2">
                             <span>{o.name}</span>
                             <button
-                              onClick={() => unassignFromCharacter(item.id!, o.id)}
+                              onClick={() => { void unassignFromCharacter(item.id!, o.id!); }}
                               className="btn btn-circle btn-xs btn-error"
                               disabled={unassigning === o.id}
                             >

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Page from '../components/Page';
-import { WikiDataService, WikiArticle } from '../services/WikiDataService';
+import { WikiDataService, WikiArticle, WikiArticleDetails } from '../services/WikiDataService';
 
 type ContentType = 'monster' | 'spell' | 'magic-item' | 'race' | 'class' | 'location' | 'note' | 'parking-lot';
 
@@ -9,18 +9,17 @@ export default function WikiImport(): JSX.Element {
   const [searchResults, setSearchResults] = useState<WikiArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedArticle, setSelectedArticle] = useState<WikiArticle | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
-  const [fullContentArticles, setFullContentArticles] = useState<Map<number, any>>(new Map());
+  const [fullContentArticles, setFullContentArticles] = useState<Map<number, WikiArticleDetails>>(new Map());
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Content', searchFn: null },
-    { id: 'monsters', name: 'Monsters', searchFn: WikiDataService.searchMonsters },
-    { id: 'spells', name: 'Spells', searchFn: WikiDataService.searchSpells },
-    { id: 'magic-items', name: 'Magic Items', searchFn: WikiDataService.searchMagicItems },
-    { id: 'races', name: 'Races', searchFn: WikiDataService.searchRaces },
-    { id: 'classes', name: 'Classes', searchFn: WikiDataService.searchClasses },
+    { id: 'monsters', name: 'Monsters', searchFn: () => WikiDataService.searchMonsters() },
+    { id: 'spells', name: 'Spells', searchFn: () => WikiDataService.searchSpells() },
+    { id: 'magic-items', name: 'Magic Items', searchFn: () => WikiDataService.searchMagicItems() },
+    { id: 'races', name: 'Races', searchFn: () => WikiDataService.searchRaces() },
+    { id: 'classes', name: 'Classes', searchFn: () => WikiDataService.searchClasses() },
   ];
 
   const handleSearch = async () => {
@@ -48,8 +47,7 @@ export default function WikiImport(): JSX.Element {
       }
 
       setSearchResults(results);
-    } catch (error) {
-      console.error('Search failed:', error);
+    } catch {
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -58,7 +56,7 @@ export default function WikiImport(): JSX.Element {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearch();
+      void handleSearch();
     }
   };
 
@@ -80,8 +78,7 @@ export default function WikiImport(): JSX.Element {
           if (articleDetail) {
             setFullContentArticles(prev => new Map(prev).set(article.id, articleDetail));
           }
-        } catch (error) {
-          console.error('Failed to load article details:', error);
+        } catch {
           setFeedbackMessage({ type: 'error', message: 'Failed to load article details. Please try again.' });
           return;
         } finally {
@@ -105,8 +102,7 @@ export default function WikiImport(): JSX.Element {
       // Also expand to show the content
       setExpandedArticles(prev => new Set(prev).add(article.id));
 
-    } catch (error) {
-      console.error('Failed to load full article content:', error);
+    } catch {
       setFeedbackMessage({ type: 'error', message: 'Failed to load full article content. Please try again.' });
     } finally {
       setLoading(false);
@@ -121,8 +117,7 @@ export default function WikiImport(): JSX.Element {
         setLoading(true);
         const details = await WikiDataService.getArticleDetails([article.id]);
         articleDetail = details[article.id];
-      } catch (error) {
-        console.error('Failed to load article details:', error);
+      } catch {
         setFeedbackMessage({ type: 'error', message: 'Failed to load article details. Please try again.' });
         return;
       } finally {
@@ -136,16 +131,12 @@ export default function WikiImport(): JSX.Element {
     }
 
     // Auto-detect content type
-    const content = articleDetail.isFullContent ? articleDetail.content : articleDetail.extract;
-    const detectedType = detectContentType(article.title, content || '');
+    const content = (articleDetail.isFullContent ? articleDetail.content : articleDetail.extract) || '';
+    const detectedType = detectContentType(article.title, content);
 
     // Import automatically based on detected type
     try {
       setLoading(true);
-      setSelectedArticle(article);
-
-      console.log(`Starting automatic import for article: ${article.title} (ID: ${article.id})`);
-      console.log(`Detected content type: ${detectedType}`);
 
       switch (detectedType) {
         case 'monster':
@@ -172,7 +163,6 @@ export default function WikiImport(): JSX.Element {
       }
 
     } catch (error: any) {
-      console.error('Import failed for article', article.id, ':', error);
 
       // Provide more specific error messages
       let errorMessage = 'Failed to import data. Please try again.';
@@ -194,7 +184,6 @@ export default function WikiImport(): JSX.Element {
       setFeedbackMessage({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
-      setSelectedArticle(null);
     }
   };
 
@@ -381,7 +370,7 @@ export default function WikiImport(): JSX.Element {
         if (errorData.error) {
           errorMessage = `Failed to add to parking lot: ${errorData.error}`;
         }
-      } catch (e) {
+      } catch {
         // If we can't parse the error response, use the status
         errorMessage = `Failed to add to parking lot (HTTP ${response.status})`;
       }
@@ -417,8 +406,9 @@ export default function WikiImport(): JSX.Element {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Search Query</label>
+                  <label htmlFor="search-query" className="block text-sm font-medium text-base-content mb-2">Search Query</label>
                   <input
+                    id="search-query"
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -429,8 +419,9 @@ export default function WikiImport(): JSX.Element {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Category</label>
+                  <label htmlFor="category-select" className="block text-sm font-medium text-base-content mb-2">Category</label>
                   <select
+                    id="category-select"
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="select select-bordered w-full"
@@ -444,9 +435,10 @@ export default function WikiImport(): JSX.Element {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2 opacity-0">Search</label>
+                  <label htmlFor="search-button" className="block text-sm font-medium text-base-content mb-2 opacity-0">Search</label>
                   <button
-                    onClick={handleSearch}
+                    id="search-button"
+                    onClick={() => void handleSearch()}
                     disabled={loading}
                     className={`btn btn-primary btn-sm w-full ${loading ? 'loading' : ''}`}
                   >
@@ -485,7 +477,7 @@ export default function WikiImport(): JSX.Element {
                           <div className="flex-1">
                             <div className="flex items-start gap-3">
                               <button
-                                onClick={() => handleExpand(article)}
+                                onClick={() => void handleExpand(article)}
                                 className="btn btn-outline btn-primary btn-sm"
                                 aria-label={isExpanded ? 'Collapse' : 'Expand'}
                               >
@@ -510,7 +502,7 @@ export default function WikiImport(): JSX.Element {
 
                           <div className="flex flex-col gap-2 ml-4">
                             <button
-                              onClick={() => handleShowDetails(article)}
+                              onClick={() => void handleShowDetails(article)}
                               className="btn btn-secondary btn-sm"
                             >
                               Details
@@ -522,7 +514,7 @@ export default function WikiImport(): JSX.Element {
                               View on Wiki
                             </button>
                             <button
-                              onClick={() => handleImport(article)}
+                              onClick={() => void handleImport(article)}
                               className="btn btn-primary btn-sm"
                             >
                               Import
@@ -545,10 +537,7 @@ export default function WikiImport(): JSX.Element {
                                   </div>
                                   <button
                                     onClick={() => {
-                                      const contentToShow = articleData.isFullContent ? articleData.content : articleData.extract;
-                                      console.log('=== ARTICLE CONTENT ===');
-                                      console.log('Article:', article.title);
-                                      console.log('Raw content:', contentToShow);
+                                      // Debug functionality removed
                                     }}
                                     className="btn btn-outline btn-xs"
                                   >

@@ -1,5 +1,39 @@
 import axios from 'axios';
 
+export interface WikiSearchResponse {
+  items: WikiArticle[];
+  basepath: string;
+  offset?: string;
+}
+
+export interface WikiArticleResponse {
+  id: number;
+  title: string;
+  url: string;
+  extract?: string;
+  content?: string;
+  thumbnail?: string;
+  isFullContent?: boolean;
+}
+
+export interface MonsterData {
+  armorClass?: number;
+  hitDice?: string;
+  movement?: string;
+}
+
+export interface SpellData {
+  level?: string;
+  range?: string;
+  duration?: string;
+}
+
+export interface MagicItemData {
+  rarity?: string;
+  type?: string;
+  attunement?: string;
+}
+
 export interface WikiArticle {
   id: number;
   title: string;
@@ -17,12 +51,6 @@ export interface WikiArticleDetails {
   isFullContent?: boolean;
 }
 
-export interface WikiSearchResult {
-  items: WikiArticle[];
-  basepath: string;
-  offset?: string;
-}
-
 export class WikiDataService {
   private static readonly BASE_URL = 'https://adnd2e.fandom.com/api/v1';
   private static readonly WIKI_BASE = 'https://adnd2e.fandom.com';
@@ -32,7 +60,7 @@ export class WikiDataService {
    */
   static async searchArticles(query: string, limit: number = 20): Promise<WikiArticle[]> {
     try {
-      const response = await axios.get('/api/wiki/search', {
+      const response = await axios.get<WikiSearchResponse>('/api/wiki/search', {
         params: {
           query,
           limit
@@ -40,8 +68,7 @@ export class WikiDataService {
       });
 
       return response.data.items || [];
-    } catch (error) {
-      console.error('Error searching wiki articles:', error);
+    } catch {
       throw new Error('Failed to search wiki articles');
     }
   }
@@ -51,7 +78,7 @@ export class WikiDataService {
    */
   static async searchByCategory(category: string, limit: number = 20): Promise<WikiArticle[]> {
     try {
-      const response = await axios.get('/api/wiki/search', {
+      const response = await axios.get<WikiSearchResponse>('/api/wiki/search', {
         params: {
           category,
           limit
@@ -59,8 +86,7 @@ export class WikiDataService {
       });
 
       return response.data.items || [];
-    } catch (error) {
-      console.error('Error searching wiki by category:', error);
+    } catch {
       throw new Error('Failed to search wiki by category');
     }
   }
@@ -75,17 +101,15 @@ export class WikiDataService {
       // Get details for each article
       for (const id of ids) {
         try {
-          const response = await axios.get(`/api/wiki/article/${id}`);
+          const response = await axios.get<WikiArticleResponse>(`/api/wiki/article/${id}`);
           details[id] = response.data;
-        } catch (error) {
-          console.error(`Error getting details for article ${id}:`, error);
+        } catch {
           // Continue with other articles if one fails
         }
       }
 
       return details;
-    } catch (error) {
-      console.error('Error getting article details:', error);
+    } catch {
       throw new Error('Failed to get article details');
     }
   }
@@ -95,12 +119,11 @@ export class WikiDataService {
    */
   static async getArticleFullContent(id: number): Promise<WikiArticleDetails> {
     try {
-      const response = await axios.get(`/api/wiki/article/${id}`, {
+      const response = await axios.get<WikiArticleResponse>(`/api/wiki/article/${id}`, {
         params: { full: 'true' }
       });
       return response.data;
-    } catch (error) {
-      console.error(`Error getting full content for article ${id}:`, error);
+    } catch {
       throw new Error('Failed to get full article content');
     }
   }
@@ -186,9 +209,8 @@ export class WikiDataService {
       }
 
       return html;
-    } catch (error) {
-      console.error('Error converting wikitext to HTML:', error);
-      return `<div class="error-message">Error rendering content: ${error}</div>`;
+    } catch (_error) {
+      return `<div class="error-message">Error rendering content: ${_error}</div>`;
     }
   }
 
@@ -608,9 +630,10 @@ export class WikiDataService {
   static async searchClasses(limit: number = 50): Promise<WikiArticle[]> {
     return this.searchByCategory('Classes', limit);
   }
-  static parseMonsterData(content: string): Partial<any> {
+
+  static parseMonsterData(content: string): MonsterData {
     // Basic parsing logic - could be enhanced
-    const monster: any = {};
+    const monster: MonsterData = {};
 
     // Extract basic stats from wiki format
     const armorClassMatch = content.match(/Armor Class:\s*(\d+)/i);
@@ -625,8 +648,8 @@ export class WikiDataService {
     return monster;
   }
 
-  static parseSpellData(content: string): Partial<any> {
-    const spell: any = {};
+  static parseSpellData(content: string): SpellData {
+    const spell: SpellData = {};
 
     const levelMatch = content.match(/Level:\s*([^<\n]+)/i);
     if (levelMatch) spell.level = levelMatch[1].trim();
@@ -640,14 +663,17 @@ export class WikiDataService {
     return spell;
   }
 
-  static parseMagicItemData(content: string): Partial<any> {
-    const item: any = {};
+  static parseMagicItemData(content: string): MagicItemData {
+    const item: MagicItemData = {};
+
+    const typeMatch = content.match(/Type:\s*([^<\n]+)/i);
+    if (typeMatch) item.type = typeMatch[1].trim();
 
     const rarityMatch = content.match(/Rarity:\s*([^<\n]+)/i);
     if (rarityMatch) item.rarity = rarityMatch[1].trim();
 
-    const typeMatch = content.match(/Type:\s*([^<\n]+)/i);
-    if (typeMatch) item.type = typeMatch[1].trim();
+    const attunementMatch = content.match(/Attunement:\s*([^<\n]+)/i);
+    if (attunementMatch) item.attunement = attunementMatch[1].trim();
 
     return item;
   }

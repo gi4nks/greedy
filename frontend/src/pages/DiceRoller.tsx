@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Page from '../components/Page';
 
 interface DiceRoll {
@@ -111,7 +111,7 @@ export default function DiceRoller(): JSX.Element {
   };
 
   // Handle dice roll
-  const handleRoll = async () => {
+  const handleRoll = () => {
     if (!currentRoll.trim()) return;
 
     setIsRolling(true);
@@ -122,9 +122,8 @@ export default function DiceRoller(): JSX.Element {
         const rollResult = rollDice(currentRoll, rollType);
         setRollHistory(prev => [rollResult, ...prev.slice(0, 49)]); // Keep last 50 rolls
         setCustomLabel('');
-      } catch (error) {
-        console.error('Invalid dice notation:', error);
-        // Could add toast notification here
+      } catch {
+        // Invalid dice notation - could add toast notification here
       } finally {
         setIsRolling(false);
       }
@@ -134,14 +133,6 @@ export default function DiceRoller(): JSX.Element {
   // Quick roll buttons
   const quickRoll = (dice: string) => {
     setCurrentRoll(dice);
-    setTimeout(() => handleRoll(), 100);
-  };
-
-  // Use preset roll
-  const usePreset = (preset: PresetRoll) => {
-    setCurrentRoll(preset.dice);
-    setModifier(preset.modifier);
-    setCustomLabel(preset.label);
     setTimeout(() => handleRoll(), 100);
   };
 
@@ -178,13 +169,14 @@ export default function DiceRoller(): JSX.Element {
               <div className="space-y-4">
                 {/* Dice Input */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Dice Notation</label>
+                  <label htmlFor="dice-input" className="block text-sm font-medium text-base-content mb-2">Dice Notation</label>
                   <input
+                    id="dice-input"
                     type="text"
                     value={currentRoll}
                     onChange={(e) => setCurrentRoll(e.target.value)}
                     placeholder="e.g., d20, 3d6, 2d8+3"
-                    className="input input-bordered input-lg font-mono"
+                    className="input input-bordered"
                     onKeyPress={(e) => e.key === 'Enter' && handleRoll()}
                   />
                 </div>
@@ -192,8 +184,9 @@ export default function DiceRoller(): JSX.Element {
                 {/* Modifier and Roll Type */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Modifier</label>
+                    <label htmlFor="modifier-input" className="block text-sm font-medium text-base-content mb-2">Modifier</label>
                     <input
+                      id="modifier-input"
                       type="number"
                       value={modifier}
                       onChange={(e) => setModifier(parseInt(e.target.value) || 0)}
@@ -202,8 +195,9 @@ export default function DiceRoller(): JSX.Element {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Roll Type</label>
+                    <label htmlFor="roll-type-select" className="block text-sm font-medium text-base-content mb-2">Roll Type</label>
                     <select
+                      id="roll-type-select"
                       value={rollType}
                       onChange={(e) => setRollType(e.target.value as typeof rollType)}
                       className="select select-bordered"
@@ -217,8 +211,9 @@ export default function DiceRoller(): JSX.Element {
 
                 {/* Custom Label */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Label (Optional)</label>
+                  <label htmlFor="custom-label-input" className="block text-sm font-medium text-base-content mb-2">Label (Optional)</label>
                   <input
+                    id="custom-label-input"
                     type="text"
                     value={customLabel}
                     onChange={(e) => setCustomLabel(e.target.value)}
@@ -231,7 +226,7 @@ export default function DiceRoller(): JSX.Element {
                 <button
                   onClick={handleRoll}
                   disabled={!currentRoll.trim() || isRolling}
-                  className={`btn btn-primary btn-lg w-full ${
+                  className={`btn btn-primary btn-sm ${
                     isRolling ? 'loading' : ''
                   }`}
                 >
@@ -267,12 +262,16 @@ export default function DiceRoller(): JSX.Element {
                 {presetRolls.map(preset => (
                   <button
                     key={preset.name}
-                    onClick={() => usePreset(preset)}
-                    className="btn btn-success btn-block justify-start btn-sm"
+                    onClick={() => {
+                      setCurrentRoll(preset.dice);
+                      setModifier(preset.modifier);
+                      setCustomLabel(preset.label);
+                      setTimeout(() => handleRoll(), 100);
+                    }}
+                    className="btn btn-success btn-block justify-center btn-sm"
                   >
                     <div>
-                      <div className="font-semibold">{preset.name}</div>
-                      <div className="text-sm opacity-90">{preset.dice}</div>
+                      <div className="font-semibold">{preset.name} ({preset.dice})</div>
                     </div>
                   </button>
                 ))}

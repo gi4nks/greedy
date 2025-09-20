@@ -27,7 +27,7 @@ export function CharacterCard({
             <button
               onClick={onToggleCollapse}
               className="btn btn-circle btn-outline btn-primary btn-sm"
-              aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+              aria-label={isCollapsed ? '+' : '-'}
             >
               {isCollapsed ? '+' : '−'}
             </button>

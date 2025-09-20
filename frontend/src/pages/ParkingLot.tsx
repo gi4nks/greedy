@@ -164,7 +164,7 @@ export default function ParkingLot(): JSX.Element {
                       {item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {item.tags.map((tag, index) => (
-                            <div key={index} className="badge badge-primary badge-outline">
+                            <div key={index} className="badge badge-primary">
                               {tag}
                             </div>
                           ))}

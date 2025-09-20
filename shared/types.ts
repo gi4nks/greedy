@@ -6,6 +6,18 @@ export interface Adventure {
   description?: string;
 }
 
+export interface CharacterClass {
+  className: string;
+  level: number;
+  experience?: number;
+}
+
+export interface CharacterSpell {
+  level: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  name: string;
+  prepared: boolean;
+}
+
 export interface Character {
   id?: number;
   adventure_id?: number | null;
@@ -38,7 +50,7 @@ export interface Character {
   skills?: Record<string, boolean>;
   equipment?: string[];
   weapons?: any[];
-  spells?: any[];
+  spells?: CharacterSpell[];
 
   // Spellcasting
   spellcastingAbility?: string;
@@ -56,7 +68,7 @@ export interface Character {
   role?: string;
   description?: string;
   tags?: string[];
-  classes?: any[];
+  classes?: CharacterClass[];
 }
 
 export interface MagicItem {
@@ -127,8 +139,8 @@ export interface CharacterForm extends Omit<Character, 'id' | 'saving_throws' | 
   skills?: Record<string, boolean>;
   equipment?: string[];
   weapons?: any[];
-  spells?: any[];
-  classes?: any[];
+  spells?: CharacterSpell[];
+  classes?: CharacterClass[];
 }
 
 export interface MagicItemForm extends Omit<MagicItem, 'id' | 'owners'> {}

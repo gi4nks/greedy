@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -9,7 +9,11 @@ export default function Search(): JSX.Element {
   const [params] = useSearchParams();
   const qParam = params.get('q') || '';
   const [q, setQ] = useState(qParam);
-  const [results, setResults] = useState({ sessions: [], npcs: [], locations: [] } as any);
+  const [results, setResults] = useState<{ 
+    sessions: { id?: number; title: string; date: string; text: string }[]; 
+    npcs: { id?: number; name: string; role: string; description: string; tags: string[] }[]; 
+    locations: { id?: number; name: string; description: string; notes: string; tags: string[] }[] 
+  }>({ sessions: [], npcs: [], locations: [] });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formType, setFormType] = useState<'session' | 'npc' | 'location' | null>(null);
   const [sessionForm, setSessionForm] = useState({ title: '', date: '', text: '', adventure_id: null as number | null });
@@ -38,17 +42,21 @@ export default function Search(): JSX.Element {
     setCollapsedLocations(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    if (qParam) doSearch(qParam);
-  }, [qParam]);
-
-  const doSearch = async (term: string) => {
+  const doSearch = useCallback(async (term: string) => {
     const params = new URLSearchParams();
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
+    const res = await axios.get<{
+      sessions: { id?: number; title: string; date: string; text: string }[];
+      npcs: { id?: number; name: string; role: string; description: string; tags: string[] }[];
+      locations: { id?: number; name: string; description: string; notes: string; tags: string[] }[];
+    }>(`/api/search?${params.toString()}`);
     setResults(res.data);
-  };
+  }, [adv.selectedId]);
+
+  useEffect(() => {
+    if (qParam) void doSearch(qParam);
+  }, [qParam, doSearch]);
 
   const renderForm = () => {
     if (formType === 'session') {
@@ -58,8 +66,9 @@ export default function Search(): JSX.Element {
             <h3 className="font-bold text-lg">Add New Session</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <label htmlFor="session-adventure-select" className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
+                  id="session-adventure-select"
                   value={sessionForm.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setSessionForm({ ...sessionForm, adventure_id: e.target.value ? Number(e.target.value) : null })}
                   className="select select-bordered w-full"
@@ -71,8 +80,9 @@ export default function Search(): JSX.Element {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                <label htmlFor="session-title-input" className="block text-sm font-medium text-base-content mb-2">Title</label>
                 <input
+                  id="session-title-input"
                   type="text"
                   placeholder="Title"
                   value={sessionForm.title}
@@ -82,8 +92,9 @@ export default function Search(): JSX.Element {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
+                <label htmlFor="session-date-input" className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
+                  id="session-date-input"
                   type="date"
                   value={sessionForm.date}
                   onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
@@ -92,8 +103,9 @@ export default function Search(): JSX.Element {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
+                <label htmlFor="session-notes-textarea" className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
                 <textarea
+                  id="session-notes-textarea"
                   placeholder="Session notes (Markdown supported)"
                   value={sessionForm.text}
                   onChange={(e) => setSessionForm({ ...sessionForm, text: e.target.value })}
@@ -102,8 +114,8 @@ export default function Search(): JSX.Element {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                <div className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                <label htmlFor="session-preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div id="session-preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown>{sessionForm.text}</ReactMarkdown>
                   </div>
@@ -130,8 +142,9 @@ export default function Search(): JSX.Element {
             <h3 className="font-bold text-lg">Add New NPC</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <label htmlFor="npc-name-input" className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
+                  id="npc-name-input"
                   type="text"
                   placeholder="Name"
                   value={npcForm.name}
@@ -141,8 +154,9 @@ export default function Search(): JSX.Element {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Role</label>
+                <label htmlFor="npc-role-input" className="block text-sm font-medium text-base-content mb-2">Role</label>
                 <input
+                  id="npc-role-input"
                   type="text"
                   placeholder="Role"
                   value={npcForm.role}
@@ -153,8 +167,9 @@ export default function Search(): JSX.Element {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                  <label htmlFor="npc-description-textarea" className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                   <textarea
+                    id="npc-description-textarea"
                     placeholder="Description (Markdown supported)"
                     value={npcForm.description}
                     onChange={(e) => setNpcForm({ ...npcForm, description: e.target.value })}
@@ -163,8 +178,8 @@ export default function Search(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
+                  <label htmlFor="npc-preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div id="npc-preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{npcForm.description}</ReactMarkdown>
                     </div>
@@ -172,16 +187,17 @@ export default function Search(): JSX.Element {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <label htmlFor="npc-tags-input" className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
                   <input
+                    id="npc-tags-input"
                     type="text"
                     placeholder="Add tag"
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     className="input input-bordered flex-1"
                   />
-                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
+                  <button type="button" onClick={() => void handleAddTag()} className="btn btn-secondary btn-sm">Add Tag</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {npcForm.tags.map(tag => (
@@ -213,8 +229,9 @@ export default function Search(): JSX.Element {
             <h3 className="font-bold text-lg">Add New Location</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <label htmlFor="location-name-input" className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
+                  id="location-name-input"
                   type="text"
                   placeholder="Name"
                   value={locationForm.name}
@@ -225,8 +242,9 @@ export default function Search(): JSX.Element {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Description</label>
+                  <label htmlFor="location-description-textarea" className="block text-sm font-medium text-base-content mb-2">Description</label>
                   <textarea
+                    id="location-description-textarea"
                     placeholder="Description"
                     value={locationForm.description}
                     onChange={(e) => setLocationForm({ ...locationForm, description: e.target.value })}
@@ -235,8 +253,8 @@ export default function Search(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-20 overflow-auto">
+                  <label htmlFor="location-description-preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div id="location-description-preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-20 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{locationForm.description}</ReactMarkdown>
                     </div>
@@ -245,8 +263,9 @@ export default function Search(): JSX.Element {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
+                  <label htmlFor="location-notes-textarea" className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
                   <textarea
+                    id="location-notes-textarea"
                     placeholder="Notes (Markdown supported)"
                     value={locationForm.notes}
                     onChange={(e) => setLocationForm({ ...locationForm, notes: e.target.value })}
@@ -255,8 +274,8 @@ export default function Search(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
+                  <label htmlFor="location-notes-preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div id="location-notes-preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown>{locationForm.notes}</ReactMarkdown>
                     </div>
@@ -264,16 +283,17 @@ export default function Search(): JSX.Element {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <label htmlFor="location-tags-input" className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
                   <input
+                    id="location-tags-input"
                     type="text"
                     placeholder="Add tag"
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     className="input input-bordered flex-1"
                   />
-                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
+                  <button type="button" onClick={() => void handleAddTag()} className="btn btn-secondary btn-sm">Add Tag</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {locationForm.tags.map(tag => (
@@ -318,7 +338,7 @@ export default function Search(): JSX.Element {
     setShowCreateForm(false);
     setFormType(null);
     // Optionally refresh search
-    if (q.trim()) await doSearch(q);
+    if (q.trim()) void doSearch(q);
   };
 
   const handleAddTag = () => {
@@ -340,16 +360,18 @@ export default function Search(): JSX.Element {
     }
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!q.trim()) return;
-    await doSearch(q);
+    void doSearch(q);
   };
 
   return (
     <Page title="Search">
       <form onSubmit={onSubmit} className="mb-4">
+        <label htmlFor="search-input" className="sr-only">Search all notes</label>
         <input
+          id="search-input"
           className="input input-bordered w-full"
           placeholder="Search all notes..."
           value={q}
@@ -362,9 +384,9 @@ export default function Search(): JSX.Element {
       <section className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-xl font-semibold">Sessions</h3>
-          <button onClick={() => { setFormType('session'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>
+          <button onClick={() => { void (() => { setFormType('session'); setShowCreateForm(true); })(); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.sessions || []).map((s: any) => {
+        {(results.sessions || []).map((s) => {
           const isCollapsed = s.id ? collapsedSessions[s.id] ?? true : false;
           return (
             <div key={s.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">
@@ -373,7 +395,7 @@ export default function Search(): JSX.Element {
                   <button
                     onClick={() => toggleCollapseSession(s.id)}
                     className="btn btn-outline btn-primary btn-sm"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    aria-label={isCollapsed ? '+' : '-'}
                   >
                     {isCollapsed ? '+' : '−'}
                   </button>
@@ -395,7 +417,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">NPCs</h3>
           <button onClick={() => { setFormType('npc'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.npcs || []).map((n: any) => {
+        {(results.npcs || []).map((n) => {
           const isCollapsed = n.id ? collapsedNpcs[n.id] ?? true : false;
           return (
             <div key={n.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">
@@ -404,7 +426,7 @@ export default function Search(): JSX.Element {
                   <button
                     onClick={() => toggleCollapseNpc(n.id)}
                     className="btn btn-outline btn-primary btn-sm"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    aria-label={isCollapsed ? '+' : '-'}
                   >
                     {isCollapsed ? '+' : '−'}
                   </button>
@@ -429,7 +451,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Locations</h3>
           <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.locations || []).map((l: any) => {
+        {(results.locations || []).map((l) => {
           const isCollapsed = l.id ? collapsedLocations[l.id] ?? true : false;
           return (
             <div key={l.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">
@@ -438,9 +460,9 @@ export default function Search(): JSX.Element {
                   <button
                     onClick={() => toggleCollapseLocation(l.id)}
                     className="btn btn-outline btn-primary btn-sm"
-                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                    aria-label={isCollapsed ? '+' : '-'}
                   >
-                    {isCollapsed ? 'Expand' : 'Collapse'}
+                    {isCollapsed ? '+' : '-'}
                   </button>
                   <h4 className="card-title text-lg">{l.name}</h4>
                 </div>

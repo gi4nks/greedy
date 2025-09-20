@@ -24,6 +24,12 @@ export default [
         document: 'readonly',
         console: 'readonly',
         process: 'readonly',
+        setTimeout: 'readonly',
+        fetch: 'readonly',
+        confirm: 'readonly',
+        alert: 'readonly',
+        localStorage: 'readonly',
+        JSX: 'readonly',
       },
     },
     plugins: {

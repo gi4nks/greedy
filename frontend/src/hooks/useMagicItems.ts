@@ -33,7 +33,7 @@ export function useCreateMagicItem() {
       return response.data as MagicItem;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['magic-items'] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-items'] });
     },
   });
 }
@@ -47,8 +47,8 @@ export function useUpdateMagicItem() {
       return response.data as MagicItem;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['magic-items'] });
-      queryClient.invalidateQueries({ queryKey: ['magic-item', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-items'] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-item', data.id] });
     },
   });
 }
@@ -62,7 +62,7 @@ export function useDeleteMagicItem() {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['magic-items'] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-items'] });
     },
   });
 }
@@ -76,8 +76,8 @@ export function useAssignMagicItem() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['magic-items'] });
-      queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-items'] });
+      void queryClient.invalidateQueries({ queryKey: ['characters'] });
     },
   });
 }
@@ -90,8 +90,8 @@ export function useUnassignMagicItem() {
       await axios.delete(`/api/magic-items/${itemId}/assign/${characterId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['magic-items'] });
-      queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['magic-items'] });
+      void queryClient.invalidateQueries({ queryKey: ['characters'] });
     },
   });
 }

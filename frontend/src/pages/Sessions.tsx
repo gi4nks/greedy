@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useAdventures } from '../contexts/AdventureContext';
 import Page from '../components/Page';
 
@@ -25,26 +24,26 @@ export default function Sessions(): JSX.Element {
 
   useEffect(() => {
     // initial load: fetch sessions optionally filtered by selected adventure
-    fetchSessions();
+    void fetchSessions();
   }, []);
 
   const fetchSessions = () => {
-    axios.get('/api/sessions').then(res => setSessions(res.data));
+    void axios.get<Session[]>('/api/sessions').then((res) => setSessions(res.data));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
     if (editingId) {
-      axios.put(`/api/sessions/${editingId}`, payload).then(() => {
-        fetchSessions();
+      void axios.put(`/api/sessions/${editingId}`, payload).then(() => {
+        void fetchSessions();
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setEditingId(null);
         setShowCreateForm(false);
       });
     } else {
-      axios.post('/api/sessions', payload).then(() => {
-        fetchSessions();
+      void axios.post('/api/sessions', payload).then(() => {
+        void fetchSessions();
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setShowCreateForm(false);
       });
@@ -60,25 +59,22 @@ export default function Sessions(): JSX.Element {
   const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this session?')) {
-      axios.delete(`/api/sessions/${id}`).then(() => {
-        fetchSessions();
+      void axios.delete(`/api/sessions/${id}`).then(() => {
+        void fetchSessions();
       });
     }
   };
 
-  const doSearch = async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
-    // server returns sessions, npcs, locations — we use sessions
-    setSessions(res.data.sessions || []);
+    const doSearch = () => {
+    void axios.get<Session[]>('/api/sessions', { params: { search: searchTerm } }).then((response) => {
+      setSessions(response.data);
+    });
   };
   // Sort sessions by date descending (newest first)
   const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return (
-    <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); console.log('Sessions + button clicked'); setShowCreateForm(true); }} onClick={() => { console.log('Sessions + onClick fired'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Create</button>}>
+    <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       {(showCreateForm || editingId) && (
         <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
@@ -86,8 +82,9 @@ export default function Sessions(): JSX.Element {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <label htmlFor="adventure-select" className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
+                  id="adventure-select"
                   value={formData.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
                   className="select select-bordered w-full"
@@ -100,8 +97,9 @@ export default function Sessions(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                <label htmlFor="title-input" className="block text-sm font-medium text-base-content mb-2">Title</label>
                 <input
+                  id="title-input"
                   type="text"
                   placeholder="Title"
                   value={formData.title}
@@ -112,8 +110,9 @@ export default function Sessions(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
+                <label htmlFor="date-input" className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
+                  id="date-input"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -123,8 +122,9 @@ export default function Sessions(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
+                <label htmlFor="notes-textarea" className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
                 <textarea
+                  id="notes-textarea"
                   placeholder="Session notes (Markdown supported)"
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
@@ -134,19 +134,16 @@ export default function Sessions(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                <div className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                <label htmlFor="preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div id="preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
                   <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown children={formData.text} />
+                    <ReactMarkdown>{formData.text}</ReactMarkdown>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="card-actions justify-end">
-              <button type="submit" className="btn btn-primary btn-sm">
-                {editingId ? 'Update' : 'Create'}
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -158,14 +155,19 @@ export default function Sessions(): JSX.Element {
               >
                 Cancel
               </button>
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
+              </button>
             </div>
           </div>
         </form>
       )}
 
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); doSearch(); }}>
+          <label htmlFor="search-input" className="sr-only">Search sessions</label>
           <input
+            id="search-input"
             type="text"
             placeholder="Search sessions..."
             value={searchTerm}
@@ -187,7 +189,7 @@ export default function Sessions(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(session.id)}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -215,7 +217,7 @@ export default function Sessions(): JSX.Element {
                 {!isCollapsed && (
                   <div className="mt-6">
                     <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown children={session.text} />
+                      <ReactMarkdown>{session.text}</ReactMarkdown>
                     </div>
                   </div>
                 )}

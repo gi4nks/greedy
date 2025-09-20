@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
@@ -40,11 +40,11 @@ export default function NPCs(): JSX.Element {
   };
 
   useEffect(() => {
-    fetchNpcs();
+    void fetchNpcs();
   }, []);
 
   const fetchNpcs = () => {
-    axios.get('/api/npcs').then(res => setNpcs(res.data));
+    void axios.get<NPC[]>('/api/npcs').then(res => setNpcs(res.data));
   };
 
   const handleAddTag = () => {
@@ -64,15 +64,15 @@ export default function NPCs(): JSX.Element {
     e.preventDefault();
     const data = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
     if (editingId) {
-      axios.put(`/api/npcs/${editingId}`, data).then(() => {
-        fetchNpcs();
+      void axios.put(`/api/npcs/${editingId}`, data).then(() => {
+        void fetchNpcs();
         setFormData({ name: '', role: '', description: '', tags: [] });
         setEditingId(null);
         setShowCreateForm(false);
       });
     } else {
-      axios.post('/api/npcs', data).then(() => {
-        fetchNpcs();
+      void axios.post('/api/npcs', data).then(() => {
+        void fetchNpcs();
         setFormData({ name: '', role: '', description: '', tags: [] });
         setShowCreateForm(false);
       });
@@ -88,8 +88,8 @@ export default function NPCs(): JSX.Element {
   const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this NPC?')) {
-      axios.delete(`/api/npcs/${id}`).then(() => {
-        fetchNpcs();
+      void axios.delete(`/api/npcs/${id}`).then(() => {
+        void fetchNpcs();
       });
     }
   };
@@ -98,14 +98,14 @@ export default function NPCs(): JSX.Element {
     const params = new URLSearchParams();
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
+    const res = await axios.get<{ npcs: NPC[] }>(`/api/search?${params.toString()}`);
     setNpcs(res.data.npcs || []);
   };
 
   return (
     <Page title="NPCs" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search NPCs..."
@@ -123,8 +123,9 @@ export default function NPCs(): JSX.Element {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <label htmlFor="npc-name" className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
+                  id="npc-name"
                   type="text"
                   placeholder="NPC Name"
                   value={formData.name}
@@ -135,8 +136,9 @@ export default function NPCs(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Role</label>
+                <label htmlFor="npc-role" className="block text-sm font-medium text-base-content mb-2">Role</label>
                 <input
+                  id="npc-role"
                   type="text"
                   placeholder="e.g., Innkeeper, Guard, Merchant, Villain"
                   value={formData.role || ''}
@@ -146,8 +148,9 @@ export default function NPCs(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <label htmlFor="npc-adventure" className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
+                  id="npc-adventure"
                   value={formData.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
                   className="select select-bordered w-full"
@@ -160,8 +163,9 @@ export default function NPCs(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                <label htmlFor="npc-description" className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                 <textarea
+                  id="npc-description"
                   placeholder="Describe the NPC's appearance, personality, background..."
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -170,9 +174,9 @@ export default function NPCs(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <label htmlFor="npc-tags" className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
-                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered flex-1" />
+                  <input ref={tagInputRef} id="npc-tags" type="text" placeholder="Add tag" className="input input-bordered flex-1" />
                   <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -214,7 +218,7 @@ export default function NPCs(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(npc.id)}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -230,13 +234,13 @@ export default function NPCs(): JSX.Element {
                   </div>
                   <div className="card-actions">
                     <button
-                      onClick={() => handleEdit(npc as NPC & { id: number })}
+                      onClick={() => { void handleEdit(npc as NPC & { id: number }); }}
                       className="btn btn-secondary btn-sm"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(npc.id)}
+                      onClick={() => { void handleDelete(npc.id); }}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -248,7 +252,7 @@ export default function NPCs(): JSX.Element {
                   <div className="space-y-4 mt-6">
                     {npc.description && (
                       <div className="prose prose-sm max-w-none">
-                        <ReactMarkdown children={npc.description} />
+                        <ReactMarkdown>{npc.description}</ReactMarkdown>
                       </div>
                     )}
                     {npc.tags && npc.tags.length > 0 && (
@@ -259,7 +263,7 @@ export default function NPCs(): JSX.Element {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {npc.tags.map(tag => (
-                            <div key={tag} className="badge badge-primary badge-outline">
+                            <div key={tag} className="badge badge-primary">
                               {tag}
                             </div>
                           ))}

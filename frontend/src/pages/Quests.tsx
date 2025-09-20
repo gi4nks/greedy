@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Page from '../components/Page';
 import { useToast } from '../components/Toast';
@@ -64,12 +64,12 @@ export const Quests: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchQuests();
-    fetchCharacters();
-  }, []);
+    void fetchQuests();
+    void fetchCharacters();
+  }, [fetchQuests]);
 
   useEffect(() => {
-    fetchCharacters();
+    void fetchCharacters();
   }, [adv.selectedId]);
 
   useEffect(() => {
@@ -78,38 +78,38 @@ export const Quests: React.FC = () => {
     }
   }, [adv.selectedId, showCreateForm, editingId]);
 
-  const fetchQuests = async () => {
+  const fetchQuests = useCallback(async () => {
     try {
-      const response = await axios.get('/api/quests');
+      const response = await axios.get<Quest[]>('/api/quests');
       // Fetch objectives for each quest
       const questsWithObjectives = await Promise.all(
         response.data.map(async (quest: Quest) => {
           try {
-            const objectivesResponse = await axios.get(`/api/quests/${quest.id}`);
+            const objectivesResponse = await axios.get<QuestWithObjectives>(`/api/quests/${quest.id}`);
             return objectivesResponse.data;
-          } catch (error) {
-            console.error(`Error fetching objectives for quest ${quest.id}:`, error);
+          } catch {
+            // Error handled silently
             return { ...quest, objectives: [] };
           }
         })
       );
       setQuests(questsWithObjectives);
-    } catch (error) {
-      console.error('Error fetching quests:', error);
+    } catch {
+      // Error handled silently
       toast.push('Failed to load quests', { type: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const addObjective = async (questId: number, description: string) => {
     try {
       await axios.post(`/api/quests/${questId}/objectives`, { description });
       toast.push('Objective added successfully', { type: 'success' });
-      fetchQuests();
+      void fetchQuests();
       setNewObjective('');
-    } catch (error) {
-      console.error('Error adding objective:', error);
+    } catch {
+      // Error handled silently
       toast.push('Failed to add objective', { type: 'error' });
     }
   };
@@ -118,11 +118,11 @@ export const Quests: React.FC = () => {
     try {
       await axios.put(`/api/quests/${questId}/objectives/${objectiveId}`, { description, completed });
       toast.push('Objective updated successfully', { type: 'success' });
-      fetchQuests();
+      void fetchQuests();
       setEditingObjectiveId(null);
       setEditingObjectiveText('');
-    } catch (error) {
-      console.error('Error updating objective:', error);
+    } catch {
+      // Error handled silently
       toast.push('Failed to update objective', { type: 'error' });
     }
   };
@@ -133,9 +133,9 @@ export const Quests: React.FC = () => {
     try {
       await axios.delete(`/api/quests/${questId}/objectives/${objectiveId}`);
       toast.push('Objective deleted successfully', { type: 'success' });
-      fetchQuests();
-    } catch (error) {
-      console.error('Error deleting objective:', error);
+      void fetchQuests();
+    } catch {
+      // Error handled silently
       toast.push('Failed to delete objective', { type: 'error' });
     }
   };
@@ -146,10 +146,10 @@ export const Quests: React.FC = () => {
 
   const fetchCharacters = async () => {
     try {
-      const response = await axios.get('/api/characters');
+      const response = await axios.get<Character[]>('/api/characters');
       setCharacters(response.data);
-    } catch (error) {
-      console.error('Error fetching characters:', error);
+    } catch {
+      // Error handled silently
     }
   };
 
@@ -172,23 +172,23 @@ export const Quests: React.FC = () => {
       try {
         await axios.put(`/api/quests/${editingId}`, data);
         toast.push('Quest updated successfully', { type: 'success' });
-        fetchQuests();
+        void fetchQuests();
         setFormData(resetForm());
         setEditingId(null);
         setShowCreateForm(false);
-      } catch (error) {
-        console.error('Error updating quest:', error);
+      } catch {
+        // Error handled silently
         toast.push('Failed to update quest', { type: 'error' });
       }
     } else {
       try {
         await axios.post('/api/quests', data);
         toast.push('Quest created successfully', { type: 'success' });
-        fetchQuests();
+        void fetchQuests();
         setFormData(resetForm());
         setShowCreateForm(false);
-      } catch (error) {
-        console.error('Error creating quest:', error);
+      } catch {
+        // Error handled silently
         toast.push('Failed to create quest', { type: 'error' });
       }
     }
@@ -216,9 +216,9 @@ export const Quests: React.FC = () => {
     try {
       await axios.delete(`/api/quests/${id}`);
       toast.push('Quest deleted successfully', { type: 'success' });
-      fetchQuests();
-    } catch (error) {
-      console.error('Error deleting quest:', error);
+      void fetchQuests();
+    } catch {
+      // Error handled silently
       toast.push('Failed to delete quest', { type: 'error' });
     }
   };
@@ -244,7 +244,7 @@ export const Quests: React.FC = () => {
       title="Quests"
       toolbar={
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => { setShowCreateForm(true); }}
           className="btn btn-primary btn-sm"
         >
           Create
@@ -254,7 +254,7 @@ export const Quests: React.FC = () => {
       <div className="space-y-6">
         {/* Create/Edit Form */}
         {showCreateForm && (
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
+          <form onSubmit={(e) => void handleSubmit(e)} className="card bg-base-100 shadow-xl mb-6">
             <div className="card-body">
               <h3 className="card-title text-xl justify-center">
                 {editingId ? 'Edit Quest' : 'Create New Quest'}
@@ -263,8 +263,9 @@ export const Quests: React.FC = () => {
               <div className="space-y-6">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Title *</label>
+                  <label htmlFor="quest-title" className="block text-sm font-medium text-base-content mb-2">Title *</label>
                   <input
+                    id="quest-title"
                     type="text"
                     required
                     value={formData.title}
@@ -276,8 +277,9 @@ export const Quests: React.FC = () => {
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Description *</label>
+                  <label htmlFor="quest-description" className="block text-sm font-medium text-base-content mb-2">Description *</label>
                   <textarea
+                    id="quest-description"
                     required
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -289,8 +291,9 @@ export const Quests: React.FC = () => {
 
                 {/* Adventure Selection - Moved to top for context setting */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Adventure *</label>
+                  <label htmlFor="quest-adventure" className="block text-sm font-medium text-base-content mb-2">Adventure *</label>
                   <select
+                    id="quest-adventure"
                     value={formData.adventure_id || ''}
                     onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? parseInt(e.target.value) : null })}
                     className="select select-bordered w-full"
@@ -308,8 +311,9 @@ export const Quests: React.FC = () => {
 
                 {/* Assigned To - Now filtered by selected adventure */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Assigned To</label>
+                  <label htmlFor="quest-assigned-to" className="block text-sm font-medium text-base-content mb-2">Assigned To</label>
                   <select
+                    id="quest-assigned-to"
                     value={formData.assigned_to || ''}
                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                     className="select select-bordered w-full"
@@ -337,8 +341,9 @@ export const Quests: React.FC = () => {
                 {/* Status and Priority */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Status</label>
+                    <label htmlFor="quest-status" className="block text-sm font-medium text-base-content mb-2">Status</label>
                     <select
+                      id="quest-status"
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as Quest['status'] })}
                       className="select select-bordered w-full"
@@ -351,8 +356,9 @@ export const Quests: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Priority</label>
+                    <label htmlFor="quest-priority" className="block text-sm font-medium text-base-content mb-2">Priority</label>
                     <select
+                      id="quest-priority"
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: e.target.value as Quest['priority'] })}
                       className="select select-bordered w-full"
@@ -366,8 +372,9 @@ export const Quests: React.FC = () => {
 
                   {/* Type */}
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Type</label>
+                    <label htmlFor="quest-type" className="block text-sm font-medium text-base-content mb-2">Type</label>
                     <select
+                      id="quest-type"
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as Quest['type'] })}
                       className="select select-bordered w-full"
@@ -383,8 +390,9 @@ export const Quests: React.FC = () => {
 
                 {/* Due Date */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Due Date</label>
+                  <label htmlFor="quest-due-date" className="block text-sm font-medium text-base-content mb-2">Due Date</label>
                   <input
+                    id="quest-due-date"
                     type="date"
                     value={formData.due_date || ''}
                     onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
@@ -394,8 +402,9 @@ export const Quests: React.FC = () => {
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                  <label htmlFor="quest-tags" className="block text-sm font-medium text-base-content mb-2">Tags</label>
                   <input
+                    id="quest-tags"
                     type="text"
                     value={formData.tags?.join(', ') || ''}
                     onChange={(e) => setFormData({
@@ -410,22 +419,22 @@ export const Quests: React.FC = () => {
               {/* Objectives Management */}
               {editingId && (
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Objectives</label>
+                  <h4 className="block text-sm font-medium text-base-content mb-2">Objectives</h4>
                   <div className="space-y-2">
                     {quests.find(q => q.id === editingId)?.objectives.map((objective) => (
                       <div key={objective.id} className="flex items-center gap-2 p-2 bg-base-200 rounded-box">
                         <input
                           type="checkbox"
                           checked={objective.completed}
-                          onChange={() => toggleObjectiveCompletion(editingId, objective.id, objective.completed, objective.description)}
+                          onChange={() => void toggleObjectiveCompletion(editingId, objective.id, objective.completed, objective.description)}
                           className="checkbox checkbox-primary"
                         />
                         <span className={`flex-1 text-sm ${objective.completed ? 'line-through text-base-content/60' : 'text-base-content'}`}>
                           {objective.description}
                         </span>
                         <button
-                          onClick={() => deleteObjective(editingId, objective.id)}
-                          className="btn btn-error btn-xs"
+                          onClick={() => void deleteObjective(editingId, objective.id)}
+                          className="btn btn-neutral btn-xs"
                         >
                           Delete
                         </button>
@@ -440,12 +449,12 @@ export const Quests: React.FC = () => {
                         className="input input-bordered input-sm flex-1"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newObjective.trim() && editingId) {
-                            addObjective(editingId, newObjective.trim());
+                            void addObjective(editingId, newObjective.trim());
                           }
                         }}
                       />
                       <button
-                        onClick={() => editingId && newObjective.trim() && addObjective(editingId, newObjective.trim())}
+                        onClick={() => { if (editingId && newObjective.trim()) { void addObjective(editingId, newObjective.trim()); } }}
                         disabled={!newObjective.trim()}
                         className="btn btn-success btn-sm"
                       >
@@ -549,7 +558,7 @@ export const Quests: React.FC = () => {
                               <input
                                 type="checkbox"
                                 checked={objective.completed}
-                                onChange={() => toggleObjectiveCompletion(quest.id, objective.id, objective.completed, objective.description)}
+                                onChange={() => void toggleObjectiveCompletion(quest.id, objective.id, objective.completed, objective.description)}
                                 className="checkbox checkbox-primary"
                               />
                               {editingObjectiveId === objective.id ? (
@@ -561,7 +570,7 @@ export const Quests: React.FC = () => {
                                     className="input input-bordered input-sm flex-1"
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        updateObjective(quest.id, objective.id, editingObjectiveText, objective.completed);
+                                        void updateObjective(quest.id, objective.id, editingObjectiveText, objective.completed);
                                       } else if (e.key === 'Escape') {
                                         setEditingObjectiveId(null);
                                         setEditingObjectiveText('');
@@ -569,7 +578,7 @@ export const Quests: React.FC = () => {
                                     }}
                                   />
                                   <button
-                                    onClick={() => updateObjective(quest.id, objective.id, editingObjectiveText, objective.completed)}
+                                    onClick={() => void updateObjective(quest.id, objective.id, editingObjectiveText, objective.completed)}
                                     className="btn btn-success btn-xs"
                                   >
                                     Save
@@ -599,8 +608,8 @@ export const Quests: React.FC = () => {
                                     Edit
                                   </button>
                                   <button
-                                    onClick={() => deleteObjective(quest.id, objective.id)}
-                                    className="btn btn-error btn-xs"
+                                    onClick={() => void deleteObjective(quest.id, objective.id)}
+                                    className="btn btn-neutral btn-xs"
                                   >
                                     Delete
                                   </button>
@@ -622,12 +631,12 @@ export const Quests: React.FC = () => {
                             className="input input-bordered input-sm flex-1"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && newObjective.trim()) {
-                                addObjective(quest.id, newObjective.trim());
+                                void addObjective(quest.id, newObjective.trim());
                               }
                             }}
                           />
                           <button
-                            onClick={() => newObjective.trim() && addObjective(quest.id, newObjective.trim())}
+                            onClick={() => { if (newObjective.trim()) { void addObjective(quest.id, newObjective.trim()); } }}
                             disabled={!newObjective.trim()}
                             className="btn btn-success btn-sm"
                           >
@@ -645,8 +654,8 @@ export const Quests: React.FC = () => {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(quest.id)}
-                        className="btn btn-error btn-sm"
+                        onClick={() => void handleDelete(quest.id)}
+                        className="btn btn-neutral btn-sm"
                       >
                         Delete
                       </button>

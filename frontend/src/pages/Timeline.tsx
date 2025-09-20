@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
@@ -21,30 +21,30 @@ export default function Timeline(): JSX.Element {
   };
 
   useEffect(() => {
-    fetchSessions();
+    void fetchSessions();
   }, []);
 
   const doSearch = async (term: string) => {
     const params = new URLSearchParams();
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
-    setSessions((res.data.sessions || []).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    const res = await axios.get<{ sessions: { id?: number; title: string; date: string; text: string }[] }>(`/api/search?${params.toString()}`);
+    setSessions((res.data.sessions || []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
     if (editingId) {
-      axios.put(`/api/sessions/${editingId}`, payload).then(() => {
-        fetchSessions();
+      void axios.put(`/api/sessions/${editingId}`, payload).then(() => {
+        void fetchSessions();
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setEditingId(null);
         setShowCreateForm(false);
       });
     } else {
-      axios.post('/api/sessions', payload).then(() => {
-        fetchSessions();
+      void axios.post('/api/sessions', payload).then(() => {
+        void fetchSessions();
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setShowCreateForm(false);
       });
@@ -60,15 +60,15 @@ export default function Timeline(): JSX.Element {
   const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this session?')) {
-      axios.delete(`/api/sessions/${id}`).then(() => {
-        fetchSessions();
+      void axios.delete(`/api/sessions/${id}`).then(() => {
+        void fetchSessions();
       });
     }
   };
 
   const fetchSessions = () => {
-    axios.get('/api/sessions').then(res => {
-      const sorted = res.data.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    void axios.get<{ id?: number; title: string; date: string; text: string }[]>('/api/sessions').then((res) => {
+      const sorted = res.data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       setSessions(sorted);
     });
   };
@@ -76,8 +76,10 @@ export default function Timeline(): JSX.Element {
   return (
     <Page title="Timeline" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
+          <label htmlFor="timeline-search-input" className="sr-only">Search timeline</label>
           <input
+            id="timeline-search-input"
             type="text"
             placeholder="Search timeline..."
             value={searchTerm}
@@ -93,8 +95,9 @@ export default function Timeline(): JSX.Element {
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <label htmlFor="timeline-adventure-select" className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
+                  id="timeline-adventure-select"
                   value={formData.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
                   className="select select-bordered w-full"
@@ -107,8 +110,9 @@ export default function Timeline(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                <label htmlFor="timeline-title-input" className="block text-sm font-medium text-base-content mb-2">Title</label>
                 <input
+                  id="timeline-title-input"
                   type="text"
                   placeholder="Title"
                   value={formData.title}
@@ -119,8 +123,9 @@ export default function Timeline(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
+                <label htmlFor="timeline-date-input" className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
+                  id="timeline-date-input"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -130,8 +135,9 @@ export default function Timeline(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
+                <label htmlFor="timeline-notes-textarea" className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
                 <textarea
+                  id="timeline-notes-textarea"
                   placeholder="Session notes (Markdown supported)"
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
@@ -141,10 +147,10 @@ export default function Timeline(): JSX.Element {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                <div className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                <label htmlFor="timeline-preview-div" className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div id="timeline-preview-div" className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
                   <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown children={formData.text} />
+                    <ReactMarkdown>{formData.text}</ReactMarkdown>
                   </div>
                 </div>
               </div>
@@ -181,7 +187,7 @@ export default function Timeline(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(session.id)}
                       className="btn btn-outline btn-success btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -207,7 +213,7 @@ export default function Timeline(): JSX.Element {
 
                 {!isCollapsed && (
                   <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown children={session.text} />
+                    <ReactMarkdown>{session.text}</ReactMarkdown>
                   </div>
                 )}
               </div>

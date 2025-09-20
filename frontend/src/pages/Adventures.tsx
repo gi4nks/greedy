@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
@@ -22,26 +22,26 @@ export default function Adventures(): JSX.Element {
   };
 
   useEffect(() => {
-    fetchAdventures();
+    void fetchAdventures();
   }, []);
 
   const fetchAdventures = () => {
-    axios.get('/api/adventures').then(res => setAdventures(res.data));
+    void axios.get<Adventure[]>('/api/adventures').then(res => setAdventures(res.data));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...formData, slug: formData.title.toLowerCase().replace(/\s+/g, '-') };
     if (editingId) {
-      axios.put(`/api/adventures/${editingId}`, payload).then(() => {
-        fetchAdventures();
+      void axios.put(`/api/adventures/${editingId}`, payload).then(() => {
+        void fetchAdventures();
         setFormData({ title: '', description: '' });
         setEditingId(null);
         setShowCreateForm(false);
       });
     } else {
-      axios.post('/api/adventures', payload).then(() => {
-        fetchAdventures();
+      void axios.post('/api/adventures', payload).then(() => {
+        void fetchAdventures();
         setFormData({ title: '', description: '' });
         setShowCreateForm(false);
       });
@@ -57,8 +57,8 @@ export default function Adventures(): JSX.Element {
   const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this adventure? This will not delete associated sessions, NPCs, or locations.')) {
-      axios.delete(`/api/adventures/${id}`).then(() => {
-        fetchAdventures();
+      void axios.delete(`/api/adventures/${id}`).then(() => {
+        void fetchAdventures();
         // If the deleted adventure was selected, clear selection
         if (adv.selectedId === id) {
           adv.selectAdventure(null);
@@ -81,8 +81,9 @@ export default function Adventures(): JSX.Element {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                  <label htmlFor="adventure-title" className="block text-sm font-medium text-base-content mb-2">Title</label>
                   <input
+                    id="adventure-title"
                     type="text"
                     placeholder="Enter adventure title"
                     value={formData.title}
@@ -93,8 +94,9 @@ export default function Adventures(): JSX.Element {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                  <label htmlFor="adventure-description" className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                   <textarea
+                    id="adventure-description"
                     placeholder="Describe your adventure..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -103,10 +105,10 @@ export default function Adventures(): JSX.Element {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div className="block text-sm font-medium text-base-content mb-2">Preview</div>
                   <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
                     <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown children={formData.description || ''} />
+                      <ReactMarkdown>{formData.description || ''}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
@@ -147,7 +149,7 @@ export default function Adventures(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(adventure.id)}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -195,7 +197,7 @@ export default function Adventures(): JSX.Element {
 
                     <div className="bg-base-200 rounded-box p-4">
                       <div className="prose prose-sm max-w-none">
-                        <ReactMarkdown children={adventure.description || ''} />
+                        <ReactMarkdown>{adventure.description || ''}</ReactMarkdown>
                       </div>
                     </div>
                   </div>

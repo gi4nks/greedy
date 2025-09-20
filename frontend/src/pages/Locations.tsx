@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { Location } from '@greedy/shared';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -12,8 +13,6 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
     </div>
   );
 }
-
-type Location = { id?: number; name: string; description: string; notes: string; tags?: string[] };
 
 export default function Locations(): JSX.Element {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -31,12 +30,9 @@ export default function Locations(): JSX.Element {
     try {
       // stop default to avoid any form submit interplay
       e.preventDefault();
-    } catch (err) {
+    } catch {
       // ignore
     }
-    // small debug to help diagnose flaky clicks in browser console
-    // eslint-disable-next-line no-console
-    console.debug('Locations: openCreateForm', e.type);
     setShowCreateForm(true);
   };
 
@@ -47,11 +43,17 @@ export default function Locations(): JSX.Element {
   };
 
   useEffect(() => {
-    fetchLocations();
+    void fetchLocations();
   }, []);
 
-  const fetchLocations = () => {
-    axios.get('/api/locations').then(res => setLocations(res.data));
+  const fetchLocations = async () => {
+    try {
+      const res = await axios.get('/api/locations');
+      const data = res.data as Location[];
+      setLocations(data);
+    } catch {
+      // Handle error - could add toast notification
+    }
   };
 
   const handleAddTag = () => {
@@ -67,22 +69,24 @@ export default function Locations(): JSX.Element {
     setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = { ...formData };
-    if (editingId) {
-      axios.put(`/api/locations/${editingId}`, data).then(() => {
-        fetchLocations();
+    try {
+      if (editingId) {
+        await axios.put(`/api/locations/${editingId}`, data);
+        await fetchLocations();
         setFormData({ name: '', description: '', notes: '', tags: [] });
         setEditingId(null);
         setShowCreateForm(false);
-      });
-    } else {
-      axios.post('/api/locations', data).then(() => {
-        fetchLocations();
+      } else {
+        await axios.post('/api/locations', data);
+        await fetchLocations();
         setFormData({ name: '', description: '', notes: '', tags: [] });
         setShowCreateForm(false);
-      });
+      }
+    } catch {
+      // Handle error - could add toast notification
     }
   };
 
@@ -92,12 +96,15 @@ export default function Locations(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this location?')) {
-      axios.delete(`/api/locations/${id}`).then(() => {
-        fetchLocations();
-      });
+      try {
+        await axios.delete(`/api/locations/${id}`);
+        await fetchLocations();
+      } catch {
+        // Handle error - could add toast notification
+      }
     }
   };
 
@@ -106,13 +113,14 @@ export default function Locations(): JSX.Element {
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
     const res = await axios.get(`/api/search?${params.toString()}`);
-    setLocations(res.data.locations || []);
+    const data = res.data as { locations: Location[] };
+    setLocations(data.locations || []);
   };
 
   return (
-  <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={openCreateForm as any} className="btn btn-primary btn-sm">Create</button>}>
+  <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={() => void openCreateForm} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search locations..."
@@ -124,14 +132,15 @@ export default function Locations(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
+        <form onSubmit={(e) => void handleSubmit(e)} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <label htmlFor="location-name" className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
+                  id="location-name"
                   type="text"
                   placeholder="Name"
                   value={formData.name}
@@ -163,8 +172,9 @@ export default function Locations(): JSX.Element {
               {activeTab === 'description' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                    <label htmlFor="location-description" className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                     <textarea
+                      id="location-description"
                       placeholder="Description (Markdown supported)"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -174,7 +184,7 @@ export default function Locations(): JSX.Element {
                   </div>
                   <div className="bg-base-200 border border-base-300 rounded-box p-4 h-64 overflow-auto">
                     <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown children={formData.description} />
+                      <ReactMarkdown>{formData.description}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
@@ -183,8 +193,9 @@ export default function Locations(): JSX.Element {
               {activeTab === 'notes' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
+                    <label htmlFor="location-notes" className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
                     <textarea
+                      id="location-notes"
                       placeholder="Notes (Markdown supported)"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -194,16 +205,16 @@ export default function Locations(): JSX.Element {
                   </div>
                   <div className="bg-base-200 border border-base-300 rounded-box p-4 h-64 overflow-auto">
                     <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown children={formData.notes} />
+                      <ReactMarkdown>{formData.notes}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <label htmlFor="location-tags" className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
-                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered flex-1" />
+                  <input id="location-tags" ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered flex-1" />
                   <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -215,9 +226,6 @@ export default function Locations(): JSX.Element {
             </div>
 
             <div className="card-actions justify-end">
-              <button type="submit" className="btn btn-primary btn-sm">
-                {editingId ? 'Update' : 'Create'}
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -229,6 +237,9 @@ export default function Locations(): JSX.Element {
                 className="btn btn-ghost btn-sm"
               >
                 Cancel
+              </button>
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>
@@ -246,7 +257,7 @@ export default function Locations(): JSX.Element {
                     <button
                       onClick={() => toggleCollapse(location.id)}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -256,13 +267,13 @@ export default function Locations(): JSX.Element {
                   </div>
                   <div className="card-actions">
                     <button
-                      onClick={() => handleEdit(location as Location & { id: number })}
+                      onClick={() => void handleEdit(location as Location & { id: number })}
                       className="btn btn-secondary btn-sm"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(location.id)}
+                      onClick={() => void handleDelete(location.id)}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -274,11 +285,11 @@ export default function Locations(): JSX.Element {
                   <div className="space-y-4 mt-6">
                     <p className="text-base-content/70 mb-2">{location.description}</p>
                     <div className="prose">
-                      <ReactMarkdown children={location.notes} />
+                      <ReactMarkdown>{location.notes}</ReactMarkdown>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {(location.tags || []).map(t => (
-                        <div key={t} className="badge badge-primary badge-outline">
+                        <div key={t} className="badge badge-primary">
                           {t}
                         </div>
                       ))}

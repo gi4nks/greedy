@@ -13,6 +13,7 @@ import CombatTracker from './pages/CombatTracker';
 import WikiImport from './pages/WikiImport';
 import ParkingLot from './pages/ParkingLot';
 import Header from './components/Header';
+import AdventureSelector from './components/AdventureSelector';
 import { AdventureProvider } from './contexts/AdventureContext';
 
 function App(): JSX.Element {
@@ -21,6 +22,7 @@ function App(): JSX.Element {
       <AdventureProvider>
         <div className="min-h-screen bg-base-100">
           <Header />
+          <AdventureSelector />
           <main className="container mx-auto p-4">
             <Routes>
               <Route path="/sessions" element={<Sessions />} />

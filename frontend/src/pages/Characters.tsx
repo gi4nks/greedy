@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
-import { Character, CharacterForm, CharacterItem, MagicItem } from '@greedy/shared';
+import { Character, CharacterForm, MagicItem } from '@greedy/shared';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -19,7 +18,6 @@ export default function Characters(): JSX.Element {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [magicItems, setMagicItems] = useState<MagicItem[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [formData, setFormData] = useState<CharacterForm>({
     name: '',
     race: '',
@@ -162,19 +160,29 @@ export default function Characters(): JSX.Element {
   };
 
   useEffect(() => {
-    fetchCharacters();
-    fetchMagicItems();
+    void fetchCharacters();
+    void fetchMagicItems();
   }, []);
 
-  const fetchCharacters = () => {
-    axios.get('/api/characters').then(res => setCharacters(res.data));
+  const fetchCharacters = async () => {
+    try {
+      const res = await axios.get<Character[]>('/api/characters');
+      setCharacters(res.data);
+    } catch {
+      // Error handled silently
+    }
   };
 
-  const fetchMagicItems = () => {
-    axios.get('/api/magic-items').then(res => setMagicItems(res.data));
+  const fetchMagicItems = async () => {
+    try {
+      const res = await axios.get<MagicItem[]>('/api/magic-items');
+      setMagicItems(res.data);
+    } catch {
+      // Error handled silently
+    }
   };
 
-  const handleAddTag = () => {
+  const handleAddTag = (): void => {
     const v = (tagInputRef.current?.value || '').trim();
     if (!v) return;
     if (!formData.tags?.includes(v)) {
@@ -183,30 +191,31 @@ export default function Characters(): JSX.Element {
     if (tagInputRef.current) tagInputRef.current.value = '';
   };
 
-  const handleRemoveTag = (tag: string) => {
+  const handleRemoveTag = (tag: string): void => {
     setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const data = { ...formData };
-    if (editingId) {
-      axios.put(`/api/characters/${editingId}`, data).then(() => {
-        fetchCharacters();
+    try {
+      if (editingId) {
+        await axios.put(`/api/characters/${editingId}`, data);
+        await fetchCharacters();
         setFormData(resetForm());
         setEditingId(null);
         setShowCreateForm(false);
-      });
-    } else {
-      axios.post('/api/characters', data).then(() => {
-        fetchCharacters();
+      } else {
+        await axios.post('/api/characters', data);
+        await fetchCharacters();
         setFormData(resetForm());
         setShowCreateForm(false);
-      });
+      }
+    } catch {
+      // Error handled silently
     }
   };
 
-  const handleEdit = (character: Character & { id: number }) => {
+  const handleEdit = (character: Character & { id: number }): void => {
     setFormData({
       ...character,
       // Ensure all required fields have defaults
@@ -248,12 +257,15 @@ export default function Characters(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this character?')) {
-      axios.delete(`/api/characters/${id}`).then(() => {
-        fetchCharacters();
-      });
+      try {
+        await axios.delete(`/api/characters/${id}`);
+        await fetchCharacters();
+      } catch {
+        // Error handled silently
+      }
     }
   };
 
@@ -261,14 +273,14 @@ export default function Characters(): JSX.Element {
     const params = new URLSearchParams();
     params.set('q', term);
     if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
+    const res = await axios.get<{ characters: Character[] }>(`/api/search?${params.toString()}`);
     setCharacters(res.data.characters || []);
   };
 
   return (
-    <Page title="Characters" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Add</button>}>
+    <Page title="Characters" toolbar={<button onClick={() => { setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>}>
       <div className="mb-6">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
+        <form onSubmit={async (e) => { e.preventDefault(); await doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search Characters..."
@@ -280,7 +292,7 @@ export default function Characters(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
+        <form onSubmit={async (e) => { e.preventDefault(); await handleSubmit(); }} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Character' : 'Create New Character'}</h3>
           <div className="flex flex-wrap border-b mb-6">
@@ -296,7 +308,7 @@ export default function Characters(): JSX.Element {
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as typeof activeTab)}
+                onClick={() => { setActiveTab(tab.key as typeof activeTab); }}
                 className={`px-4 py-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-b-2 border-primary text-primary'
@@ -313,8 +325,9 @@ export default function Characters(): JSX.Element {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Character Name</label>
+                  <label htmlFor="character-name" className="block text-sm font-medium text-base-content mb-2">Character Name</label>
                   <input
+                    id="character-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -323,8 +336,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Race</label>
+                  <label htmlFor="race" className="block text-sm font-medium text-base-content mb-2">Race</label>
                   <input
+                    id="race"
                     type="text"
                     value={formData.race || ''}
                     onChange={(e) => setFormData({ ...formData, race: e.target.value })}
@@ -333,8 +347,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Background</label>
+                  <label htmlFor="background" className="block text-sm font-medium text-base-content mb-2">Background</label>
                   <input
+                    id="background"
                     type="text"
                     value={formData.background || ''}
                     onChange={(e) => setFormData({ ...formData, background: e.target.value })}
@@ -343,8 +358,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Alignment</label>
+                  <label htmlFor="alignment" className="block text-sm font-medium text-base-content mb-2">Alignment</label>
                   <select
+                    id="alignment"
                     value={formData.alignment || ''}
                     onChange={(e) => setFormData({ ...formData, alignment: e.target.value })}
                     className="select select-bordered w-full"
@@ -362,8 +378,9 @@ export default function Characters(): JSX.Element {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Experience Points</label>
+                  <label htmlFor="experience" className="block text-sm font-medium text-base-content mb-2">Experience Points</label>
                   <input
+                    id="experience"
                     type="number"
                     min="0"
                     value={formData.experience || 0}
@@ -372,8 +389,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                  <label htmlFor="adventure" className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                   <select
+                    id="adventure"
                     value={formData.adventure_id || ''}
                     onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? parseInt(e.target.value) : undefined })}
                     className="select select-bordered w-full"
@@ -395,7 +413,7 @@ export default function Characters(): JSX.Element {
               <div>
                 <h4 className="text-lg font-semibold mb-3">Classes</h4>
                 <p className="text-sm text-base-content/70 mb-3">
-                  Add and manage your character's classes. Each class can have its own level and experience points.
+                  Add and manage your character&apos;s classes. Each class can have its own level and experience points.
                 </p>
                 {(formData.classes || []).map((classInfo, index) => (
                   <div key={index} className="flex items-center gap-2 mb-2 p-3 bg-base-200 rounded border border-base-300">
@@ -469,8 +487,9 @@ export default function Characters(): JSX.Element {
               <h4 className="text-lg font-semibold mb-3">Ability Scores</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">STR</label>
+                  <label htmlFor="strength" className="block text-sm font-medium text-base-content mb-2">STR</label>
                   <input
+                    id="strength"
                     type="number"
                     min="1"
                     max="30"
@@ -481,8 +500,9 @@ export default function Characters(): JSX.Element {
                   <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.strength || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">DEX</label>
+                  <label htmlFor="dexterity" className="block text-sm font-medium text-base-content mb-2">DEX</label>
                   <input
+                    id="dexterity"
                     type="number"
                     min="1"
                     max="30"
@@ -493,8 +513,9 @@ export default function Characters(): JSX.Element {
                   <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.dexterity || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">CON</label>
+                  <label htmlFor="constitution" className="block text-sm font-medium text-base-content mb-2">CON</label>
                   <input
+                    id="constitution"
                     type="number"
                     min="1"
                     max="30"
@@ -505,8 +526,9 @@ export default function Characters(): JSX.Element {
                   <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.constitution || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">INT</label>
+                  <label htmlFor="intelligence" className="block text-sm font-medium text-base-content mb-2">INT</label>
                   <input
+                    id="intelligence"
                     type="number"
                     min="1"
                     max="30"
@@ -517,8 +539,9 @@ export default function Characters(): JSX.Element {
                   <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.intelligence || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">WIS</label>
+                  <label htmlFor="wisdom" className="block text-sm font-medium text-base-content mb-2">WIS</label>
                   <input
+                    id="wisdom"
                     type="number"
                     min="1"
                     max="30"
@@ -529,8 +552,9 @@ export default function Characters(): JSX.Element {
                   <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.wisdom || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium text-base-content mb-2">CHA</label>
+                  <label htmlFor="charisma" className="block text-sm font-medium text-base-content mb-2">CHA</label>
                   <input
+                    id="charisma"
                     type="number"
                     min="1"
                     max="30"
@@ -549,8 +573,9 @@ export default function Characters(): JSX.Element {
               <h4 className="text-lg font-semibold mb-3">Combat Statistics</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Hit Points</label>
+                  <label htmlFor="hit-points" className="block text-sm font-medium text-base-content mb-2">Hit Points</label>
                   <input
+                    id="hit-points"
                     type="number"
                     min="0"
                     value={formData.hitPoints || 0}
@@ -559,8 +584,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Max Hit Points</label>
+                  <label htmlFor="max-hit-points" className="block text-sm font-medium text-base-content mb-2">Max Hit Points</label>
                   <input
+                    id="max-hit-points"
                     type="number"
                     min="0"
                     value={formData.maxHitPoints || 0}
@@ -569,8 +595,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Armor Class</label>
+                  <label htmlFor="armor-class" className="block text-sm font-medium text-base-content mb-2">Armor Class</label>
                   <input
+                    id="armor-class"
                     type="number"
                     min="0"
                     value={formData.armorClass || 10}
@@ -579,8 +606,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Speed</label>
+                  <label htmlFor="speed" className="block text-sm font-medium text-base-content mb-2">Speed</label>
                   <input
+                    id="speed"
                     type="number"
                     min="0"
                     value={formData.speed || 30}
@@ -591,8 +619,9 @@ export default function Characters(): JSX.Element {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Initiative</label>
+                  <label htmlFor="initiative" className="block text-sm font-medium text-base-content mb-2">Initiative</label>
                   <input
+                    id="initiative"
                     type="number"
                     value={formData.initiative || 0}
                     onChange={(e) => setFormData({ ...formData, initiative: parseInt(e.target.value) || 0 })}
@@ -600,8 +629,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Proficiency Bonus</label>
+                  <label htmlFor="proficiency-bonus" className="block text-sm font-medium text-base-content mb-2">Proficiency Bonus</label>
                   <input
+                    id="proficiency-bonus"
                     type="number"
                     min="0"
                     max="6"
@@ -651,13 +681,15 @@ export default function Characters(): JSX.Element {
                           </div>
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               if (item.id && editingId) {
-                                axios.post(`/api/magic-items/${item.id}/unassign`, { characterId: editingId })
-                                  .then(() => {
-                                    fetchMagicItems();
-                                    fetchCharacters();
-                                  });
+                                try {
+                                  await axios.post(`/api/magic-items/${item.id}/unassign`, { characterId: editingId });
+                                  await fetchMagicItems();
+                                  await fetchCharacters();
+                                } catch {
+                                  // Error handled silently
+                                }
                               }
                             }}
                             className="btn btn-error btn-sm"
@@ -677,30 +709,32 @@ export default function Characters(): JSX.Element {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowAssignModal(true)}
+                    onClick={() => { setShowAssignModal(true); }}
                     className="btn btn-primary btn-sm"
                   >
                     Assign
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       // Create a new magical item and assign it to the character
-                      const itemName = prompt('Enter magical item name:');
+                      const itemName = window.prompt('Enter magical item name:');
                       if (itemName && editingId) {
-                        axios.post('/api/magic-items', {
-                          name: itemName,
-                          description: 'New magical item',
-                          rarity: 'common',
-                          type: 'Wondrous item',
-                          attunement_required: false
-                        }).then((response) => {
+                        try {
+                          const response = await axios.post('/api/magic-items', {
+                            name: itemName,
+                            description: 'New magical item',
+                            rarity: 'common',
+                            type: 'Wondrous item',
+                            attunement_required: false
+                          });
                           const newItemId = response.data.id;
-                          return axios.post(`/api/magic-items/${newItemId}/assign`, { characterId: editingId });
-                        }).then(() => {
-                          fetchMagicItems();
-                          fetchCharacters();
-                        });
+                          await axios.post(`/api/magic-items/${newItemId}/assign`, { characterId: editingId });
+                          await fetchMagicItems();
+                          await fetchCharacters();
+                        } catch {
+                          // Error handled silently
+                        }
                       }
                     }}
                     className="btn btn-secondary btn-sm"
@@ -717,8 +751,9 @@ export default function Characters(): JSX.Element {
               <h4 className="text-lg font-semibold mb-3">Spellcasting</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Spellcasting Ability</label>
+                  <label htmlFor="spellcasting-ability" className="block text-sm font-medium text-base-content mb-2">Spellcasting Ability</label>
                   <select
+                    id="spellcasting-ability"
                     value={formData.spellcastingAbility || ''}
                     onChange={(e) => setFormData({ ...formData, spellcastingAbility: e.target.value })}
                     className="select select-bordered w-full"
@@ -730,8 +765,9 @@ export default function Characters(): JSX.Element {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Spell Save DC</label>
+                  <label htmlFor="spell-save-dc" className="block text-sm font-medium text-base-content mb-2">Spell Save DC</label>
                   <input
+                    id="spell-save-dc"
                     type="number"
                     min="0"
                     value={formData.spellSaveDC || 0}
@@ -740,8 +776,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Spell Attack Bonus</label>
+                  <label htmlFor="spell-attack-bonus" className="block text-sm font-medium text-base-content mb-2">Spell Attack Bonus</label>
                   <input
+                    id="spell-attack-bonus"
                     type="number"
                     value={formData.spellAttackBonus || 0}
                     onChange={(e) => setFormData({ ...formData, spellAttackBonus: parseInt(e.target.value) || 0 })}
@@ -823,17 +860,19 @@ export default function Characters(): JSX.Element {
               <h4 className="text-lg font-semibold mb-3">Background & Personality</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Personality Traits</label>
+                  <label htmlFor="personality-traits" className="block text-sm font-medium text-base-content mb-2">Personality Traits</label>
                   <textarea
+                    id="personality-traits"
                     value={formData.personalityTraits || ''}
                     onChange={(e) => setFormData({ ...formData, personalityTraits: e.target.value })}
                     className="textarea textarea-bordered w-full h-24"
-                    placeholder="Describe your character's personality traits..."
+                    placeholder="Describe your character&apos;s personality traits..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Ideals</label>
+                  <label htmlFor="ideals" className="block text-sm font-medium text-base-content mb-2">Ideals</label>
                   <textarea
+                    id="ideals"
                     value={formData.ideals || ''}
                     onChange={(e) => setFormData({ ...formData, ideals: e.target.value })}
                     className="textarea textarea-bordered w-full h-24"
@@ -841,8 +880,9 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Bonds</label>
+                  <label htmlFor="bonds" className="block text-sm font-medium text-base-content mb-2">Bonds</label>
                   <textarea
+                    id="bonds"
                     value={formData.bonds || ''}
                     onChange={(e) => setFormData({ ...formData, bonds: e.target.value })}
                     className="textarea textarea-bordered w-full h-24"
@@ -850,27 +890,30 @@ export default function Characters(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-base-content mb-2">Flaws</label>
+                  <label htmlFor="flaws" className="block text-sm font-medium text-base-content mb-2">Flaws</label>
                   <textarea
+                    id="flaws"
                     value={formData.flaws || ''}
                     onChange={(e) => setFormData({ ...formData, flaws: e.target.value })}
                     className="textarea textarea-bordered w-full h-24"
-                    placeholder="What are your character's weaknesses..."
+                    placeholder="What are your character&apos;s weaknesses..."
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Backstory</label>
+                <label htmlFor="backstory" className="block text-sm font-medium text-base-content mb-2">Backstory</label>
                 <textarea
+                  id="backstory"
                   value={formData.backstory || ''}
                   onChange={(e) => setFormData({ ...formData, backstory: e.target.value })}
                   className="textarea textarea-bordered w-full h-32"
-                  placeholder="Tell your character's story..."
+                  placeholder="Tell your character&apos;s story..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">Legacy Description</label>
+                <label htmlFor="description" className="block text-sm font-medium text-base-content mb-2">Legacy Description</label>
                 <textarea
+                  id="description"
                   placeholder="Character description (Markdown supported)"
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -881,11 +924,11 @@ export default function Characters(): JSX.Element {
                 <h5 className="text-md font-medium mb-2">Tags</h5>
                 <div className="flex items-center mb-2">
                   <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered mr-2 flex-1" />
-                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add</button>
+                  <button type="button" onClick={() => { handleAddTag(); }} className="btn btn-secondary btn-sm">Add</button>
                 </div>
                 <div className="mt-2">
                   {(formData.tags || []).map(tag => (
-                    <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
+                    <Chip key={tag} label={tag} onRemove={() => { handleRemoveTag(tag); }} />
                   ))}
                 </div>
               </div>
@@ -894,9 +937,6 @@ export default function Characters(): JSX.Element {
 
           {/* Form Actions */}
           <div className="card-actions justify-end">
-            <button type="submit" className="btn btn-primary btn-sm">
-              {editingId ? 'Update' : 'Create'}
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -908,6 +948,9 @@ export default function Characters(): JSX.Element {
               className="btn btn-ghost btn-sm"
             >
               Cancel
+            </button>
+            <button type="submit" className="btn btn-primary btn-sm">
+              {editingId ? 'Update' : 'Create'}
             </button>
           </div>
         </div>
@@ -944,14 +987,16 @@ export default function Characters(): JSX.Element {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (item.id && editingId) {
-                          axios.post(`/api/magic-items/${item.id}/assign`, { characterId: editingId })
-                            .then(() => {
-                              fetchMagicItems();
-                              fetchCharacters();
-                              setShowAssignModal(false);
-                            });
+                          try {
+                            await axios.post(`/api/magic-items/${item.id}/assign`, { characterId: editingId });
+                            await fetchMagicItems();
+                            await fetchCharacters();
+                            setShowAssignModal(false);
+                          } catch {
+                            // Error handled silently
+                          }
                         }
                       }}
                       className="btn btn-success btn-sm"
@@ -969,7 +1014,7 @@ export default function Characters(): JSX.Element {
             <div className="modal-action">
               <button
                 type="button"
-                onClick={() => setShowAssignModal(false)}
+                onClick={() => { setShowAssignModal(false); }}
                 className="btn btn-ghost btn-sm"
               >
                 Close
@@ -988,9 +1033,9 @@ export default function Characters(): JSX.Element {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => toggleCollapse(character.id)}
+                      onClick={() => { toggleCollapse(character.id); }}
                       className="btn btn-outline btn-primary btn-sm"
-                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      aria-label={isCollapsed ? '+' : '-'}
                     >
                       {isCollapsed ? '+' : '−'}
                     </button>
@@ -1014,13 +1059,13 @@ export default function Characters(): JSX.Element {
                   </div>
                   <div className="card-actions">
                     <button
-                      onClick={() => handleEdit(character as Character & { id: number })}
+                      onClick={() => { handleEdit(character as Character & { id: number }); }}
                       className="btn btn-secondary btn-sm"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(character.id)}
+                      onClick={async () => await handleDelete(character.id)}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -1041,7 +1086,7 @@ export default function Characters(): JSX.Element {
                         <div className="text-sm font-medium text-base-content/70 mb-1">Total Level</div>
                         <div className="text-2xl font-bold text-primary">
                           {character.classes && character.classes.length > 0
-                            ? (character.classes as any[]).reduce((sum, c) => sum + (c.level || 0), 0)
+                            ? (character.classes).reduce((sum, c) => sum + (c.level || 0), 0)
                             : (character.level || 0)}
                         </div>
                       </div>
@@ -1068,7 +1113,7 @@ export default function Characters(): JSX.Element {
                       <div className="text-sm font-medium text-base-content/70 mb-2">Class Breakdown</div>
                       {character.classes && character.classes.length > 0 ? (
                         <div className="space-y-2">
-                          {(character.classes as any[]).map((c, idx) => {
+                          {(character.classes).map((c, idx) => {
                             const classExp = c.experience ?? c.exp ?? c.xp ?? null;
                             return (
                               <div key={idx} className="flex items-center justify-between bg-base-200 rounded-lg p-3">
@@ -1205,7 +1250,7 @@ export default function Characters(): JSX.Element {
                       </h4>
                       <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
                         <div className="prose prose-sm max-w-none">
-                          <ReactMarkdown children={character.description} />
+                          <ReactMarkdown>{character.description}</ReactMarkdown>
                         </div>
                       </div>
                     </div>
@@ -1262,7 +1307,7 @@ export default function Characters(): JSX.Element {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {(character.tags).map(tag => (
-                          <span key={tag} className="badge badge-primary badge-outline">
+                          <span key={tag} className="badge badge-primary">
                             {tag}
                           </span>
                         ))}

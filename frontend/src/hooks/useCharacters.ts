@@ -34,7 +34,7 @@ export function useCreateCharacter() {
       return response.data as Character;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['characters'] });
     },
   });
 }
@@ -48,8 +48,8 @@ export function useUpdateCharacter() {
       return response.data as Character;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['characters'] });
-      queryClient.invalidateQueries({ queryKey: ['character', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['character', data.id] });
     },
   });
 }
@@ -63,7 +63,7 @@ export function useDeleteCharacter() {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['characters'] });
     },
   });
 }

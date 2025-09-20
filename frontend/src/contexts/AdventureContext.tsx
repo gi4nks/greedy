@@ -3,6 +3,17 @@ import axios from 'axios';
 
 type Adventure = { id?: number; slug?: string; title: string; description?: string };
 
+type Session = { id?: number; adventure_id?: number };
+type Character = { id?: number; adventure_id?: number };
+type Location = { id?: number; adventure_id?: number };
+
+type ExportPayload = {
+  adventures: Adventure[];
+  sessions: Session[];
+  characters: Character[];
+  locations: Location[];
+};
+
 type AdventureContextValue = {
   adventures: Adventure[];
   selectedId: number | null;
@@ -21,17 +32,29 @@ export function AdventureProvider({ children }: { children: React.ReactNode }) {
   const [counts, setCounts] = useState<AdventureContextValue['counts']>({});
 
   useEffect(() => {
-    axios.get('/api/adventures').then(res => setAdventures(res.data || []));
-    // fetch export to compute counts per adventure (lightweight for small DBs)
-    axios.get('/api/export').then(res => {
-      const payload = res.data || {};
-      const byId: typeof counts = {};
-      (payload.adventures || []).forEach((a: any) => { if (a && a.id) byId[a.id] = { sessions: 0, characters: 0, locations: 0 }; });
-      (payload.sessions || []).forEach((s: any) => { if (s && s.adventure_id && byId[s.adventure_id]) byId[s.adventure_id]!.sessions += 1; });
-      (payload.characters || []).forEach((c: any) => { if (c && c.adventure_id && byId[c.adventure_id]) byId[c.adventure_id]!.characters += 1; });
-      (payload.locations || []).forEach((l: any) => { if (l && l.adventure_id && byId[l.adventure_id]) byId[l.adventure_id]!.locations += 1; });
-      setCounts(byId);
-    }).catch(() => {});
+    const loadData = async () => {
+      try {
+        const [adventuresRes, exportRes] = await Promise.all([
+          axios.get('/api/adventures'),
+          axios.get('/api/export')
+        ]);
+
+        const adventures: Adventure[] = (adventuresRes.data as Adventure[]) || [];
+        setAdventures(adventures);
+
+        const payload: ExportPayload = (exportRes.data as ExportPayload) || {};
+        const byId: typeof counts = {};
+        (payload.adventures || []).forEach((a) => { if (a && a.id) byId[a.id] = { sessions: 0, characters: 0, locations: 0 }; });
+        (payload.sessions || []).forEach((s) => { if (s && s.adventure_id && byId[s.adventure_id]) byId[s.adventure_id]!.sessions += 1; });
+        (payload.characters || []).forEach((c) => { if (c && c.adventure_id && byId[c.adventure_id]) byId[c.adventure_id]!.characters += 1; });
+        (payload.locations || []).forEach((l) => { if (l && l.adventure_id && byId[l.adventure_id]) byId[l.adventure_id]!.locations += 1; });
+        setCounts(byId);
+      } catch {
+        // Handle errors silently for now
+      }
+    };
+
+    void loadData();
   }, []);
 
   useEffect(() => {
