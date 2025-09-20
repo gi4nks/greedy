@@ -12,6 +12,7 @@ export default function WikiImport(): JSX.Element {
   const [selectedArticle, setSelectedArticle] = useState<WikiArticle | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
   const [fullContentArticles, setFullContentArticles] = useState<Map<number, any>>(new Map());
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Content', searchFn: null },
@@ -81,7 +82,7 @@ export default function WikiImport(): JSX.Element {
           }
         } catch (error) {
           console.error('Failed to load article details:', error);
-          alert('Failed to load article details. Please try again.');
+          setFeedbackMessage({ type: 'error', message: 'Failed to load article details. Please try again.' });
           return;
         } finally {
           setLoading(false);
@@ -106,7 +107,7 @@ export default function WikiImport(): JSX.Element {
 
     } catch (error) {
       console.error('Failed to load full article content:', error);
-      alert('Failed to load full article content. Please try again.');
+      setFeedbackMessage({ type: 'error', message: 'Failed to load full article content. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -122,7 +123,7 @@ export default function WikiImport(): JSX.Element {
         articleDetail = details[article.id];
       } catch (error) {
         console.error('Failed to load article details:', error);
-        alert('Failed to load article details. Please try again.');
+        setFeedbackMessage({ type: 'error', message: 'Failed to load article details. Please try again.' });
         return;
       } finally {
         setLoading(false);
@@ -130,7 +131,7 @@ export default function WikiImport(): JSX.Element {
     }
 
     if (!articleDetail) {
-      alert(`❌ Could not retrieve details for "${article.title}". The article might not exist or there might be an API issue.`);
+      setFeedbackMessage({ type: 'error', message: `Could not retrieve details for "${article.title}". The article might not exist or there might be an API issue.` });
       return;
     }
 
@@ -190,7 +191,7 @@ export default function WikiImport(): JSX.Element {
         errorMessage = `❌ Import failed: ${error.message}`;
       }
 
-      alert(errorMessage);
+      setFeedbackMessage({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
       setSelectedArticle(null);
@@ -265,7 +266,7 @@ export default function WikiImport(): JSX.Element {
     });
 
     if (response.ok) {
-      alert(`✅ Monster "${article.title}" imported successfully to Characters section!`);
+      setFeedbackMessage({ type: 'success', message: `Monster "${article.title}" imported successfully to Characters section!` });
     } else {
       throw new Error('Failed to import monster');
     }
@@ -300,7 +301,7 @@ export default function WikiImport(): JSX.Element {
     });
 
     if (response.ok) {
-      alert(`✅ Spell "${article.title}" imported successfully as a character entry!`);
+      setFeedbackMessage({ type: 'success', message: `Spell "${article.title}" imported successfully as a character entry!` });
     } else {
       throw new Error('Failed to import spell');
     }
@@ -326,7 +327,7 @@ export default function WikiImport(): JSX.Element {
     });
 
     if (response.ok) {
-      alert(`✅ Magic Item "${article.title}" imported successfully to Magic Items section!`);
+      setFeedbackMessage({ type: 'success', message: `Magic Item "${article.title}" imported successfully to Magic Items section!` });
     } else {
       throw new Error('Failed to import magic item');
     }
@@ -349,7 +350,7 @@ export default function WikiImport(): JSX.Element {
     });
 
     if (response.ok) {
-      alert(`✅ Location "${article.title}" imported successfully to Locations section!`);
+      setFeedbackMessage({ type: 'success', message: `Location "${article.title}" imported successfully to Locations section!` });
     } else {
       throw new Error('Failed to import location');
     }
@@ -372,7 +373,7 @@ export default function WikiImport(): JSX.Element {
     });
 
     if (response.ok) {
-      alert(`✅ "${article.title}" (${contentType}) added to Parking Lot for future organization!`);
+      setFeedbackMessage({ type: 'success', message: `"${article.title}" (${contentType}) added to Parking Lot for future organization!` });
     } else {
       throw new Error('Failed to add to parking lot');
     }
@@ -381,64 +382,75 @@ export default function WikiImport(): JSX.Element {
   return (
     <Page title="Wiki Import">
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Feedback Messages */}
+        {feedbackMessage && (
+          <div className={`alert ${feedbackMessage.type === 'success' ? 'alert-success' : feedbackMessage.type === 'error' ? 'alert-error' : feedbackMessage.type === 'warning' ? 'alert-warning' : 'alert-info'}`}>
+            <div>
+              <span>{feedbackMessage.message}</span>
+            </div>
+            <div>
+              <button
+                onClick={() => setFeedbackMessage(null)}
+                className="btn btn-sm btn-circle btn-ghost"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Search Section */}
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-xl">Search AD&D 2nd Edition Wiki</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div className="md:col-span-2">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Search Query</span>
-                  </label>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Search Query</label>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Enter search terms..."
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="select select-bordered w-full"
+                  >
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>
+                        {getCategoryIcon(category.id)} {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2 opacity-0">Search</label>
+                  <button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className={`btn btn-primary btn-sm w-full ${loading ? 'loading' : ''}`}
+                  >
+                    {loading ? 'Searching...' : 'Search'}
+                  </button>
                 </div>
               </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Category</span>
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="select select-bordered"
-                >
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {getCategoryIcon(category.id)} {category.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="text-sm text-base-content/70 bg-base-200 p-4 rounded-box">
+                <p>
+                  Search the official AD&D 2nd Edition wiki for monsters, spells, magic items, races, classes, and more.
+                  Content is automatically imported to the appropriate section or parking lot.
+                </p>
               </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text opacity-0">Search</span>
-                </label>
-                <button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className={`btn btn-primary ${loading ? 'loading' : ''}`}
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </button>
-              </div>
-            </div>
-
-            <div className="text-sm text-base-content/70">
-              <p>
-                Search the official AD&D 2nd Edition wiki for monsters, spells, magic items, races, classes, and more.
-                Content is automatically imported to the appropriate section or parking lot.
-              </p>
             </div>
           </div>
         </div>
@@ -535,7 +547,7 @@ export default function WikiImport(): JSX.Element {
                                   <button
                                     onClick={() => {
                                       const contentToShow = articleData.isFullContent ? articleData.content : articleData.extract;
-                                      alert('Raw Content:\n\n' + (contentToShow || 'No content'));
+                                      setFeedbackMessage({ type: 'info', message: `Raw Content:\n\n${contentToShow || 'No content'}` });
                                     }}
                                     className="btn btn-secondary btn-xs"
                                   >
