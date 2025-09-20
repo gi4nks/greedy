@@ -1,4 +1,4 @@
-import axios from 'axios';
+
 
 export interface WikiSearchResponse {
   items: WikiArticle[];
@@ -60,14 +60,13 @@ export class WikiDataService {
    */
   static async searchArticles(query: string, limit: number = 20): Promise<WikiArticle[]> {
     try {
-      const response = await axios.get<WikiSearchResponse>('/api/wiki/search', {
-        params: {
-          query,
-          limit
-        }
-      });
-
-      return response.data.items || [];
+      const params = new URLSearchParams({ query: query, limit: limit.toString() });
+      const response = await fetch(`/api/wiki/search?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to search wiki articles');
+      }
+      const data: WikiSearchResponse = await response.json();
+      return data.items || [];
     } catch {
       throw new Error('Failed to search wiki articles');
     }
@@ -78,14 +77,13 @@ export class WikiDataService {
    */
   static async searchByCategory(category: string, limit: number = 20): Promise<WikiArticle[]> {
     try {
-      const response = await axios.get<WikiSearchResponse>('/api/wiki/search', {
-        params: {
-          category,
-          limit
-        }
-      });
-
-      return response.data.items || [];
+      const params = new URLSearchParams({ category: category, limit: limit.toString() });
+      const response = await fetch(`/api/wiki/search?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to search wiki by category');
+      }
+      const data: WikiSearchResponse = await response.json();
+      return data.items || [];
     } catch {
       throw new Error('Failed to search wiki by category');
     }
@@ -101,8 +99,12 @@ export class WikiDataService {
       // Get details for each article
       for (const id of ids) {
         try {
-          const response = await axios.get<WikiArticleResponse>(`/api/wiki/article/${id}`);
-          details[id] = response.data;
+          const response = await fetch(`/api/wiki/article/${id}`);
+          if (!response.ok) {
+            throw new Error('Failed to get article details');
+          }
+          const data: WikiArticleResponse = await response.json();
+          details[id] = data;
         } catch {
           // Continue with other articles if one fails
         }
@@ -119,10 +121,12 @@ export class WikiDataService {
    */
   static async getArticleFullContent(id: number): Promise<WikiArticleDetails> {
     try {
-      const response = await axios.get<WikiArticleResponse>(`/api/wiki/article/${id}`, {
-        params: { full: 'true' }
-      });
-      return response.data;
+      const params = new URLSearchParams({ full: 'true' });
+      const response = await fetch(`/api/wiki/article/${id}?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get full article content');
+      }
+      return response.json() as Promise<WikiArticleDetails>;
     } catch {
       throw new Error('Failed to get full article content');
     }

@@ -3,125 +3,125 @@
 ## Overview
 This document outlines the established DaisyUI styling patterns and conventions used throughout the Greedy application for consistent user interface design.
 
-## 🎨 **Complete Color System Analysis**
+## 🎨 **Complete Nord Theme Implementation**
 
-### New Color Palette
-The application now uses a balanced blue-themed color palette with excellent readability:
+### Nord Color Palette
+The application uses DaisyUI's built-in "nord" theme for a clean, readable, and consistent arctic-inspired color scheme:
 
-- **Dark Blue** (`#1e40af`): Primary actions (add, create, save) - high contrast
-- **Medium Blue** (`#3b82f6`): Secondary actions and links - good visibility  
-- **Light Blue** (`#60a5fa`): Accents and highlights - subtle emphasis
-- **Sky Blue** (`#0ea5e9`): Informational elements - clear distinction
-- **Green** (`#10b981`): Success states - positive feedback
-- **Amber** (`#f59e0b`): Warnings and cautions - attention-grabbing
-- **Red** (`#ef4444`): Errors and destructive actions - clear danger signal
+- **Primary** (`#5E81AC`): Arctic blue for primary actions (add, create, save)
+- **Secondary** (`#81A1C1`): Frost blue for secondary actions and links
+- **Accent** (`#88C0D0`): Light blue for accents and highlights
+- **Success** (`#A3BE8C`): Polar green for success states
+- **Warning** (`#EBCB8B`): Aurora amber for warnings and cautions
+- **Error** (`#BF616A`): Aurora red for errors and destructive actions
+- **Info** (`#81A1C1`): Frost blue for informational elements
 
-### Background Colors for Maximum Readability
-- **White** (`#ffffff`): Main cards and content areas
-- **Very Light Gray** (`#f8fafc`): Secondary backgrounds and forms
-- **Light Gray** (`#e2e8f0`): Borders and subtle dividers
+### Background Colors for Arctic Theme
+- **Base-100** (`#ECEFF4`): Snow white for main cards and content areas
+- **Base-200** (`#E5E9F0`): Light snow for secondary backgrounds and forms
+- **Base-300** (`#D8DEE9`): Lighter snow for borders and subtle dividers
 
-### Text Colors for Optimal Contrast
-- **Dark Gray** (`#1f2937`): Main body text - excellent readability
-- **Medium Gray** (`#374151`): Secondary text and labels
-- **Very Dark Gray** (`#111827`): Emphasis and strong text
+### Text Colors for Nord Theme
+- **Base-Content** (`#2E3440`): Polar night dark for main body text
+- **Base-Content/70** (`#4C566A`): Frost gray for secondary text and labels
+- **Base-Content/50** (`#81A1C1`): Light frost for subtle text
 
 ### Button Color Semantics
-All buttons use DaisyUI semantic colors with the new balanced palette:
+All buttons use DaisyUI semantic colors with the nord theme:
 
-- **`btn-primary`** (Dark Blue `#1e40af`): Primary actions like Add, Create, Save - highest importance
-- **`btn-secondary`** (Medium Blue `#3b82f6`): Secondary actions like Cancel, Back - medium importance
-- **`btn-success`** (Green `#10b981`): Positive outcomes like Accept, Complete, Select - success states
-- **`btn-warning`** (Amber `#f59e0b`): Cautionary actions like Edit, Update, Modify - requires attention
-- **`btn-error`** (Red `#ef4444`): Destructive actions like Delete, Remove - danger actions
-- **`btn-ghost`** (Neutral): Subtle actions like Debug, Raw, Close - minimal visual weight
-- **`btn-info`** (Sky Blue `#0ea5e9`): Informational actions like Show, View, Details - neutral info
-- **`btn-accent`** (Light Blue `#60a5fa`): Special highlights and unique actions - visual emphasis
+- **`btn-primary`** (Arctic Blue `#5E81AC`): Primary actions like Add, Create, Save - highest importance
+- **`btn-secondary`** (Frost Blue `#81A1C1`): Secondary actions like Cancel, Back - medium importance
+- **`btn-success`** (Polar Green `#A3BE8C`): Positive outcomes like Accept, Complete, Select - success states
+- **`btn-warning`** (Aurora Amber `#EBCB8B`): Cautionary actions like Edit, Update, Modify - requires attention
+- **`btn-error`** (Aurora Red `#BF616A`): Destructive actions like Delete, Remove - danger actions
+- **`btn-ghost`**: Subtle actions like Debug, Raw, Close - minimal visual weight
+- **`btn-info`** (Frost Blue `#81A1C1`): Informational actions like Show, View, Details - neutral info
+- **`btn-accent`** (Light Blue `#88C0D0`): Special highlights and unique actions - visual emphasis
 
 ### Badge Color Semantics
 Badges follow the same semantic pattern as buttons:
 
-- **`badge-primary`**: Main categories, tags, primary identifiers (Prussian Blue)
-- **`badge-secondary`**: Secondary categories, alternative tags (Blue Green)
-- **`badge-success`**: Active/completed states, positive status (Blue Green)
-- **`badge-warning`**: Cantrips, caution states, pending items (Selective Yellow)
-- **`badge-error`**: Error states, critical issues (UT Orange)
-- **`badge-info`**: Informational content, data types, classes (Sky Blue)
-- **`badge-accent`**: Special content types, locations, unique items (Sky Blue)
-- **`badge-neutral`**: Default/uncategorized content (Prussian Blue)
+- **`badge-primary`**: Main categories, tags, primary identifiers (Arctic Blue)
+- **`badge-secondary`**: Secondary categories, alternative tags (Frost Blue)
+- **`badge-success`**: Active/completed states, positive status (Polar Green)
+- **`badge-warning`**: Cantrips, caution states, pending items (Aurora Amber)
+- **`badge-error`**: Error states, critical issues (Aurora Red)
+- **`badge-info`**: Informational content, data types, classes (Frost Blue)
+- **`badge-accent`**: Special content types, locations, unique items (Light Blue)
+- **`badge-neutral`**: Default/uncategorized content (Polar Night)
 
 ### Background Color Standards
-All backgrounds use clean, readable colors:
+All backgrounds use clean, nord-themed colors:
 
-- **`bg-base-100`** (White `#ffffff`): Main cards, primary content areas, modal backgrounds - maximum readability
-- **`bg-base-200`** (Very Light Gray `#f8fafc`): Secondary content, form sections, nested cards - subtle distinction
-- **`bg-base-300`** (Light Gray `#e2e8f0`): Borders, dividers, subtle accents - minimal but visible
+- **`bg-base-100`** (Snow `#ECEFF4`): Main cards, primary content areas, modal backgrounds - maximum readability
+- **`bg-base-200`** (Light Snow `#E5E9F0`): Secondary content, form sections, nested cards - subtle distinction
+- **`bg-base-300`** (Lighter Snow `#D8DEE9`): Borders, dividers, subtle accents - minimal but visible
 
 ### Text Color Standards
-- **`text-base-content`** (Dark Gray `#1f2937`): Main text color for excellent readability on light backgrounds
-- **Links**: Medium Blue (`#3b82f6`) with Dark Blue hover states (`#1e40af`)
-- **Headings**: Dark Blue (`#1e40af`) for clear hierarchy and visual interest
-- **Subtle text**: Medium Gray (`#374151`) for metadata and secondary information
+- **`text-base-content`** (Polar Night `#2E3440`): Main text color for excellent readability on light nord backgrounds
+- **Links**: Frost Blue (`#81A1C1`) with Arctic Blue hover states (`#5E81AC`)
+- **Headings**: Arctic Blue (`#5E81AC`) for clear hierarchy and visual interest
+- **Subtle text**: Frost Gray (`#4C566A`) for metadata and secondary information
 
 ### Color Usage Patterns by Component Type
 
 #### Status Indicators
-- **Active/Completed**: `badge-success` (Blue Green)
-- **Pending/Inactive**: `badge-warning` (Selective Yellow)
-- **Error/Critical**: `badge-error` (UT Orange)
-- **Info/Neutral**: `badge-info` (Sky Blue)
+- **Active/Completed**: `badge-success` (Polar Green)
+- **Pending/Inactive**: `badge-warning` (Aurora Amber)
+- **Error/Critical**: `badge-error` (Aurora Red)
+- **Info/Neutral**: `badge-info` (Frost Blue)
 
 #### Content Categories (Wiki Import, Parking Lot)
-- **Monsters**: `badge-info` (Sky Blue)
-- **Spells**: `badge-success` (Blue Green)
-- **Magic Items**: `badge-accent` (Sky Blue)
-- **Locations**: `badge-warning` (Selective Yellow)
-- **Races & Classes**: `badge-neutral` (Prussian Blue)
-- **Other Content**: `badge-neutral` (Prussian Blue)
+- **Monsters**: `badge-info` (Frost Blue)
+- **Spells**: `badge-success` (Polar Green)
+- **Magic Items**: `badge-accent` (Light Blue)
+- **Locations**: `badge-warning` (Aurora Amber)
+- **Races & Classes**: `badge-neutral` (Polar Night)
+- **Other Content**: `badge-neutral` (Polar Night)
 
 #### Quest Status (Quests.tsx)
-- **Active**: `badge-success` (Blue Green)
-- **Completed**: `badge-info` (Sky Blue)
-- **Cancelled**: `badge-error` (UT Orange)
-- **Critical Priority**: `badge-error` (UT Orange)
-- **High Priority**: `badge-warning` (Selective Yellow)
-- **Medium Priority**: `badge-info` (Sky Blue)
-- **Low Priority**: `badge-success` (Blue Green)
+- **Active**: `badge-success` (Polar Green)
+- **Completed**: `badge-info` (Frost Blue)
+- **Cancelled**: `badge-error` (Aurora Red)
+- **Critical Priority**: `badge-error` (Aurora Red)
+- **High Priority**: `badge-warning` (Aurora Amber)
+- **Medium Priority**: `badge-info` (Frost Blue)
+- **Low Priority**: `badge-success` (Polar Green)
 
 #### Spell Levels (Characters.tsx)
-- **Cantrips (Level 0)**: `badge-warning` (Selective Yellow)
-- **Level 1+**: `badge-info` (Sky Blue)
+- **Cantrips (Level 0)**: `badge-warning` (Aurora Amber)
+- **Level 1+**: `badge-info` (Frost Blue)
 
 #### Combat States (CombatTracker.tsx)
-- **Health Status**: Color-coded based on percentage using new palette
-- **Active Combatant**: `badge-error` (UT Orange) for status effects
+- **Health Status**: Color-coded based on percentage using nord palette
+- **Active Combatant**: `badge-error` (Aurora Red) for status effects
 
 ### Color Consistency Rules
-1. **Use only the new color palette** - Sky Blue, Blue Green, Prussian Blue, Selective Yellow, UT Orange
+1. **Use only the nord theme colors** - Arctic, Frost, Polar, Aurora colors
 2. **Always use DaisyUI semantic colors** for buttons and badges
 3. **Use base colors only** for backgrounds (`bg-base-100`, `bg-base-200`, `bg-base-300`)
 4. **Maintain semantic meaning** - same color should mean same thing across pages
-5. **Ensure accessibility** - Prussian Blue text on light backgrounds provides excellent contrast
-6. **Use Prussian Blue** as the primary text color for consistency and readability
+5. **Ensure accessibility** - Polar Night text on snow backgrounds provides excellent contrast
+6. **Use Arctic Blue** as the primary text color for consistency and readability
 
-### Color Migration Status
-- **✅ Complete**: DaisyUI theme configuration updated with balanced blue palette
-- **✅ Complete**: CSS variables updated for better contrast and readability
-- **✅ Complete**: Card backgrounds changed to white for maximum readability
-- **✅ Complete**: Wiki content styling updated with dark text on light backgrounds
+### Nord Theme Migration Status
+- **✅ Complete**: DaisyUI theme configuration updated to use built-in "nord" theme
+- **✅ Complete**: CSS variables updated for nord color palette
+- **✅ Complete**: Card backgrounds changed to snow white for maximum readability
+- **✅ Complete**: Wiki content styling updated with polar night text on light backgrounds
 - **✅ Complete**: Text colors optimized for excellent contrast ratios
-- **✅ Complete**: Button gradients configured for semantic meaning:
-  - Dark blue for primary "add/create" actions
-  - Medium blue for secondary actions  
+- **✅ Complete**: Button gradients configured for nord semantic meaning:
+  - Arctic blue for primary "add/create" actions
+  - Frost blue for secondary actions  
   - Light blue for accents and highlights
-  - Green for success, amber for warnings, red for errors
-- **✅ Complete**: Form backgrounds and inputs use light, readable colors
-- **✅ Complete**: Menu and navigation elements now have proper contrast
+  - Polar green for success, aurora amber for warnings, aurora red for errors
+- **✅ Complete**: Form backgrounds and inputs use light, readable nord colors
+- **✅ Complete**: Menu and navigation elements now have proper nord contrast
 
 ### Accessibility Improvements
-- **High Contrast**: Dark text (#1f2937) on white backgrounds (#ffffff)
-- **Clear Hierarchy**: Blue headings (#1e40af) stand out without being overwhelming
-- **Readable Links**: Medium blue (#3b82f6) with darker hover states
+- **High Contrast**: Polar night text (#2E3440) on snow backgrounds (#ECEFF4)
+- **Clear Hierarchy**: Arctic blue headings (#5E81AC) stand out without being overwhelming
+- **Readable Links**: Frost blue (#81A1C1) with darker hover states
 - **Semantic Colors**: Logical color associations (red for danger, green for success)
 - **Clean Interface**: Minimal use of colored backgrounds, focus on content readability
 
@@ -271,7 +271,7 @@ When adding new components or pages:
 2. **Typography**: Follow hierarchy (text-xl → text-lg → text-base → text-sm → text-xs)
 3. **Spacing**: Use `p-4`, `gap-4`, `space-y-4` consistently
 4. **Colors**: 
-   - Use DaisyUI semantic colors only (no raw Tailwind colors)
+   - Use DaisyUI nord theme semantic colors only (no raw Tailwind colors)
    - Backgrounds: `bg-base-100`, `bg-base-200` only
    - Buttons: Semantic variants (`btn-primary`, `btn-success`, etc.)
    - Badges: Semantic variants (`badge-primary`, `badge-success`, etc.)
@@ -282,7 +282,7 @@ When adding new components or pages:
 ## 🚀 **Future Development**
 
 - Maintain these patterns for all new features
-- Use established color scheme consistently
+- Use established nord color scheme consistently
 - Follow responsive design patterns
 - Keep button sizes standardized to `btn-sm`
 - Preserve typography hierarchy
@@ -290,6 +290,7 @@ When adding new components or pages:
 
 ---
 
-*Last updated: December 2024*
+*Last updated: September 2025*
+*Theme: DaisyUI Nord*
 *Maintained by: Development Team*</content>
 <parameter name="filePath">/Users/gianluca/Projects/github/gi4nks/greedy/frontend/UI_STYLE_STANDARDS.md

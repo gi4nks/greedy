@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { NPC } from '@greedy/shared';
+import { useNPCs, useCreateNPC, useUpdateNPC, useDeleteNPC } from '../hooks/useNPCs';
+import { useSearch } from '../hooks/useSearch';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -13,17 +15,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
-type NPC = {
-  id?: number;
-  name: string;
-  role?: string;
-  description?: string;
-  tags?: string[];
-  adventure_id?: number | null;
-};
-
 export default function NPCs(): JSX.Element {
-  const [npcs, setNpcs] = useState<NPC[]>([]);
   const [formData, setFormData] = useState<NPC>({ name: '', role: '', description: '', tags: [] });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,13 +31,14 @@ export default function NPCs(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    void fetchNpcs();
-  }, []);
+  // React Query hooks
+  const { data: npcs = [] } = useNPCs();
+  const { data: searchResults } = useSearch(searchTerm, adv.selectedId ?? undefined);
 
-  const fetchNpcs = () => {
-    void axios.get<NPC[]>('/api/npcs').then(res => setNpcs(res.data));
-  };
+  // Mutations
+  const createNPCMutation = useCreateNPC();
+  const updateNPCMutation = useUpdateNPC();
+  const deleteNPCMutation = useDeleteNPC();
 
   const handleAddTag = () => {
     const v = (tagInputRef.current?.value || '').trim();
@@ -64,18 +57,14 @@ export default function NPCs(): JSX.Element {
     e.preventDefault();
     const data = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
     if (editingId) {
-      void axios.put(`/api/npcs/${editingId}`, data).then(() => {
-        void fetchNpcs();
-        setFormData({ name: '', role: '', description: '', tags: [] });
-        setEditingId(null);
-        setShowCreateForm(false);
-      });
+      updateNPCMutation.mutate({ id: editingId, npc: data });
+      setFormData({ name: '', role: '', description: '', tags: [] });
+      setEditingId(null);
+      setShowCreateForm(false);
     } else {
-      void axios.post('/api/npcs', data).then(() => {
-        void fetchNpcs();
-        setFormData({ name: '', role: '', description: '', tags: [] });
-        setShowCreateForm(false);
-      });
+      createNPCMutation.mutate(data);
+      setFormData({ name: '', role: '', description: '', tags: [] });
+      setShowCreateForm(false);
     }
   };
 
@@ -88,24 +77,19 @@ export default function NPCs(): JSX.Element {
   const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this NPC?')) {
-      void axios.delete(`/api/npcs/${id}`).then(() => {
-        void fetchNpcs();
-      });
+      deleteNPCMutation.mutate(id);
     }
   };
 
-  const doSearch = async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get<{ npcs: NPC[] }>(`/api/search?${params.toString()}`);
-    setNpcs(res.data.npcs || []);
+  const doSearch = (term: string) => {
+    setSearchTerm(term);
+    // The useSearch hook will automatically refetch when searchTerm changes
   };
 
   return (
     <Page title="NPCs" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search NPCs..."
@@ -208,7 +192,7 @@ export default function NPCs(): JSX.Element {
       )}
 
       <div className="space-y-6">
-        {npcs.map(npc => {
+        {(searchTerm ? searchResults?.npcs || [] : npcs).map(npc => {
           const isCollapsed = npc.id ? collapsed[npc.id] ?? true : false;
           return (
             <div key={npc.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">

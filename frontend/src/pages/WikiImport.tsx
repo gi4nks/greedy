@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import Page from '../components/Page';
 import { WikiDataService, WikiArticle, WikiArticleDetails } from '../services/WikiDataService';
+import { useCreateCharacter } from '../hooks/useCharacters';
+import { useCreateMagicItem } from '../hooks/useMagicItems';
+import { useCreateLocation } from '../hooks/useLocations';
+import { useCreateParkingLotItem } from '../hooks/useParkingLot';
 
 type ContentType = 'monster' | 'spell' | 'magic-item' | 'race' | 'class' | 'location' | 'note' | 'parking-lot';
 
@@ -12,6 +16,12 @@ export default function WikiImport(): JSX.Element {
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
   const [fullContentArticles, setFullContentArticles] = useState<Map<number, WikiArticleDetails>>(new Map());
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
+
+  // React Query mutations
+  const createCharacterMutation = useCreateCharacter();
+  const createMagicItemMutation = useCreateMagicItem();
+  const createLocationMutation = useCreateLocation();
+  const createParkingLotItemMutation = useCreateParkingLotItem();
 
   const categories = [
     { id: 'all', name: 'All Content', searchFn: null },
@@ -240,25 +250,28 @@ export default function WikiImport(): JSX.Element {
       role: 'Monster',
       description: content || 'Imported from AD&D 2nd Edition Wiki',
       tags: ['monster', 'wiki-import'],
-      // Store monster combat stats
-      armor_class: parsedData.armorClass || 10,
-      hit_dice: parsedData.hitDice || '1d8',
-      movement: parsedData.movement || '30 ft.',
+      // Required Character fields with defaults
+      level: 1,
+      experience: 0,
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      hitPoints: 10,
+      maxHitPoints: 10,
+      armorClass: parsedData.armorClass || 10,
+      initiative: 0,
+      speed: 30,
+      proficiencyBonus: 2,
+      // Store monster combat stats in description and legacy fields
       wiki_url: WikiDataService.getFullUrl(article.url)
     };
 
     // Import as character with role="Monster"
-    const response = await fetch('/api/characters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(monsterData)
-    });
-
-    if (response.ok) {
-      setFeedbackMessage({ type: 'success', message: `Monster "${article.title}" imported successfully to Characters section!` });
-    } else {
-      throw new Error('Failed to import monster');
-    }
+    await createCharacterMutation.mutateAsync(monsterData);
+    setFeedbackMessage({ type: 'success', message: `Monster "${article.title}" imported successfully to Characters section!` });
   };
 
   const importSpell = async (article: WikiArticle, content: string) => {
@@ -270,30 +283,33 @@ export default function WikiImport(): JSX.Element {
       role: 'Spell',
       description: content || 'Imported from AD&D 2nd Edition Wiki',
       tags: ['spell', 'wiki-import'],
+      // Required Character fields with defaults
+      level: 1,
+      experience: 0,
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      hitPoints: 10,
+      maxHitPoints: 10,
+      armorClass: 10,
+      initiative: 0,
+      speed: 30,
+      proficiencyBonus: 2,
       // Store spell details in spells field as JSON
       spells: [{
+        level: (typeof parsedData.level === 'number' && parsedData.level >= 0 && parsedData.level <= 9) ? parsedData.level as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 : 1,
         name: article.title,
-        level: parsedData.level,
-        range: parsedData.range,
-        duration: parsedData.duration,
-        description: content,
-        source: 'AD&D 2nd Edition Wiki'
+        prepared: true
       }],
       wiki_url: WikiDataService.getFullUrl(article.url)
     };
 
     // Import as character with role="Spell"
-    const response = await fetch('/api/characters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(spellData)
-    });
-
-    if (response.ok) {
-      setFeedbackMessage({ type: 'success', message: `Spell "${article.title}" imported successfully as a character entry!` });
-    } else {
-      throw new Error('Failed to import spell');
-    }
+    await createCharacterMutation.mutateAsync(spellData);
+    setFeedbackMessage({ type: 'success', message: `Spell "${article.title}" imported successfully as a character entry!` });
   };
 
   const importMagicItem = async (article: WikiArticle, content: string) => {
@@ -305,77 +321,39 @@ export default function WikiImport(): JSX.Element {
       rarity: parsedData.rarity,
       type: parsedData.type,
       tags: ['magic-item', 'wiki-import'],
+      attunement_required: false,
       wiki_url: WikiDataService.getFullUrl(article.url)
     };
 
     // Import as magic item using dedicated endpoint
-    const response = await fetch('/api/magic-items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(itemData)
-    });
-
-    if (response.ok) {
-      setFeedbackMessage({ type: 'success', message: `Magic Item "${article.title}" imported successfully to Magic Items section!` });
-    } else {
-      throw new Error('Failed to import magic item');
-    }
+    await createMagicItemMutation.mutateAsync(itemData);
+    setFeedbackMessage({ type: 'success', message: `Magic Item "${article.title}" imported successfully to Magic Items section!` });
   };
 
   const importLocation = async (article: WikiArticle, content: string) => {
     const locationData = {
-      adventure_id: null,
+      adventure_id: undefined,
       name: article.title,
       description: content || 'Imported from AD&D 2nd Edition Wiki',
       notes: 'Location imported from wiki',
-      tags: ['location', 'wiki-import'],
-      wiki_url: WikiDataService.getFullUrl(article.url)
+      tags: ['location', 'wiki-import']
     };
 
-    const response = await fetch('/api/locations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(locationData)
-    });
-
-    if (response.ok) {
-      setFeedbackMessage({ type: 'success', message: `Location "${article.title}" imported successfully to Locations section!` });
-    } else {
-      throw new Error('Failed to import location');
-    }
+    await createLocationMutation.mutateAsync(locationData);
+    setFeedbackMessage({ type: 'success', message: `Location "${article.title}" imported successfully to Locations section!` });
   };
 
   const importToParkingLot = async (article: WikiArticle, content: string, contentType: string) => {
     const parkingLotData = {
       name: article.title,
       description: content || 'Imported from AD&D 2nd Edition Wiki',
-      contentType: contentType,
-      wikiUrl: WikiDataService.getFullUrl(article.url),
+      content_type: contentType,
+      wiki_url: WikiDataService.getFullUrl(article.url),
       tags: ['wiki-import', contentType]
     };
 
-    const response = await fetch('/api/parking-lot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(parkingLotData)
-    });
-
-    if (response.ok) {
-      setFeedbackMessage({ type: 'success', message: `"${article.title}" (${contentType}) added to Parking Lot for future organization!` });
-    } else {
-      // Get detailed error information
-      let errorMessage = 'Failed to add to parking lot';
-      try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          errorMessage = `Failed to add to parking lot: ${errorData.error}`;
-        }
-      } catch {
-        // If we can't parse the error response, use the status
-        errorMessage = `Failed to add to parking lot (HTTP ${response.status})`;
-      }
-      throw new Error(errorMessage);
-    }
+    await createParkingLotItemMutation.mutateAsync(parkingLotData);
+    setFeedbackMessage({ type: 'success', message: `"${article.title}" (${contentType}) added to Parking Lot for future organization!` });
   };
 
   return (

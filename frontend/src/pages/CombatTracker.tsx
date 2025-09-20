@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { useCharacters } from '../hooks/useCharacters';
+import { useNPCs } from '../hooks/useNPCs';
 
 interface Combatant {
   id: string;
@@ -28,8 +29,6 @@ export default function CombatTracker(): JSX.Element {
   const [roundNumber, setRoundNumber] = useState(1);
   const [isCombatActive, setIsCombatActive] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [availableCharacters, setAvailableCharacters] = useState<any[]>([]);
-  const [availableNpcs, setAvailableNpcs] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const adv = useAdventures();
@@ -52,31 +51,18 @@ export default function CombatTracker(): JSX.Element {
     { name: 'Unconscious', duration: 1, description: 'Incapacitated, unaware, auto crit on attacks, attacks against have advantage' }
   ];
 
-  useEffect(() => {
-    loadAvailableCombatants();
-  }, [adv.selectedId]);
-
-  const loadAvailableCombatants = async () => {
-    try {
-      const [charactersRes, npcsRes] = await Promise.all([
-        axios.get('/api/characters'),
-        axios.get('/api/npcs')
-      ]);
-      setAvailableCharacters(charactersRes.data);
-      setAvailableNpcs(npcsRes.data);
-    } catch (error) {
-      console.error('Failed to load combatants:', error);
-    }
-  };
+  // React Query hooks for available combatants
+  const { data: availableCharacters = [] } = useCharacters(adv.selectedId || undefined);
+  const { data: availableNpcs = [] } = useNPCs(adv.selectedId || undefined);
 
   const addCombatant = (combatant: any, type: 'character' | 'npc') => {
     const newCombatant: Combatant = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: combatant.name,
       initiative: 0,
-      maxHp: combatant.hitPoints || combatant.hit_points || 0,
-      currentHp: combatant.hitPoints || combatant.hit_points || 0,
-      ac: combatant.armorClass || combatant.armor_class || 10,
+      maxHp: combatant.hitPoints || 0,
+      currentHp: combatant.hitPoints || 0,
+      ac: combatant.armorClass || 10,
       type,
       sourceId: combatant.id,
       conditions: [],
@@ -482,7 +468,7 @@ export default function CombatTracker(): JSX.Element {
                           <div>
                             <div className="font-medium">{character.name}</div>
                             <div className="text-sm text-base-content/70">
-                              HP: {character.hitPoints || character.hit_points || 0} | AC: {character.armorClass || character.armor_class || 10}
+                              HP: {character.hitPoints || 0} | AC: {character.armorClass || 10}
                             </div>
                           </div>
                           <button

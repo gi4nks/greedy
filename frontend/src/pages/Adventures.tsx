@@ -1,19 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { useToast } from '../components/Toast';
+import {
+  useAdventures as useAdventuresQuery,
+  useCreateAdventure,
+  useUpdateAdventure,
+  useDeleteAdventure
+} from '../hooks/useAdventures';
 
 type Adventure = { id?: number; slug?: string; title: string; description?: string };
 
 export default function Adventures(): JSX.Element {
-  const [adventures, setAdventures] = useState<Adventure[]>([]);
   const [formData, setFormData] = useState<Adventure>({ title: '', description: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   // Collapsed state for each adventure
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+  const toast = useToast();
+
+  // React Query hooks
+  const { data: adventures = [], isLoading } = useAdventuresQuery();
+  const createAdventureMutation = useCreateAdventure();
+  const updateAdventureMutation = useUpdateAdventure();
+  const deleteAdventureMutation = useDeleteAdventure();
 
   // Toggle collapse for an adventure
   const toggleCollapse = (id?: number) => {
@@ -21,30 +33,33 @@ export default function Adventures(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: ! (prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    void fetchAdventures();
-  }, []);
-
-  const fetchAdventures = () => {
-    void axios.get<Adventure[]>('/api/adventures').then(res => setAdventures(res.data));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...formData, slug: formData.title.toLowerCase().replace(/\s+/g, '-') };
     if (editingId) {
-      void axios.put(`/api/adventures/${editingId}`, payload).then(() => {
-        void fetchAdventures();
+      try {
+        await updateAdventureMutation.mutateAsync({
+          id: editingId,
+          adventure: payload
+        });
+        toast.push('Adventure updated successfully', { type: 'success' });
         setFormData({ title: '', description: '' });
         setEditingId(null);
         setShowCreateForm(false);
-      });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to update adventure', { type: 'error' });
+      }
     } else {
-      void axios.post('/api/adventures', payload).then(() => {
-        void fetchAdventures();
+      try {
+        await createAdventureMutation.mutateAsync(payload);
+        toast.push('Adventure created successfully', { type: 'success' });
         setFormData({ title: '', description: '' });
         setShowCreateForm(false);
-      });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to create adventure', { type: 'error' });
+      }
     }
   };
 
@@ -54,22 +69,36 @@ export default function Adventures(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this adventure? This will not delete associated sessions, NPCs, or locations.')) {
-      void axios.delete(`/api/adventures/${id}`).then(() => {
-        void fetchAdventures();
+      try {
+        await deleteAdventureMutation.mutateAsync(id);
+        toast.push('Adventure deleted successfully', { type: 'success' });
         // If the deleted adventure was selected, clear selection
         if (adv.selectedId === id) {
           adv.selectAdventure(null);
         }
-      });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to delete adventure', { type: 'error' });
+      }
     }
   };
 
   const handleSelect = (id: number) => {
     adv.selectAdventure(id);
   };
+
+  if (isLoading) {
+    return (
+      <Page title="Adventures">
+        <div className="flex justify-center items-center h-64">
+          <div className="loading loading-spinner loading-lg"></div>
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page title="Adventures" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>

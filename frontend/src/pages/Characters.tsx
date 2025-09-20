@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
-import { Character, CharacterForm, MagicItem } from '@greedy/shared';
+import { Character, CharacterForm } from '@greedy/shared';
+import { useCharacters, useCreateCharacter, useUpdateCharacter, useDeleteCharacter } from '../hooks/useCharacters';
+import { useMagicItems, useCreateMagicItem, useAssignMagicItem, useUnassignMagicItem } from '../hooks/useMagicItems';
+import { useSearch } from '../hooks/useSearch';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -15,8 +17,6 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
 }
 
 export default function Characters(): JSX.Element {
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [magicItems, setMagicItems] = useState<MagicItem[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [formData, setFormData] = useState<CharacterForm>({
     name: '',
@@ -159,28 +159,18 @@ export default function Characters(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: ! (prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    void fetchCharacters();
-    void fetchMagicItems();
-  }, []);
+  // React Query hooks
+  const { data: characters = [] } = useCharacters();
+  const { data: magicItems = [] } = useMagicItems();
+  const { data: searchResults } = useSearch(searchTerm, adv.selectedId ?? undefined);
 
-  const fetchCharacters = async () => {
-    try {
-      const res = await axios.get<Character[]>('/api/characters');
-      setCharacters(res.data);
-    } catch {
-      // Error handled silently
-    }
-  };
-
-  const fetchMagicItems = async () => {
-    try {
-      const res = await axios.get<MagicItem[]>('/api/magic-items');
-      setMagicItems(res.data);
-    } catch {
-      // Error handled silently
-    }
-  };
+  // Mutations
+  const createCharacterMutation = useCreateCharacter();
+  const updateCharacterMutation = useUpdateCharacter();
+  const deleteCharacterMutation = useDeleteCharacter();
+  const createMagicItemMutation = useCreateMagicItem();
+  const assignMagicItemMutation = useAssignMagicItem();
+  const unassignMagicItemMutation = useUnassignMagicItem();
 
   const handleAddTag = (): void => {
     const v = (tagInputRef.current?.value || '').trim();
@@ -195,23 +185,17 @@ export default function Characters(): JSX.Element {
     setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const data = { ...formData };
-    try {
-      if (editingId) {
-        await axios.put(`/api/characters/${editingId}`, data);
-        await fetchCharacters();
-        setFormData(resetForm());
-        setEditingId(null);
-        setShowCreateForm(false);
-      } else {
-        await axios.post('/api/characters', data);
-        await fetchCharacters();
-        setFormData(resetForm());
-        setShowCreateForm(false);
-      }
-    } catch {
-      // Error handled silently
+    if (editingId) {
+      updateCharacterMutation.mutate({ id: editingId, character: data });
+      setFormData(resetForm());
+      setEditingId(null);
+      setShowCreateForm(false);
+    } else {
+      createCharacterMutation.mutate(data);
+      setFormData(resetForm());
+      setShowCreateForm(false);
     }
   };
 
@@ -257,30 +241,22 @@ export default function Characters(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = async (id?: number) => {
+  const handleDelete = (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this character?')) {
-      try {
-        await axios.delete(`/api/characters/${id}`);
-        await fetchCharacters();
-      } catch {
-        // Error handled silently
-      }
+      deleteCharacterMutation.mutate(id);
     }
   };
 
-  const doSearch = async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get<{ characters: Character[] }>(`/api/search?${params.toString()}`);
-    setCharacters(res.data.characters || []);
+  const doSearch = (term: string) => {
+    setSearchTerm(term);
+    // The useSearch hook will automatically refetch when searchTerm changes
   };
 
   return (
     <Page title="Characters" toolbar={<button onClick={() => { setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>}>
       <div className="mb-6">
-        <form onSubmit={async (e) => { e.preventDefault(); await doSearch(searchTerm); }}>
+        <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search Characters..."
@@ -292,7 +268,7 @@ export default function Characters(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={async (e) => { e.preventDefault(); await handleSubmit(); }} className="card bg-base-100 shadow-xl mb-6">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Character' : 'Create New Character'}</h3>
           <div className="flex flex-wrap border-b mb-6">
@@ -681,15 +657,9 @@ export default function Characters(): JSX.Element {
                           </div>
                           <button
                             type="button"
-                            onClick={async () => {
+                            onClick={() => {
                               if (item.id && editingId) {
-                                try {
-                                  await axios.post(`/api/magic-items/${item.id}/unassign`, { characterId: editingId });
-                                  await fetchMagicItems();
-                                  await fetchCharacters();
-                                } catch {
-                                  // Error handled silently
-                                }
+                                unassignMagicItemMutation.mutate({ itemId: item.id, characterId: editingId });
                               }
                             }}
                             className="btn btn-error btn-sm"
@@ -716,25 +686,17 @@ export default function Characters(): JSX.Element {
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      // Create a new magical item and assign it to the character
+                    onClick={() => {
+                      // Create a new magical item
                       const itemName = window.prompt('Enter magical item name:');
-                      if (itemName && editingId) {
-                        try {
-                          const response = await axios.post('/api/magic-items', {
-                            name: itemName,
-                            description: 'New magical item',
-                            rarity: 'common',
-                            type: 'Wondrous item',
-                            attunement_required: false
-                          });
-                          const newItemId = response.data.id;
-                          await axios.post(`/api/magic-items/${newItemId}/assign`, { characterId: editingId });
-                          await fetchMagicItems();
-                          await fetchCharacters();
-                        } catch {
-                          // Error handled silently
-                        }
+                      if (itemName) {
+                        createMagicItemMutation.mutate({
+                          name: itemName,
+                          description: 'New magical item',
+                          rarity: 'common',
+                          type: 'Wondrous item',
+                          attunement_required: false
+                        });
                       }
                     }}
                     className="btn btn-secondary btn-sm"
@@ -844,7 +806,7 @@ export default function Characters(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => {
-                    const newSpells = [...(formData.spells || []), { level: 0, name: '', prepared: false }];
+                    const newSpells = [...(formData.spells || []), { level: 0 as const, name: '', prepared: false }];
                     setFormData({ ...formData, spells: newSpells });
                   }}
                   className="btn btn-success btn-sm"
@@ -987,16 +949,10 @@ export default function Characters(): JSX.Element {
                     </div>
                     <button
                       type="button"
-                      onClick={async () => {
+                      onClick={() => {
                         if (item.id && editingId) {
-                          try {
-                            await axios.post(`/api/magic-items/${item.id}/assign`, { characterId: editingId });
-                            await fetchMagicItems();
-                            await fetchCharacters();
-                            setShowAssignModal(false);
-                          } catch {
-                            // Error handled silently
-                          }
+                          assignMagicItemMutation.mutate({ itemId: item.id, characterIds: [editingId] });
+                          setShowAssignModal(false);
                         }
                       }}
                       className="btn btn-success btn-sm"
@@ -1025,7 +981,7 @@ export default function Characters(): JSX.Element {
       )}
 
       <div className="space-y-6">
-        {characters.map(character => {
+        {(searchTerm ? searchResults?.characters || [] : characters).map(character => {
           const isCollapsed = character.id ? collapsed[character.id] ?? true : false;
           return (
             <div key={character.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
@@ -1065,7 +1021,7 @@ export default function Characters(): JSX.Element {
                       Edit
                     </button>
                     <button
-                      onClick={async () => await handleDelete(character.id)}
+                      onClick={() => { handleDelete(character.id); }}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -1114,7 +1070,7 @@ export default function Characters(): JSX.Element {
                       {character.classes && character.classes.length > 0 ? (
                         <div className="space-y-2">
                           {(character.classes).map((c, idx) => {
-                            const classExp = c.experience ?? c.exp ?? c.xp ?? null;
+                            const classExp = c.experience ?? null;
                             return (
                               <div key={idx} className="flex items-center justify-between bg-base-200 rounded-lg p-3">
                                 <div className="flex items-center gap-3">

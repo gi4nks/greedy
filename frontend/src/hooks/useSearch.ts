@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { SearchResult } from '@greedy/shared';
 
 export function useSearch(query: string, adventureId?: number) {
@@ -7,7 +6,8 @@ export function useSearch(query: string, adventureId?: number) {
     queryKey: ['search', query, adventureId],
     queryFn: async () => {
       if (!query.trim()) {
-        return { sessions: [], npcs: [], locations: [], characters: [], magicItems: [] } as SearchResult;
+        return { sessions: [], npcs: [], locations: [], characters: [], 
+          quests: [], magicItems: [] } as SearchResult;
       }
 
       const params = new URLSearchParams({ q: query });
@@ -15,8 +15,11 @@ export function useSearch(query: string, adventureId?: number) {
         params.set('adventure', adventureId.toString());
       }
 
-      const response = await axios.get(`/api/search?${params.toString()}`);
-      return response.data as SearchResult;
+      const response = await fetch(`/api/search?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to search');
+      }
+      return response.json() as Promise<SearchResult>;
     },
     enabled: query.length > 0,
     staleTime: 30 * 1000, // 30 seconds for search results

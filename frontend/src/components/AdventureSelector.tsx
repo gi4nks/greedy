@@ -31,15 +31,15 @@ export default function AdventureSelector(): JSX.Element {
                   <span className="text-base-content/70">Campaign Stats:</span>
                 </div>
                 <div className="flex gap-2">
-                  <div className="badge badge-primary gap-1">
+                  <div className="badge badge-info gap-1">
                     <span>📖</span>
                     <span>{counts.sessions} Sessions</span>
                   </div>
-                  <div className="badge badge-primary gap-1">
+                  <div className="badge badge-info gap-1">
                     <span>👥</span>
                     <span>{counts.characters} Characters</span>
                   </div>
-                  <div className="badge badge-primary gap-1">
+                  <div className="badge badge-info gap-1">
                     <span>🗺️</span>
                     <span>{counts.locations} Locations</span>
                   </div>

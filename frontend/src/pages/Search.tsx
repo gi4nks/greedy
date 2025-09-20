@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { useAdventures } from '../contexts/AdventureContext';
 import Page from '../components/Page';
+import { useSearch } from '../hooks/useSearch';
+import { useCreateSession } from '../hooks/useSessions';
+import { useCreateNPC } from '../hooks/useNPCs';
+import { useCreateLocation } from '../hooks/useLocations';
 
 export default function Search(): JSX.Element {
   const [params] = useSearchParams();
   const qParam = params.get('q') || '';
   const [q, setQ] = useState(qParam);
-  const [results, setResults] = useState<{ 
-    sessions: { id?: number; title: string; date: string; text: string }[]; 
-    npcs: { id?: number; name: string; role: string; description: string; tags: string[] }[]; 
-    locations: { id?: number; name: string; description: string; notes: string; tags: string[] }[] 
-  }>({ sessions: [], npcs: [], locations: [] });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formType, setFormType] = useState<'session' | 'npc' | 'location' | null>(null);
   const [sessionForm, setSessionForm] = useState({ title: '', date: '', text: '', adventure_id: null as number | null });
@@ -25,6 +23,12 @@ export default function Search(): JSX.Element {
   const [collapsedNpcs, setCollapsedNpcs] = useState<{ [id: number]: boolean }>({});
   const [collapsedLocations, setCollapsedLocations] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+
+  // React Query hooks
+  const { data: searchResults } = useSearch(q, adv.selectedId || undefined);
+  const createSessionMutation = useCreateSession();
+  const createNPCMutation = useCreateNPC();
+  const createLocationMutation = useCreateLocation();
 
   // Toggle functions
   const toggleCollapseSession = (id?: number) => {
@@ -41,22 +45,6 @@ export default function Search(): JSX.Element {
     if (!id) return;
     setCollapsedLocations(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
-
-  const doSearch = useCallback(async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get<{
-      sessions: { id?: number; title: string; date: string; text: string }[];
-      npcs: { id?: number; name: string; role: string; description: string; tags: string[] }[];
-      locations: { id?: number; name: string; description: string; notes: string; tags: string[] }[];
-    }>(`/api/search?${params.toString()}`);
-    setResults(res.data);
-  }, [adv.selectedId]);
-
-  useEffect(() => {
-    if (qParam) void doSearch(qParam);
-  }, [qParam, doSearch]);
 
   const renderForm = () => {
     if (formType === 'session') {
@@ -324,21 +312,23 @@ export default function Search(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formType === 'session') {
-      const payload = { ...sessionForm, adventure_id: sessionForm.adventure_id ?? adv.selectedId };
-      await axios.post('/api/sessions', payload);
-      setSessionForm({ title: '', date: '', text: '', adventure_id: null });
-    } else if (formType === 'npc') {
-      await axios.post('/api/npcs', npcForm);
-      setNpcForm({ name: '', role: '', description: '', tags: [] });
-    } else if (formType === 'location') {
-      await axios.post('/api/locations', locationForm);
-      setLocationForm({ name: '', description: '', notes: '', tags: [] });
+    try {
+      if (formType === 'session') {
+        const payload = { ...sessionForm, adventure_id: sessionForm.adventure_id ?? adv.selectedId };
+        await createSessionMutation.mutateAsync(payload);
+        setSessionForm({ title: '', date: '', text: '', adventure_id: null });
+      } else if (formType === 'npc') {
+        await createNPCMutation.mutateAsync(npcForm);
+        setNpcForm({ name: '', role: '', description: '', tags: [] });
+      } else if (formType === 'location') {
+        await createLocationMutation.mutateAsync(locationForm);
+        setLocationForm({ name: '', description: '', notes: '', tags: [] });
+      }
+      setShowCreateForm(false);
+      setFormType(null);
+    } catch (error) {
+      console.error('Error creating item:', error);
     }
-    setShowCreateForm(false);
-    setFormType(null);
-    // Optionally refresh search
-    if (q.trim()) void doSearch(q);
   };
 
   const handleAddTag = () => {
@@ -362,8 +352,7 @@ export default function Search(): JSX.Element {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!q.trim()) return;
-    void doSearch(q);
+    // Search is handled automatically by the useSearch hook when q changes
   };
 
   return (
@@ -386,7 +375,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Sessions</h3>
           <button onClick={() => { void (() => { setFormType('session'); setShowCreateForm(true); })(); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.sessions || []).map((s) => {
+        {(searchResults?.sessions || []).map((s) => {
           const isCollapsed = s.id ? collapsedSessions[s.id] ?? true : false;
           return (
             <div key={s.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">
@@ -417,7 +406,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">NPCs</h3>
           <button onClick={() => { setFormType('npc'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.npcs || []).map((n) => {
+        {(searchResults?.npcs || []).map((n) => {
           const isCollapsed = n.id ? collapsedNpcs[n.id] ?? true : false;
           return (
             <div key={n.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">
@@ -451,7 +440,7 @@ export default function Search(): JSX.Element {
           <h3 className="text-xl font-semibold">Locations</h3>
           <button onClick={() => { setFormType('location'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Add</button>
         </div>
-        {(results.locations || []).map((l) => {
+        {(searchResults?.locations || []).map((l) => {
           const isCollapsed = l.id ? collapsedLocations[l.id] ?? true : false;
           return (
             <div key={l.id} className="card bg-base-100 shadow-xl hover:shadow-2xl mb-4">

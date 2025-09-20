@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useAdventures } from '../contexts/AdventureContext';
 import Page from '../components/Page';
+import { useToast } from '../components/Toast';
+import {
+  useSessions,
+  useCreateSession,
+  useUpdateSession,
+  useDeleteSession
+} from '../hooks/useSessions';
 
 type Session = { id?: number; title: string; date: string; text: string };
 
 export default function Sessions(): JSX.Element {
-  const [sessions, setSessions] = useState<Session[]>([]);
   const [formData, setFormData] = useState<Session & { adventure_id?: number | null }>({ title: '', date: '', text: '', adventure_id: null });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +20,13 @@ export default function Sessions(): JSX.Element {
   // Collapsed state for each session
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
+  const toast = useToast();
+
+  // React Query hooks
+  const { data: sessions = [], isLoading } = useSessions(adv.selectedId || undefined, searchTerm || undefined);
+  const createSessionMutation = useCreateSession();
+  const updateSessionMutation = useUpdateSession();
+  const deleteSessionMutation = useDeleteSession();
 
   // Toggle collapse for a session
   const toggleCollapse = (id?: number) => {
@@ -22,31 +34,33 @@ export default function Sessions(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    // initial load: fetch sessions optionally filtered by selected adventure
-    void fetchSessions();
-  }, []);
-
-  const fetchSessions = () => {
-    void axios.get<Session[]>('/api/sessions').then((res) => setSessions(res.data));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
     if (editingId) {
-      void axios.put(`/api/sessions/${editingId}`, payload).then(() => {
-        void fetchSessions();
+      try {
+        await updateSessionMutation.mutateAsync({
+          id: editingId,
+          session: { ...payload, adventure_id: payload.adventure_id || undefined }
+        });
+        toast.push('Session updated successfully', { type: 'success' });
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setEditingId(null);
         setShowCreateForm(false);
-      });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to update session', { type: 'error' });
+      }
     } else {
-      void axios.post('/api/sessions', payload).then(() => {
-        void fetchSessions();
+      try {
+        await createSessionMutation.mutateAsync({ ...payload, adventure_id: payload.adventure_id || undefined });
+        toast.push('Session created successfully', { type: 'success' });
         setFormData({ title: '', date: '', text: '', adventure_id: null });
         setShowCreateForm(false);
-      });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to create session', { type: 'error' });
+      }
     }
   };
 
@@ -56,22 +70,31 @@ export default function Sessions(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this session?')) {
-      void axios.delete(`/api/sessions/${id}`).then(() => {
-        void fetchSessions();
-      });
+      try {
+        await deleteSessionMutation.mutateAsync(id);
+        toast.push('Session deleted successfully', { type: 'success' });
+      } catch {
+        // Error handled by React Query
+        toast.push('Failed to delete session', { type: 'error' });
+      }
     }
   };
 
-    const doSearch = () => {
-    void axios.get<Session[]>('/api/sessions', { params: { search: searchTerm } }).then((response) => {
-      setSessions(response.data);
-    });
-  };
   // Sort sessions by date descending (newest first)
   const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  if (isLoading) {
+    return (
+      <Page title="Sessions">
+        <div className="flex justify-center items-center h-64">
+          <div className="loading loading-spinner loading-lg"></div>
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
@@ -164,17 +187,15 @@ export default function Sessions(): JSX.Element {
       )}
 
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); doSearch(); }}>
-          <label htmlFor="search-input" className="sr-only">Search sessions</label>
-          <input
-            id="search-input"
-            type="text"
-            placeholder="Search sessions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input input-bordered w-full"
-          />
-        </form>
+        <label htmlFor="search-input" className="sr-only">Search sessions</label>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search sessions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="input input-bordered w-full"
+        />
       </div>
 
       <h2 className="text-lg font-bold mb-2">Session List</h2>

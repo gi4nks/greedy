@@ -1,26 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useToast } from '../components/Toast';
 import { logError } from '../utils/logger';
-import { Character } from '../../../shared/types';
-
-type MagicItem = {
-  id?: number;
-  name: string;
-  rarity?: string;
-  type?: string;
-  description?: string;
-  properties?: Record<string, unknown>;
-  attunement_required?: number;
-  owners?: Character[];
-};
+import { Character, MagicItem } from '../../../shared/types';
+import {
+  useMagicItems,
+  useCreateMagicItem,
+  useUpdateMagicItem,
+  useDeleteMagicItem,
+  useAssignMagicItem,
+  useUnassignMagicItem,
+} from '../hooks/useMagicItems';
+import { useCharacters } from '../hooks/useCharacters';
+import { useSearch } from '../hooks/useSearch';
 
 export default function MagicItems(): JSX.Element {
-  const [items, setItems] = useState<MagicItem[]>([]);
-  const [characters, setCharacters] = useState<Array<{ id: number; name: string }>>([]);
-  const [form, setForm] = useState<MagicItem>({ name: '', description: '' });
+  const [form, setForm] = useState<Partial<MagicItem>>({ name: '', description: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [assignModalItem, setAssignModalItem] = useState<number | null>(null);
@@ -28,59 +24,60 @@ export default function MagicItems(): JSX.Element {
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState<number | null>(null);
   const [charSearch, setCharSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   // Collapsed state for each magic item
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const toast = useToast();
 
-  // Toggle collapse for a magic item
-  const toggleCollapse = (id?: number) => {
-    if (!id) return;
-    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
-  };
+  const { data: items = [], isLoading: itemsLoading, error: itemsError } = useMagicItems();
+  const { data: characters = [], isLoading: charactersLoading, error: charactersError } = useCharacters();
+  const { data: searchResults } = useSearch(searchTerm);
 
-  useEffect(() => { void fetchItems(); }, []);
-
-  useEffect(() => { void fetchCharacters(); }, []);
-  const fetchItems = async () => {
-    const res = await axios.get<MagicItem[]>('/api/magic-items');
-    setItems(res.data);
-  };
-
-  const fetchCharacters = async () => {
-    try {
-      const res = await axios.get<Character[]>('/api/characters');
-      setCharacters((res.data || []).filter(c => c.id !== undefined).map((c: Character) => ({ id: c.id!, name: c.name })));
-    } catch {
-      setCharacters([]);
-    }
-  };
+  const createMutation = useCreateMagicItem();
+  const updateMutation = useUpdateMagicItem();
+  const deleteMutation = useDeleteMagicItem();
+  const assignMutation = useAssignMagicItem();
+  const unassignMutation = useUnassignMagicItem();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form };
     if (editingId) {
-      try {
-        await axios.put(`/api/magic-items/${editingId}`, payload);
-        toast.push('Magic item updated');
-      } catch (err) {
-        logError(err, 'update-magic-item');
-        toast.push('Failed to update magic item', { type: 'error' });
-        return;
-      }
+      updateMutation.mutate(
+        { id: editingId, item: payload as Partial<MagicItem> },
+        {
+          onSuccess: () => {
+            toast.push('Magic item updated');
+            setForm({ name: '', description: '' });
+            setEditingId(null);
+            setShowForm(false);
+          },
+          onError: (err) => {
+            logError(err, 'update-magic-item');
+            toast.push('Failed to update magic item', { type: 'error' });
+          },
+        }
+      );
     } else {
-      try {
-        await axios.post('/api/magic-items', payload);
-        toast.push('Magic item created');
-      } catch (err) {
-        logError(err, 'create-magic-item');
-        toast.push('Failed to create magic item', { type: 'error' });
-        return;
-      }
+      createMutation.mutate(payload as Omit<MagicItem, 'id'>, {
+        onSuccess: () => {
+          toast.push('Magic item created');
+          setForm({ name: '', description: '' });
+          setEditingId(null);
+          setShowForm(false);
+        },
+        onError: (err) => {
+          logError(err, 'create-magic-item');
+          toast.push('Failed to create magic item', { type: 'error' });
+        },
+      });
     }
-    setForm({ name: '', description: '' });
-    setEditingId(null);
-    setShowForm(false);
-    void fetchItems();
+  };
+
+  // Toggle collapse for a magic item
+  const toggleCollapse = (id?: number) => {
+    if (!id) return;
+    setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   const handleEdit = (it: MagicItem & { id: number }) => {
@@ -92,90 +89,141 @@ export default function MagicItems(): JSX.Element {
   const handleDelete = async (id?: number) => {
     if (!id) return;
     if (!window.confirm('Delete this magic item?')) return;
-    try {
-      await axios.delete(`/api/magic-items/${id}`);
-      toast.push('Magic item deleted');
-    } catch (err) {
-      logError(err, 'delete-magic-item');
-      toast.push('Failed to delete magic item', { type: 'error' });
-    } finally {
-      void fetchItems();
-    }
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.push('Magic item deleted');
+      },
+      onError: (err) => {
+        logError(err, 'delete-magic-item');
+        toast.push('Failed to delete magic item', { type: 'error' });
+      },
+    });
   };
 
   const unassignFromCharacter = async (itemId: number, charId: number) => {
     if (!confirm('Unassign this item from character?')) return;
-    // optimistic remove
     setUnassigning(charId);
-    setItems(prev => prev.map(it => it.id === itemId ? { ...it, owners: (it.owners || []).filter((o: Character) => o.id !== charId) } : it));
-    try {
-      await axios.post(`/api/magic-items/${itemId}/unassign`, { characterId: charId });
-      // Add Undo action to toast: reassign if clicked
-      toast.push('Unassigned', {
-        actions: [
-          {
-            label: 'Undo',
-            onClick: async () => {
-              try {
-                await axios.post(`/api/magic-items/${itemId}/assign`, { characterId: charId });
-                fetchItems();
-              } catch (e) {
-                logError(e, 'undo-unassign');
-                toast.push('Undo failed', { type: 'error' });
-              }
-            }
-          }
-        ]
-      });
-      await fetchItems();
-    } catch (err) {
-      logError(err, 'unassign-item');
-      toast.push('Failed to unassign', { type: 'error' });
-      await fetchItems();
-    } finally {
-      setUnassigning(null);
-    }
+    unassignMutation.mutate(
+      { itemId, characterId: charId },
+      {
+        onSuccess: () => {
+          toast.push('Unassigned', {
+            actions: [
+              {
+                label: 'Undo',
+                onClick: () => {
+                  assignMutation.mutate(
+                    { itemId, characterIds: [charId] },
+                    {
+                      onSuccess: () => toast.push('Reassigned'),
+                      onError: (err) => {
+                        logError(err, 'undo-unassign');
+                        toast.push('Undo failed', { type: 'error' });
+                      },
+                    }
+                  );
+                },
+              },
+            ],
+          });
+        },
+        onError: (err) => {
+          logError(err, 'unassign-item');
+          toast.push('Failed to unassign', { type: 'error' });
+        },
+        onSettled: () => {
+          setUnassigning(null);
+        },
+      }
+    );
   };
 
   const openAssignModal = (itemId: number) => {
     setAssignModalItem(itemId);
     const it = items.find(i => i.id === itemId);
-    setSelectedCharIds((it?.owners || []).map((o: Character) => o.id!).filter(Boolean));
+    setSelectedCharIds((it?.owners || []).map((o: Character) => o.id).filter((id): id is number => id !== undefined));
     setCharSearch('');
   };
 
   const filteredCharacters = useMemo(() => {
     const q = charSearch.trim().toLowerCase();
-    if (!q) return characters;
-    return characters.filter(c => c.name.toLowerCase().includes(q));
+    const validCharacters = characters.filter(c => c.id !== undefined);
+    if (!q) return validCharacters;
+    return validCharacters.filter(c => c.name.toLowerCase().includes(q));
   }, [characters, charSearch]);
 
   const saveAssignments = async () => {
     if (assignModalItem == null) return;
     setAssigning(true);
-    try {
-      // send assignment requests: compute to-add and to-remove
-      const it = items.find(i => i.id === assignModalItem);
-      const current = (it?.owners || []).map((o: Character) => o.id!).filter((id): id is number => id !== undefined);
-      const toAdd = selectedCharIds.filter(id => !current.includes(id));
-      const toRemove = current.filter(id => !selectedCharIds.includes(id));
-      await Promise.all([
-        ...toAdd.map(id => axios.post(`/api/magic-items/${assignModalItem}/assign`, { characterId: id })),
-        ...toRemove.map(id => axios.post(`/api/magic-items/${assignModalItem}/unassign`, { characterId: id }))
-      ]);
-      await fetchItems();
-      toast.push('Assignments updated');
-      setAssignModalItem(null);
-    } catch (err) {
-      toast.push('Failed to update assignments', { type: 'error' });
-      await fetchItems();
-    } finally {
+    // send assignment requests: compute to-add and to-remove
+    const it = items.find(i => i.id === assignModalItem);
+    const current = (it?.owners || []).map((o: Character) => o.id).filter((id): id is number => id !== undefined);
+    const toAdd = selectedCharIds.filter(id => !current.includes(id));
+    const toRemove = current.filter(id => !selectedCharIds.includes(id));
+
+    if (toAdd.length > 0) {
+      assignMutation.mutate(
+        { itemId: assignModalItem, characterIds: toAdd },
+        {
+          onSuccess: () => {
+            toast.push('Assignments updated');
+            setAssignModalItem(null);
+          },
+          onError: (err) => {
+            logError(err, 'assign-items');
+            toast.push('Failed to update assignments', { type: 'error' });
+          },
+          onSettled: () => {
+            setAssigning(false);
+          },
+        }
+      );
+    } else if (toRemove.length > 0) {
+      // For unassignment, we need to call unassign for each character
+      Promise.all(
+        toRemove.map(charId =>
+          new Promise<void>((resolve, reject) => {
+            unassignMutation.mutate(
+              { itemId: assignModalItem, characterId: charId },
+              {
+                onSuccess: resolve,
+                onError: reject,
+              }
+            );
+          })
+        )
+      )
+        .then(() => {
+          toast.push('Assignments updated');
+          setAssignModalItem(null);
+        })
+        .catch((err) => {
+          logError(err, 'unassign-items');
+          toast.push('Failed to update assignments', { type: 'error' });
+        })
+        .finally(() => {
+          setAssigning(false);
+        });
+    } else {
       setAssigning(false);
+      setAssignModalItem(null);
     }
   };
 
   return (
     <Page title="Magic Items" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowForm(true); }} onClick={() => setShowForm(true)} className="btn btn-primary btn-sm">Create</button>}>
+      <div className="mb-6">
+        <form onSubmit={(e) => { e.preventDefault(); }}>
+          <input
+            type="text"
+            placeholder="Search Magic Items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input input-bordered input-primary w-full h-9"
+          />
+        </form>
+      </div>
+
       {(showForm || editingId) && (
         <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
@@ -210,7 +258,7 @@ export default function MagicItems(): JSX.Element {
       )}
 
       <div className="space-y-6">
-        {items.map(item => {
+        {(searchTerm ? searchResults?.magicItems || [] : items).map(item => {
           const isCollapsed = item.id ? collapsed[item.id] ?? true : false;
           return (
             <div key={item.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
@@ -298,14 +346,14 @@ export default function MagicItems(): JSX.Element {
             <div className="py-4">
               <div className="mb-3 flex gap-2">
                 <input className="input input-bordered flex-1" placeholder="Search characters..." value={charSearch} onChange={(e) => setCharSearch(e.target.value)} />
-                <button onClick={() => { setSelectedCharIds(characters.map(c => c.id)); }} className="btn btn-secondary btn-sm">Select All</button>
+                <button onClick={() => { setSelectedCharIds(filteredCharacters.map(c => c.id!)); }} className="btn btn-secondary btn-sm">Select All</button>
                 <button onClick={() => { setSelectedCharIds([]); }} className="btn btn-ghost btn-sm">Clear</button>
               </div>
               <div className="max-h-64 overflow-auto border border-base-300 rounded-box p-2 mb-4">
                 {filteredCharacters.map(c => (
                   <label key={c.id} className="flex items-center gap-2 p-2 hover:bg-base-200 rounded-box cursor-pointer">
-                    <input type="checkbox" className="checkbox checkbox-primary" checked={selectedCharIds.includes(c.id)} onChange={(e) => {
-                      if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id]);
+                    <input type="checkbox" className="checkbox checkbox-primary" checked={selectedCharIds.includes(c.id!)} onChange={(e) => {
+                      if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id!]);
                       else setSelectedCharIds(prev => prev.filter(id => id !== c.id));
                     }} />
                     <span>{c.name}</span>

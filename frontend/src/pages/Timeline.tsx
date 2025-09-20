@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { useSessions, useCreateSession, useUpdateSession, useDeleteSession } from '../hooks/useSessions';
+import { Session } from '@greedy/shared';
 
 export default function Timeline(): JSX.Element {
-  const [sessions, setSessions] = useState<{ id?: number; title: string; date: string; text: string }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<{ title: string; date: string; text: string; adventure_id?: number | null }>({ title: '', date: '', text: '', adventure_id: null });
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -14,39 +14,45 @@ export default function Timeline(): JSX.Element {
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
 
+  // React Query hooks
+  const { data: sessions = [], isLoading } = useSessions(adv.selectedId || undefined, searchTerm);
+  const createSessionMutation = useCreateSession();
+  const updateSessionMutation = useUpdateSession();
+  const deleteSessionMutation = useDeleteSession();
+
   // Toggle collapse for a session
   const toggleCollapse = (id?: number) => {
     if (!id) return;
     setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    void fetchSessions();
-  }, []);
-
-  const doSearch = async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get<{ sessions: { id?: number; title: string; date: string; text: string }[] }>(`/api/search?${params.toString()}`);
-    setSessions((res.data.sessions || []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...formData, adventure_id: formData.adventure_id ?? adv.selectedId };
+    const adventureId = formData.adventure_id ?? adv.selectedId ?? undefined;
+    const payload = { ...formData, adventure_id: adventureId };
     if (editingId) {
-      void axios.put(`/api/sessions/${editingId}`, payload).then(() => {
-        void fetchSessions();
-        setFormData({ title: '', date: '', text: '', adventure_id: null });
-        setEditingId(null);
-        setShowCreateForm(false);
-      });
+      updateSessionMutation.mutate(
+        { id: editingId, session: payload },
+        {
+          onSuccess: () => {
+            setFormData({ title: '', date: '', text: '', adventure_id: null });
+            setEditingId(null);
+            setShowCreateForm(false);
+          },
+          onError: (err) => {
+            console.error('Error updating session:', err);
+          },
+        }
+      );
     } else {
-      void axios.post('/api/sessions', payload).then(() => {
-        void fetchSessions();
-        setFormData({ title: '', date: '', text: '', adventure_id: null });
-        setShowCreateForm(false);
+      createSessionMutation.mutate(payload as Omit<Session, 'id'>, {
+        onSuccess: () => {
+          setFormData({ title: '', date: '', text: '', adventure_id: null });
+          setShowCreateForm(false);
+        },
+        onError: (err) => {
+          console.error('Error creating session:', err);
+        },
       });
     }
   };
@@ -57,36 +63,30 @@ export default function Timeline(): JSX.Element {
     setShowCreateForm(true);
   };
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this session?')) {
-      void axios.delete(`/api/sessions/${id}`).then(() => {
-        void fetchSessions();
+      deleteSessionMutation.mutate(id, {
+        onSuccess: () => {
+          // Session deleted successfully
+        },
+        onError: (err) => {
+          console.error('Error deleting session:', err);
+        },
       });
     }
-  };
-
-  const fetchSessions = () => {
-    void axios.get<{ id?: number; title: string; date: string; text: string }[]>('/api/sessions').then((res) => {
-      const sorted = res.data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setSessions(sorted);
-    });
   };
 
   return (
     <Page title="Timeline" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
-          <label htmlFor="timeline-search-input" className="sr-only">Search timeline</label>
-          <input
-            id="timeline-search-input"
-            type="text"
-            placeholder="Search timeline..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input input-bordered w-full"
-          />
-        </form>
+        <input
+          type="text"
+          placeholder="Search timeline..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="input input-bordered w-full"
+        />
       </div>
 
       {(showCreateForm || editingId) && (

@@ -165,5 +165,34 @@ export interface SearchResult {
   npcs: NPC[];
   locations: Location[];
   characters: Character[];
+  quests: Quest[];
   magicItems: MagicItem[];
+}
+
+export interface QuestObjective {
+  id?: number;
+  quest_id: number;
+  description: string;
+  completed: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Quest {
+  id?: number;
+  adventure_id?: number | null;
+  title: string;
+  description?: string;
+  status: 'active' | 'completed' | 'cancelled' | 'on-hold';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  type: 'main' | 'side' | 'personal' | 'guild' | 'other';
+  created_at?: string;
+  updated_at?: string;
+  due_date?: string | null;
+  assigned_to?: string | null;
+  tags?: string[];
+}
+
+export interface QuestWithObjectives extends Quest {
+  objectives: QuestObjective[];
 }

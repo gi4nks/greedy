@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
+import { useToast } from '../components/Toast';
 import { Location } from '@greedy/shared';
+import {
+  useLocations,
+  useCreateLocation,
+  useUpdateLocation,
+  useDeleteLocation
+} from '../hooks/useLocations';
+import { useSearch } from '../hooks/useSearch';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -15,7 +22,6 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
 }
 
 export default function Locations(): JSX.Element {
-  const [locations, setLocations] = useState<Location[]>([]);
   const [formData, setFormData] = useState<Location>({ name: '', description: '', notes: '', tags: [] });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +31,17 @@ export default function Locations(): JSX.Element {
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const adv = useAdventures();
+  const toast = useToast();
+
+  // React Query hooks
+  const { data: locations = [], isLoading } = useLocations(adv.selectedId || undefined);
+  const { data: searchResults } = useSearch(searchTerm, adv.selectedId || undefined);
+  const createLocationMutation = useCreateLocation();
+  const updateLocationMutation = useUpdateLocation();
+  const deleteLocationMutation = useDeleteLocation();
+
+  // Use search results if there's a search term, otherwise use all locations
+  const displayLocations = searchTerm ? (searchResults?.locations || []) : locations;
 
   const openCreateForm = (e: React.PointerEvent | React.MouseEvent) => {
     try {
@@ -42,17 +59,39 @@ export default function Locations(): JSX.Element {
     setCollapsed(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
-  useEffect(() => {
-    void fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const res = await axios.get('/api/locations');
-      const data = res.data as Location[];
-      setLocations(data);
-    } catch {
-      // Handle error - could add toast notification
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = { ...formData };
+    // Remove id and adventure_id from the payload
+    const { id, adventure_id, ...payload } = data;
+    if (editingId) {
+      updateLocationMutation.mutate(
+        { id: editingId, location: payload },
+        {
+          onSuccess: () => {
+            toast.push('Location updated');
+            setFormData({ name: '', description: '', notes: '', tags: [] });
+            setEditingId(null);
+            setShowCreateForm(false);
+          },
+          onError: (err) => {
+            console.error('Error updating location:', err);
+            toast.push('Failed to update location', { type: 'error' });
+          },
+        }
+      );
+    } else {
+      createLocationMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.push('Location created');
+          setFormData({ name: '', description: '', notes: '', tags: [] });
+          setShowCreateForm(false);
+        },
+        onError: (err) => {
+          console.error('Error creating location:', err);
+          toast.push('Failed to create location', { type: 'error' });
+        },
+      });
     }
   };
 
@@ -69,27 +108,6 @@ export default function Locations(): JSX.Element {
     setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const data = { ...formData };
-    try {
-      if (editingId) {
-        await axios.put(`/api/locations/${editingId}`, data);
-        await fetchLocations();
-        setFormData({ name: '', description: '', notes: '', tags: [] });
-        setEditingId(null);
-        setShowCreateForm(false);
-      } else {
-        await axios.post('/api/locations', data);
-        await fetchLocations();
-        setFormData({ name: '', description: '', notes: '', tags: [] });
-        setShowCreateForm(false);
-      }
-    } catch {
-      // Handle error - could add toast notification
-    }
-  };
-
   const handleEdit = (location: Location & { id: number }) => {
     setFormData({ name: location.name, description: location.description, notes: location.notes, tags: location.tags || [] });
     setEditingId(location.id);
@@ -99,36 +117,28 @@ export default function Locations(): JSX.Element {
   const handleDelete = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Are you sure you want to delete this location?')) {
-      try {
-        await axios.delete(`/api/locations/${id}`);
-        await fetchLocations();
-      } catch {
-        // Handle error - could add toast notification
-      }
+      deleteLocationMutation.mutate(id, {
+        onSuccess: () => {
+          toast.push('Location deleted');
+        },
+        onError: (err) => {
+          console.error('Error deleting location:', err);
+          toast.push('Failed to delete location', { type: 'error' });
+        },
+      });
     }
-  };
-
-  const doSearch = async (term: string) => {
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (adv.selectedId) params.set('adventure', String(adv.selectedId));
-    const res = await axios.get(`/api/search?${params.toString()}`);
-    const data = res.data as { locations: Location[] };
-    setLocations(data.locations || []);
   };
 
   return (
   <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={() => void openCreateForm} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
-        <form onSubmit={(e) => { e.preventDefault(); void doSearch(searchTerm); }}>
-          <input
-            type="text"
-            placeholder="Search locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input input-bordered w-full"
-          />
-        </form>
+        <input
+          type="text"
+          placeholder="Search locations..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="input input-bordered w-full"
+        />
       </div>
 
       {(showCreateForm || editingId) && (

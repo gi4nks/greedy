@@ -63,17 +63,32 @@ router.post('/import', (req: Request, res: Response) => {
 // Search
 router.get('/search', (req: Request, res: Response) => {
   const q = (String(req.query.q || '')).toLowerCase().trim();
-  if (!q) return res.json({ sessions: [], npcs: [], locations: [] });
+  if (!q) return res.json({ sessions: [], npcs: [], locations: [], characters: [], quests: [], magicItems: [] });
 
   const sessions = db.prepare('SELECT * FROM sessions').all().filter((s: any) => (s.title || '').toLowerCase().includes(q) || (s.text || '').toLowerCase().includes(q) || (s.date || '').toLowerCase().includes(q));
   const npcs = db.prepare('SELECT * FROM characters WHERE role IS NOT NULL AND length(trim(role)) > 0').all().filter((c: any) => (c.name || '').toLowerCase().includes(q) || (c.role || '').toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q) || (parseTags(c.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
   const locations = db.prepare('SELECT * FROM locations').all().filter((l: any) => (l.name || '').toLowerCase().includes(q) || (l.description || '').toLowerCase().includes(q) || (l.notes || '').toLowerCase().includes(q) || (parseTags(l.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
+  const characters = db.prepare('SELECT * FROM characters').all().filter((c: any) => (c.name || '').toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q) || (parseTags(c.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
+  const quests = db.prepare('SELECT * FROM quests').all().filter((qst: any) => (qst.title || '').toLowerCase().includes(q) || (qst.description || '').toLowerCase().includes(q) || (parseTags(qst.tags) || []).some((t: string) => t.toLowerCase().includes(q)));
+  const magicItems = db.prepare('SELECT * FROM magic_items').all().filter((mi: any) => (mi.name || '').toLowerCase().includes(q) || (mi.description || '').toLowerCase().includes(q) || (mi.rarity || '').toLowerCase().includes(q) || (mi.type || '').toLowerCase().includes(q));
 
-  // parse tags before returning
+  // Parse tags for each entity
   npcs.forEach((c: any) => c.tags = parseTags(c.tags));
   locations.forEach((l: any) => l.tags = parseTags(l.tags));
+  characters.forEach((c: any) => c.tags = parseTags(c.tags));
+  quests.forEach((qst: any) => qst.tags = parseTags(qst.tags));
 
-  res.json({ sessions, npcs, locations });
+  // Add owners to magic items
+  magicItems.forEach((mi: any) => {
+    const owners = db.prepare(`
+      SELECT ch.* FROM characters ch
+      JOIN character_magic_items cmi ON cmi.character_id = ch.id
+      WHERE cmi.magic_item_id = ?
+    `).all(mi.id);
+    mi.owners = owners;
+  });
+
+  res.json({ sessions, npcs, locations, characters, quests, magicItems });
 });
 
 // Wiki proxy endpoints to avoid CORS issues
