@@ -5,9 +5,10 @@ type ExportPayload = {
   sessions: { id?: number; adventure_id?: number }[];
   characters: { id?: number; adventure_id?: number }[];
   locations: { id?: number; adventure_id?: number }[];
+  quests: { id?: number; adventure_id?: number }[];
 };
 
-type AdventureCounts = Record<number, { sessions: number; characters: number; locations: number } | undefined>;
+type AdventureCounts = Record<number, { sessions: number; characters: number; locations: number; quests: number } | undefined>;
 
 export function useAdventureCounts(): { data: AdventureCounts | undefined; isLoading: boolean } {
   return useQuery({
@@ -19,7 +20,7 @@ export function useAdventureCounts(): { data: AdventureCounts | undefined; isLoa
 
       const byId: AdventureCounts = {};
       (payload.adventures || []).forEach((a) => {
-        if (a && a.id) byId[a.id] = { sessions: 0, characters: 0, locations: 0 };
+        if (a && a.id) byId[a.id] = { sessions: 0, characters: 0, locations: 0, quests: 0 };
       });
       (payload.sessions || []).forEach((s) => {
         if (s && s.adventure_id && byId[s.adventure_id]) byId[s.adventure_id]!.sessions += 1;
@@ -29,6 +30,9 @@ export function useAdventureCounts(): { data: AdventureCounts | undefined; isLoa
       });
       (payload.locations || []).forEach((l) => {
         if (l && l.adventure_id && byId[l.adventure_id]) byId[l.adventure_id]!.locations += 1;
+      });
+      (payload.quests || []).forEach((q) => {
+        if (q && q.adventure_id && byId[q.adventure_id]) byId[q.adventure_id]!.quests += 1;
       });
 
       return byId;

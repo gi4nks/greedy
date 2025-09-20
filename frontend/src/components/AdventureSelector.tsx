@@ -24,7 +24,7 @@ export default function AdventureSelector(): JSX.Element {
 
           {adventureCtx.selectedId && (() => {
             const ad = adventureCtx.adventures.find(x => x.id === adventureCtx.selectedId);
-            const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0 }) : null;
+            const counts = ad && ad.id ? (adventureCtx.counts[ad.id] || { sessions: 0, characters: 0, locations: 0, quests: 0 }) : null;
             return counts ? (
               <div className="flex gap-3 text-sm">
                 <div className="flex items-center gap-2">
@@ -42,6 +42,10 @@ export default function AdventureSelector(): JSX.Element {
                   <div className="badge badge-info gap-1">
                     <span>🗺️</span>
                     <span>{counts.locations} Locations</span>
+                  </div>
+                  <div className="badge badge-info gap-1">
+                    <span>🎯</span>
+                    <span>{counts.quests} Quests</span>
                   </div>
                 </div>
               </div>

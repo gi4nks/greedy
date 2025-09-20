@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Page from '../components/Page';
 import { useToast } from '../components/Toast';
 import { useAdventures } from '../contexts/AdventureContext';
@@ -16,6 +16,15 @@ import { useCharacters } from '../hooks/useCharacters';
 import { useSearch } from '../hooks/useSearch';
 import { Quest, QuestObjective } from '@greedy/shared';
 
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <div className="badge badge-primary gap-2">
+      {label}
+      <button onClick={onRemove} className="btn btn-xs btn-ghost btn-circle">×</button>
+    </div>
+  );
+}
+
 export const Quests: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -23,6 +32,7 @@ export const Quests: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const toast = useToast();
   const adv = useAdventures();
+  const tagInputRef = useRef<HTMLInputElement | null>(null);
 
   // React Query hooks
   const { data: quests = [], isLoading } = useQuests(adv.selectedId || undefined);
@@ -167,6 +177,19 @@ export const Quests: React.FC = () => {
 
   const toggleObjectiveCompletion = async (questId: number, objectiveId: number, currentCompleted: boolean, description: string) => {
     await updateObjective(questId, objectiveId, description, !currentCompleted);
+  };
+
+  const handleAddTag = (): void => {
+    const v = (tagInputRef.current?.value || '').trim();
+    if (!v) return;
+    if (!formData.tags?.includes(v)) {
+      setFormData({ ...formData, tags: [...(formData.tags || []), v] });
+    }
+    if (tagInputRef.current) tagInputRef.current.value = '';
+  };
+
+  const handleRemoveTag = (tag: string): void => {
+    setFormData({ ...formData, tags: (formData.tags || []).filter(t => t !== tag) });
   };
 
   if (isLoading) {
@@ -355,17 +378,15 @@ export const Quests: React.FC = () => {
                 {/* Tags */}
                 <div>
                   <label htmlFor="quest-tags" className="block text-sm font-medium text-base-content mb-2">Tags</label>
-                  <input
-                    id="quest-tags"
-                    type="text"
-                    value={formData.tags?.join(', ') || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
-                    })}
-                    className="input input-bordered w-full"
-                    placeholder="Enter tags separated by commas"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input ref={tagInputRef} id="quest-tags" type="text" placeholder="Add tag" className="input input-bordered flex-1" />
+                    <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(formData.tags || []).map(tag => (
+                      <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
+                    ))}
+                  </div>
                 </div>
 
               {/* Objectives Management */}
@@ -480,6 +501,19 @@ export const Quests: React.FC = () => {
 
                       {quest.due_date && (
                         <p className="text-sm text-base-content/60">Due: {new Date(quest.due_date).toLocaleDateString()}</p>
+                      )}
+
+                      {/* Tags */}
+                      {quest.tags && quest.tags.length > 0 && (
+                        <div className="mt-3">
+                          <div className="flex flex-wrap gap-2">
+                            {quest.tags.map(tag => (
+                              <span key={tag} className="badge badge-primary">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       )}
 
                       {/* Note: Objectives are managed in edit mode */}

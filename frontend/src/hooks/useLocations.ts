@@ -51,6 +51,7 @@ export function useCreateLocation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -73,6 +74,7 @@ export function useUpdateLocation() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
       void queryClient.invalidateQueries({ queryKey: ['location', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -90,6 +92,7 @@ export function useDeleteLocation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }

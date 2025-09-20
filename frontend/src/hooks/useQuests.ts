@@ -43,6 +43,7 @@ export function useCreateQuest() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['quests'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -65,6 +66,7 @@ export function useUpdateQuest() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['quests'] });
       void queryClient.invalidateQueries({ queryKey: ['quest', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -82,6 +84,7 @@ export function useDeleteQuest() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['quests'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }

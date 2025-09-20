@@ -45,6 +45,7 @@ export function useCreateSession() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -67,6 +68,7 @@ export function useUpdateSession() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['sessions'] });
       void queryClient.invalidateQueries({ queryKey: ['session', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -84,6 +86,7 @@ export function useDeleteSession() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }

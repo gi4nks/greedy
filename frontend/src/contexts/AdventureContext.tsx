@@ -8,7 +8,7 @@ type AdventureContextValue = {
   adventures: Adventure[];
   selectedId: number | null;
   selectAdventure: (id: number | null) => void;
-  counts: Record<number, { sessions: number; characters: number; locations: number } | undefined>;
+  counts: Record<number, { sessions: number; characters: number; locations: number; quests: number } | undefined>;
 };
 
 const AdventureContext = createContext<AdventureContextValue | undefined>(undefined);

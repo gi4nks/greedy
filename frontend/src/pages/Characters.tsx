@@ -717,13 +717,13 @@ export default function Characters(): JSX.Element {
                   <select
                     id="spellcasting-ability"
                     value={formData.spellcastingAbility || ''}
-                    onChange={(e) => setFormData({ ...formData, spellcastingAbility: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, spellcastingAbility: e.target.value || undefined })}
                     className="select select-bordered w-full"
                   >
                     <option value="">None</option>
-                    <option value="Intelligence">Intelligence</option>
-                    <option value="Wisdom">Wisdom</option>
-                    <option value="Charisma">Charisma</option>
+                    <option value="intelligence">Intelligence</option>
+                    <option value="wisdom">Wisdom</option>
+                    <option value="charisma">Charisma</option>
                   </select>
                 </div>
                 <div>

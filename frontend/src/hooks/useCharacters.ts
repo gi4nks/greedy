@@ -43,6 +43,7 @@ export function useCreateCharacter() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -51,7 +52,7 @@ export function useUpdateCharacter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, character }: { id: number; character: Partial<Character> }) => {
+    mutationFn: async ({ id, character }: { id: number; character: Omit<Character, 'id'> }) => {
       const response = await fetch(`/api/characters/${id}`, {
         method: 'PUT',
         headers: {
@@ -59,12 +60,23 @@ export function useUpdateCharacter() {
         },
         body: JSON.stringify(character),
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        // Log the error response for debugging
+        const errorText = await response.text();
+        console.error('Character update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          requestData: character
+        });
+        throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${errorText}`);
+      }
       return response.json() as Promise<Character>;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
       void queryClient.invalidateQueries({ queryKey: ['character', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -82,6 +94,7 @@ export function useDeleteCharacter() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
+      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
