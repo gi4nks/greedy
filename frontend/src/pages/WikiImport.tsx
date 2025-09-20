@@ -358,12 +358,11 @@ export default function WikiImport(): JSX.Element {
 
   const importToParkingLot = async (article: WikiArticle, content: string, contentType: string) => {
     const parkingLotData = {
-      title: article.title,
-      content: content || 'Imported from AD&D 2nd Edition Wiki',
-      content_type: contentType,
-      wiki_url: WikiDataService.getFullUrl(article.url),
-      tags: ['wiki-import', contentType],
-      imported_at: new Date().toISOString()
+      name: article.title,
+      description: content || 'Imported from AD&D 2nd Edition Wiki',
+      contentType: contentType,
+      wikiUrl: WikiDataService.getFullUrl(article.url),
+      tags: ['wiki-import', contentType]
     };
 
     const response = await fetch('/api/parking-lot', {
@@ -375,7 +374,18 @@ export default function WikiImport(): JSX.Element {
     if (response.ok) {
       setFeedbackMessage({ type: 'success', message: `"${article.title}" (${contentType}) added to Parking Lot for future organization!` });
     } else {
-      throw new Error('Failed to add to parking lot');
+      // Get detailed error information
+      let errorMessage = 'Failed to add to parking lot';
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = `Failed to add to parking lot: ${errorData.error}`;
+        }
+      } catch (e) {
+        // If we can't parse the error response, use the status
+        errorMessage = `Failed to add to parking lot (HTTP ${response.status})`;
+      }
+      throw new Error(errorMessage);
     }
   };
 
@@ -515,7 +525,7 @@ export default function WikiImport(): JSX.Element {
                               onClick={() => handleImport(article)}
                               className="btn btn-primary btn-sm"
                             >
-                              Auto Import
+                              Import
                             </button>
                           </div>
                         </div>
