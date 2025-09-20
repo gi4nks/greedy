@@ -19,7 +19,7 @@ function App(): JSX.Element {
   return (
     <Router>
       <AdventureProvider>
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-base-100">
           <Header />
           <main className="container mx-auto p-4">
             <Routes>

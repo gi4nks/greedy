@@ -77,7 +77,7 @@ export default function ParkingLot(): JSX.Element {
     return (
       <Page title="Parking Lot">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="loading loading-spinner loading-lg"></span>
         </div>
       </Page>
     );
@@ -86,92 +86,96 @@ export default function ParkingLot(): JSX.Element {
   return (
     <Page title="Parking Lot">
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">🅿️ Parking Lot</h2>
-          <p className="text-gray-600 mb-4">
-            Temporary storage for imported wiki content that doesn't have a dedicated section yet.
-            Items here can be moved to appropriate sections when they're created.
-          </p>
+        <div className="card bg-base-100 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-xl">🅿️ Parking Lot</h2>
+            <p className="text-base-content/70 mb-4">
+              Temporary storage for imported wiki content that doesn't have a dedicated section yet.
+              Items here can be moved to appropriate sections when they're created.
+            </p>
 
-          {items.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-4">📦</div>
-              <p>No items in the parking lot</p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {items.map((item) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          item.contentType === 'race' ? 'bg-blue-100 text-blue-800' :
-                          item.contentType === 'class' ? 'bg-green-100 text-green-800' :
-                          item.contentType === 'location' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.contentType}
-                        </span>
+            {items.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">📦</div>
+                <p className="text-base-content/70">No items in the parking lot</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <div key={item.id} className="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="card-body">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="card-title text-lg">{item.name}</h3>
+                            <div className={`badge ${
+                              item.contentType === 'race' ? 'badge-primary' :
+                              item.contentType === 'class' ? 'badge-success' :
+                              item.contentType === 'location' ? 'badge-warning' :
+                              'badge-neutral'
+                            }`}>
+                              {item.contentType}
+                            </div>
+                          </div>
+                          <p className="text-sm text-base-content/70 mb-2">
+                            {item.description.length > 200
+                              ? `${item.description.substring(0, 200)}...`
+                              : item.description
+                            }
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-base-content/50">
+                            <span>📅 {new Date(item.createdAt).toLocaleDateString()}</span>
+                            <a
+                              href={item.wikiUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="link link-primary"
+                            >
+                              🔗 Wiki Link
+                            </a>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                moveToSection(item, e.target.value);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="select select-bordered select-sm"
+                            defaultValue=""
+                          >
+                            <option value="">Move to...</option>
+                            <option value="characters">Characters</option>
+                            <option value="locations">Locations</option>
+                            <option value="magic-items">Magic Items</option>
+                            <option value="quests">Quests</option>
+                          </select>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="btn btn-error btn-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {item.description.length > 200
-                          ? `${item.description.substring(0, 200)}...`
-                          : item.description
-                        }
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>📅 {new Date(item.createdAt).toLocaleDateString()}</span>
-                        <a
-                          href={item.wikiUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          🔗 Wiki Link
-                        </a>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            moveToSection(item, e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                        className="text-sm border border-gray-300 rounded px-2 py-1"
-                        defaultValue=""
-                      >
-                        <option value="">Move to...</option>
-                        <option value="characters">Characters</option>
-                        <option value="locations">Locations</option>
-                        <option value="magic-items">Magic Items</option>
-                        <option value="quests">Quests</option>
-                      </select>
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        className="px-3 py-1 text-red-600 hover:text-red-800 text-sm border border-red-200 rounded hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
+
+                      {item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {item.tags.map((tag, index) => (
+                            <div key={index} className="badge badge-outline">
+                              {tag}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {item.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {item.tags.map((tag, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Page>

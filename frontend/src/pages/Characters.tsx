@@ -8,10 +8,10 @@ import { Character, CharacterForm, CharacterItem, MagicItem } from '@greedy/shar
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded mr-2 mb-2">
+    <div className="badge badge-primary gap-2">
       {label}
-      <button onClick={onRemove} className="ml-2 text-red-500">×</button>
-    </span>
+      <button onClick={onRemove} className="btn btn-circle btn-xs btn-ghost">×</button>
+    </div>
   );
 }
 
@@ -266,24 +266,23 @@ export default function Characters(): JSX.Element {
   };
 
   return (
-    <Page title="Characters" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
-      <div className="mb-4">
+    <Page title="Characters" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Add</button>}>
+      <div className="mb-6">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
             type="text"
             placeholder="Search Characters..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered input-primary w-full h-9"
           />
         </form>
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
-          <h3 className="text-xl font-bold mb-6 text-center">{editingId ? 'Edit Character' : 'Create New Character'}</h3>
-
-          {/* Tab Navigation */}
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Character' : 'Create New Character'}</h3>
           <div className="flex flex-wrap border-b mb-6">
             {[
               { key: 'basic', label: 'Basic Info' },
@@ -300,8 +299,8 @@ export default function Characters(): JSX.Element {
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`px-4 py-2 font-medium text-sm ${
                   activeTab === tab.key
-                    ? 'border-b-2 border-orange-600 text-orange-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-base-content/60 hover:text-base-content'
                 }`}
               >
                 {tab.label}
@@ -311,44 +310,44 @@ export default function Characters(): JSX.Element {
 
           {/* Tab Content */}
           {activeTab === 'basic' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Character Name</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Character Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Race</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Race</label>
                   <input
                     type="text"
                     value={formData.race || ''}
                     onChange={(e) => setFormData({ ...formData, race: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                     placeholder="e.g., Human, Elf, Dwarf"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Background</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Background</label>
                   <input
                     type="text"
                     value={formData.background || ''}
                     onChange={(e) => setFormData({ ...formData, background: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                     placeholder="e.g., Noble, Criminal, Entertainer"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Alignment</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Alignment</label>
                   <select
                     value={formData.alignment || ''}
                     onChange={(e) => setFormData({ ...formData, alignment: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="select select-bordered w-full"
                   >
                     <option value="">Select Alignment</option>
                     <option value="Lawful Good">Lawful Good</option>
@@ -363,21 +362,21 @@ export default function Characters(): JSX.Element {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Experience Points</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Experience Points</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.experience || 0}
                     onChange={(e) => setFormData({ ...formData, experience: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Adventure</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                   <select
                     value={formData.adventure_id || ''}
                     onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? parseInt(e.target.value) : undefined })}
-                    className="w-full p-2 border rounded"
+                    className="select select-bordered w-full"
                   >
                     <option value="">No Adventure Assigned</option>
                     {adv.adventures.map(adventure => (
@@ -392,14 +391,14 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'classes' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <h4 className="text-lg font-semibold mb-3">Classes</h4>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-base-content/70 mb-3">
                   Add and manage your character's classes. Each class can have its own level and experience points.
                 </p>
                 {(formData.classes || []).map((classInfo, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2 p-3 bg-gray-50 rounded border">
+                  <div key={index} className="flex items-center gap-2 mb-2 p-3 bg-base-200 rounded border border-base-300">
                     <input
                       type="text"
                       placeholder="Class name (e.g., Fighter, Wizard)"
@@ -409,7 +408,7 @@ export default function Characters(): JSX.Element {
                         newClasses[index] = { ...newClasses[index], className: e.target.value };
                         setFormData({ ...formData, classes: newClasses });
                       }}
-                      className="flex-1 p-2 border rounded"
+                      className="input input-bordered flex-1"
                       title="Enter the name of the class, e.g., Fighter, Wizard, Rogue"
                     />
                     <input
@@ -423,7 +422,7 @@ export default function Characters(): JSX.Element {
                         newClasses[index] = { ...newClasses[index], level: parseInt(e.target.value) || 1 };
                         setFormData({ ...formData, classes: newClasses });
                       }}
-                      className="w-20 p-2 border rounded"
+                      className="input input-bordered w-20"
                       title="Enter the level for this class (1-20)"
                     />
                     <input
@@ -436,7 +435,7 @@ export default function Characters(): JSX.Element {
                         newClasses[index] = { ...newClasses[index], experience: parseInt(e.target.value) || 0 };
                         setFormData({ ...formData, classes: newClasses });
                       }}
-                      className="w-28 p-2 border rounded"
+                      className="input input-bordered w-28"
                       title="Experience points earned specifically for this class"
                     />
                     <button
@@ -445,7 +444,7 @@ export default function Characters(): JSX.Element {
                         const newClasses = (formData.classes || []).filter((_, i) => i !== index);
                         setFormData({ ...formData, classes: newClasses });
                       }}
-                      className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+                      className="btn btn-error btn-sm"
                     >
                       Remove
                     </button>
@@ -457,158 +456,158 @@ export default function Characters(): JSX.Element {
                     const newClasses = [...(formData.classes || []), { className: '', level: 1, experience: 0 }];
                     setFormData({ ...formData, classes: newClasses });
                   }}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  className="btn btn-success btn-sm"
                 >
-                  Add Class
+                  Add
                 </button>
               </div>
             </div>
           )}
 
           {activeTab === 'abilities' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <h4 className="text-lg font-semibold mb-3">Ability Scores</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">STR</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">STR</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.strength || 10}
                     onChange={(e) => setFormData({ ...formData, strength: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.strength || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.strength || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">DEX</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">DEX</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.dexterity || 10}
                     onChange={(e) => setFormData({ ...formData, dexterity: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.dexterity || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.dexterity || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">CON</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">CON</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.constitution || 10}
                     onChange={(e) => setFormData({ ...formData, constitution: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.constitution || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.constitution || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">INT</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">INT</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.intelligence || 10}
                     onChange={(e) => setFormData({ ...formData, intelligence: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.intelligence || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.intelligence || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">WIS</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">WIS</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.wisdom || 10}
                     onChange={(e) => setFormData({ ...formData, wisdom: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.wisdom || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.wisdom || 10) - 10) / 2)}</div>
                 </div>
                 <div className="text-center">
-                  <label className="block text-sm font-medium mb-1">CHA</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">CHA</label>
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={formData.charisma || 10}
                     onChange={(e) => setFormData({ ...formData, charisma: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded text-center font-bold"
+                    className="input input-bordered w-full text-center font-bold"
                   />
-                  <div className="text-xs text-gray-600 mt-1">+{Math.floor(((formData.charisma || 10) - 10) / 2)}</div>
+                  <div className="text-xs text-base-content/70 mt-1">+{Math.floor(((formData.charisma || 10) - 10) / 2)}</div>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === 'combat' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <h4 className="text-lg font-semibold mb-3">Combat Statistics</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Hit Points</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Hit Points</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.hitPoints || 0}
                     onChange={(e) => setFormData({ ...formData, hitPoints: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Max Hit Points</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Max Hit Points</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.maxHitPoints || 0}
                     onChange={(e) => setFormData({ ...formData, maxHitPoints: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Armor Class</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Armor Class</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.armorClass || 10}
                     onChange={(e) => setFormData({ ...formData, armorClass: parseInt(e.target.value) || 10 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Speed</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Speed</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.speed || 30}
                     onChange={(e) => setFormData({ ...formData, speed: parseInt(e.target.value) || 30 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Initiative</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Initiative</label>
                   <input
                     type="number"
                     value={formData.initiative || 0}
                     onChange={(e) => setFormData({ ...formData, initiative: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Proficiency Bonus</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Proficiency Bonus</label>
                   <input
                     type="number"
                     min="0"
                     max="6"
                     value={formData.proficiencyBonus || 2}
                     onChange={(e) => setFormData({ ...formData, proficiencyBonus: parseInt(e.target.value) || 2 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
               </div>
@@ -616,38 +615,38 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'items' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <h4 className="text-lg font-semibold mb-3">Magical Items</h4>
 
               {/* Magical Items Section */}
               <div className="mb-6">
                 <h5 className="text-md font-medium mb-3 flex items-center gap-2">
-                  <span className="text-purple-600">✨</span>
+                  <span className="text-secondary">✨</span>
                   Magical Items
                 </h5>
                 <div className="mb-4">
-                  <h6 className="text-sm font-medium text-gray-700 mb-2">Assigned Magical Items</h6>
+                  <h6 className="text-sm font-medium text-base-content/70 mb-2">Assigned Magical Items</h6>
                   <div className="space-y-2">
                     {magicItems
                       .filter(item => item.owners?.some(owner => owner.id === editingId))
                       .map(item => (
-                        <div key={item.id} className="flex items-center justify-between bg-purple-50 p-3 rounded border border-purple-200">
+                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 p-3 rounded border border-secondary/20">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-purple-800">{item.name}</span>
+                              <span className="font-semibold text-base-content">{item.name}</span>
                               {item.rarity && (
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">
                                   {item.rarity}
                                 </span>
                               )}
                               {item.type && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                <span className="text-xs bg-info/20 text-info px-2 py-1 rounded">
                                   {item.type}
                                 </span>
                               )}
                             </div>
                             {item.description && (
-                              <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                              <p className="text-sm text-base-content/70 mt-1">{item.description}</p>
                             )}
                           </div>
                           <button
@@ -661,14 +660,14 @@ export default function Characters(): JSX.Element {
                                   });
                               }
                             }}
-                            className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                            className="btn btn-error btn-sm"
                           >
                             Remove
                           </button>
                         </div>
                       ))}
                     {magicItems.filter(item => item.owners?.some(owner => owner.id === editingId)).length === 0 && (
-                      <div className="text-gray-500 italic text-sm p-3 bg-gray-50 rounded">
+                      <div className="text-base-content/50 italic text-sm p-3 bg-base-200 rounded">
                         No magical items assigned
                       </div>
                     )}
@@ -679,9 +678,9 @@ export default function Characters(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => setShowAssignModal(true)}
-                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                    className="btn btn-primary btn-sm"
                   >
-                    Assign a Magical Item
+                    Assign
                   </button>
                   <button
                     type="button"
@@ -704,9 +703,9 @@ export default function Characters(): JSX.Element {
                         });
                       }
                     }}
-                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                    className="btn btn-secondary btn-sm"
                   >
-                    Create & Assign Magical Item
+                    Create
                   </button>
                 </div>
               </div>
@@ -714,15 +713,15 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'spells' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <h4 className="text-lg font-semibold mb-3">Spellcasting</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Spellcasting Ability</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Spellcasting Ability</label>
                   <select
                     value={formData.spellcastingAbility || ''}
                     onChange={(e) => setFormData({ ...formData, spellcastingAbility: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="select select-bordered w-full"
                   >
                     <option value="">None</option>
                     <option value="Intelligence">Intelligence</option>
@@ -731,29 +730,29 @@ export default function Characters(): JSX.Element {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Spell Save DC</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Spell Save DC</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.spellSaveDC || 0}
                     onChange={(e) => setFormData({ ...formData, spellSaveDC: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Spell Attack Bonus</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Spell Attack Bonus</label>
                   <input
                     type="number"
                     value={formData.spellAttackBonus || 0}
                     onChange={(e) => setFormData({ ...formData, spellAttackBonus: parseInt(e.target.value) || 0 })}
-                    className="w-full p-2 border rounded"
+                    className="input input-bordered w-full"
                   />
                 </div>
               </div>
               <div>
                 <h5 className="text-md font-medium mb-2">Known Spells</h5>
                 {(formData.spells || []).map((spell, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center gap-2 mb-2 p-2 bg-base-200 rounded">
                     <select
                       value={spell.level}
                       onChange={(e) => {
@@ -761,7 +760,7 @@ export default function Characters(): JSX.Element {
                         newSpells[index] = { ...newSpells[index], level: parseInt(e.target.value) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 };
                         setFormData({ ...formData, spells: newSpells });
                       }}
-                      className="p-2 border rounded"
+                      className="select select-bordered"
                     >
                       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(level => (
                         <option key={level} value={level}>
@@ -778,7 +777,7 @@ export default function Characters(): JSX.Element {
                         newSpells[index] = { ...newSpells[index], name: e.target.value };
                         setFormData({ ...formData, spells: newSpells });
                       }}
-                      className="flex-1 p-2 border rounded"
+                      className="input input-bordered flex-1"
                     />
                     <label className="flex items-center">
                       <input
@@ -799,7 +798,7 @@ export default function Characters(): JSX.Element {
                         const newSpells = (formData.spells || []).filter((_, i) => i !== index);
                         setFormData({ ...formData, spells: newSpells });
                       }}
-                      className="bg-red-500 text-white px-3 py-2 rounded"
+                      className="btn btn-error btn-sm"
                     >
                       Remove
                     </button>
@@ -811,78 +810,78 @@ export default function Characters(): JSX.Element {
                     const newSpells = [...(formData.spells || []), { level: 0, name: '', prepared: false }];
                     setFormData({ ...formData, spells: newSpells });
                   }}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
+                  className="btn btn-success btn-sm"
                 >
-                  Add Spell
+                  Add
                 </button>
               </div>
             </div>
           )}
 
           {activeTab === 'background' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <h4 className="text-lg font-semibold mb-3">Background & Personality</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Personality Traits</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Personality Traits</label>
                   <textarea
                     value={formData.personalityTraits || ''}
                     onChange={(e) => setFormData({ ...formData, personalityTraits: e.target.value })}
-                    className="w-full p-2 border rounded h-24"
+                    className="textarea textarea-bordered w-full h-24"
                     placeholder="Describe your character's personality traits..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ideals</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Ideals</label>
                   <textarea
                     value={formData.ideals || ''}
                     onChange={(e) => setFormData({ ...formData, ideals: e.target.value })}
-                    className="w-full p-2 border rounded h-24"
+                    className="textarea textarea-bordered w-full h-24"
                     placeholder="What does your character believe in..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Bonds</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Bonds</label>
                   <textarea
                     value={formData.bonds || ''}
                     onChange={(e) => setFormData({ ...formData, bonds: e.target.value })}
-                    className="w-full p-2 border rounded h-24"
+                    className="textarea textarea-bordered w-full h-24"
                     placeholder="What ties does your character have..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Flaws</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Flaws</label>
                   <textarea
                     value={formData.flaws || ''}
                     onChange={(e) => setFormData({ ...formData, flaws: e.target.value })}
-                    className="w-full p-2 border rounded h-24"
+                    className="textarea textarea-bordered w-full h-24"
                     placeholder="What are your character's weaknesses..."
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Backstory</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Backstory</label>
                 <textarea
                   value={formData.backstory || ''}
                   onChange={(e) => setFormData({ ...formData, backstory: e.target.value })}
-                  className="w-full p-2 border rounded h-32"
+                  className="textarea textarea-bordered w-full h-32"
                   placeholder="Tell your character's story..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Legacy Description</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Legacy Description</label>
                 <textarea
                   placeholder="Character description (Markdown supported)"
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2 border rounded h-32"
+                  className="textarea textarea-bordered w-full h-32"
                 />
               </div>
               <div>
                 <h5 className="text-md font-medium mb-2">Tags</h5>
                 <div className="flex items-center mb-2">
-                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2 flex-1" />
-                  <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-2 rounded">Add Tag</button>
+                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered mr-2 flex-1" />
+                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add</button>
                 </div>
                 <div className="mt-2">
                   {(formData.tags || []).map(tag => (
@@ -894,9 +893,9 @@ export default function Characters(): JSX.Element {
           )}
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
-            <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
-              {editingId ? 'Update Character' : 'Create Character'}
+          <div className="card-actions justify-end">
+            <button type="submit" className="btn btn-primary btn-sm">
+              {editingId ? 'Update' : 'Create'}
             </button>
             <button
               type="button"
@@ -906,40 +905,41 @@ export default function Characters(): JSX.Element {
                 setShowCreateForm(false);
                 setActiveTab('basic');
               }}
-              className="bg-gray-500 text-white px-6 py-2 rounded"
+              className="btn btn-ghost btn-sm"
             >
               Cancel
             </button>
           </div>
-        </form>
-      )}
+        </div>
+      </form>
+    )}
 
       {/* Assign Magical Item Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
-            <h3 className="text-lg font-bold mb-4">Assign Magical Item</h3>
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">Assign Magical Item</h3>
             <div className="space-y-2">
               {magicItems
                 .filter(item => !item.owners?.some(owner => owner.id === editingId))
                 .map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded hover:bg-gray-50">
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded hover:bg-base-200">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{item.name}</span>
                         {item.rarity && (
-                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                          <div className="badge badge-primary badge-sm">
                             {item.rarity}
-                          </span>
+                          </div>
                         )}
                         {item.type && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          <div className="badge badge-secondary badge-sm">
                             {item.type}
-                          </span>
+                          </div>
                         )}
                       </div>
                       {item.description && (
-                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-sm text-base-content/70 mt-1">{item.description}</p>
                       )}
                     </div>
                     <button
@@ -954,23 +954,23 @@ export default function Characters(): JSX.Element {
                             });
                         }
                       }}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 ml-2"
+                      className="btn btn-success btn-sm"
                     >
                       Assign
                     </button>
                   </div>
                 ))}
               {magicItems.filter(item => !item.owners?.some(owner => owner.id === editingId)).length === 0 && (
-                <div className="text-gray-500 italic text-sm p-4 text-center">
+                <div className="text-base-content/50 italic text-sm p-4 text-center">
                   No available magical items to assign
                 </div>
               )}
             </div>
-            <div className="flex justify-end mt-4">
+            <div className="modal-action">
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                className="btn btn-ghost btn-sm"
               >
                 Close
               </button>
@@ -983,105 +983,102 @@ export default function Characters(): JSX.Element {
         {characters.map(character => {
           const isCollapsed = character.id ? collapsed[character.id] ?? true : false;
           return (
-            <div key={character.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 border-b border-gray-100">
+            <div key={character.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleCollapse(character.id)}
-                      className="w-8 h-8 flex items-center justify-center border-2 border-orange-200 rounded-full bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-200"
+                      className="btn btn-outline btn-primary btn-sm"
                       aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
-                      <span className="text-lg font-bold text-orange-600">{isCollapsed ? '+' : '−'}</span>
+                      {isCollapsed ? '+' : '−'}
                     </button>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{character.name}</h3>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                      <h3 className="card-title text-xl">{character.name}</h3>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-base-content/70">
                         {character.race && <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
                           {character.race}
                         </span>}
                         {character.background && <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                          <div className="w-2 h-2 bg-success rounded-full"></div>
                           {character.background}
                         </span>}
                         {character.alignment && <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                          <div className="w-2 h-2 bg-accent rounded-full"></div>
                           {character.alignment}
                         </span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="card-actions">
                     <button
                       onClick={() => handleEdit(character as Character & { id: number })}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-secondary btn-sm"
                     >
-                      <span>✏️</span>
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(character.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-neutral btn-sm"
                     >
-                      <span>🗑️</span>
                       Delete
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {!isCollapsed && (
-                <div className="p-6 space-y-6">
+                {!isCollapsed && (
+                  <div className="space-y-6 mt-6">
                   {/* Enhanced Recap Panel */}
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-200">
-                    <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6 border border-primary/20">
+                    <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                       <span className="text-2xl">📊</span>
                       Character Recap
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                        <div className="text-sm font-medium text-gray-600 mb-1">Total Level</div>
-                        <div className="text-2xl font-bold text-orange-600">
+                      <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
+                        <div className="text-sm font-medium text-base-content/70 mb-1">Total Level</div>
+                        <div className="text-2xl font-bold text-primary">
                           {character.classes && character.classes.length > 0
                             ? (character.classes as any[]).reduce((sum, c) => sum + (c.level || 0), 0)
                             : (character.level || 0)}
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                        <div className="text-sm font-medium text-gray-600 mb-1">Total XP</div>
-                        <div className="text-2xl font-bold text-green-600">
+                      <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
+                        <div className="text-sm font-medium text-base-content/70 mb-1">Total XP</div>
+                        <div className="text-2xl font-bold text-success">
                           {character.experience !== undefined && character.experience !== null ? character.experience.toLocaleString() : '—'}
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                        <div className="text-sm font-medium text-gray-600 mb-1">Hit Points</div>
-                        <div className="text-2xl font-bold text-red-600">
+                      <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
+                        <div className="text-sm font-medium text-base-content/70 mb-1">Hit Points</div>
+                        <div className="text-2xl font-bold text-error">
                           {character.hitPoints !== undefined ? `${character.hitPoints}/${character.maxHitPoints || character.hitPoints}` : '—'}
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                        <div className="text-sm font-medium text-gray-600 mb-1">Armor Class</div>
-                        <div className="text-2xl font-bold text-blue-600">
+                      <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
+                        <div className="text-sm font-medium text-base-content/70 mb-1">Armor Class</div>
+                        <div className="text-2xl font-bold text-info">
                           {character.armorClass !== undefined ? character.armorClass : '—'}
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                      <div className="text-sm font-medium text-gray-600 mb-2">Class Breakdown</div>
+                    <div className="bg-base-100 rounded-lg p-4 shadow-sm border border-base-300">
+                      <div className="text-sm font-medium text-base-content/70 mb-2">Class Breakdown</div>
                       {character.classes && character.classes.length > 0 ? (
                         <div className="space-y-2">
                           {(character.classes as any[]).map((c, idx) => {
                             const classExp = c.experience ?? c.exp ?? c.xp ?? null;
                             return (
-                              <div key={idx} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                              <div key={idx} className="flex items-center justify-between bg-base-200 rounded-lg p-3">
                                 <div className="flex items-center gap-3">
-                                  <span className="w-3 h-3 bg-orange-400 rounded-full"></span>
-                                  <span className="font-semibold text-gray-900">{c.className || 'Unknown'}</span>
-                                  <span className="text-sm text-gray-600">Level {c.level || 0}</span>
+                                  <span className="w-3 h-3 bg-primary rounded-full"></span>
+                                  <span className="font-semibold text-base-content">{c.className || 'Unknown'}</span>
+                                  <span className="text-sm text-base-content/70">Level {c.level || 0}</span>
                                 </div>
                                 {classExp && (
-                                  <span className="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                                  <span className="text-sm font-medium text-success bg-success/10 px-2 py-1 rounded">
                                     {classExp.toLocaleString()} XP
                                   </span>
                                 )}
@@ -1090,7 +1087,7 @@ export default function Characters(): JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="text-gray-500 italic">
+                        <div className="text-base-content/50 italic">
                           {character.class ? `${character.class} — Level ${character.level || 0}` : 'No class information'}
                         </div>
                       )}
@@ -1099,24 +1096,24 @@ export default function Characters(): JSX.Element {
 
                   {/* Ability Scores Section */}
                   {(character.strength || character.dexterity || character.constitution || character.intelligence || character.wisdom || character.charisma) && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">💪</span>
                         Ability Scores
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         {[
-                          { name: 'STR', value: character.strength, color: 'bg-red-500' },
-                          { name: 'DEX', value: character.dexterity, color: 'bg-green-500' },
-                          { name: 'CON', value: character.constitution, color: 'bg-yellow-500' },
-                          { name: 'INT', value: character.intelligence, color: 'bg-blue-500' },
-                          { name: 'WIS', value: character.wisdom, color: 'bg-purple-500' },
-                          { name: 'CHA', value: character.charisma, color: 'bg-pink-500' }
+                          { name: 'STR', value: character.strength, color: 'text-primary' },
+                          { name: 'DEX', value: character.dexterity, color: 'text-primary' },
+                          { name: 'CON', value: character.constitution, color: 'text-primary' },
+                          { name: 'INT', value: character.intelligence, color: 'text-primary' },
+                          { name: 'WIS', value: character.wisdom, color: 'text-primary' },
+                          { name: 'CHA', value: character.charisma, color: 'text-primary' }
                         ].map(({ name, value, color }) => value && (
-                          <div key={name} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 text-center">
-                            <div className="text-sm font-medium text-gray-600 mb-2">{name}</div>
-                            <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-                            <div className={`text-sm font-medium ${color.replace('bg-', 'text-').replace('-500', '-600')}`}>
+                          <div key={name} className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300 text-center">
+                            <div className="text-sm font-medium text-base-content/70 mb-2">{name}</div>
+                            <div className="text-2xl font-bold text-base-content mb-1">{value}</div>
+                            <div className={`text-sm font-medium ${color}`}>
                               +{Math.floor((value - 10) / 2)}
                             </div>
                           </div>
@@ -1127,34 +1124,34 @@ export default function Characters(): JSX.Element {
 
                   {/* Combat Stats Section */}
                   {(character.hitPoints !== undefined || character.armorClass !== undefined || character.speed !== undefined || character.proficiencyBonus !== undefined) && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">⚔️</span>
                         Combat Statistics
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {character.hitPoints !== undefined && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-1">Hit Points</div>
-                            <div className="text-xl font-bold text-red-600">{character.hitPoints}/{character.maxHitPoints || character.hitPoints}</div>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-1">Hit Points</div>
+                            <div className="text-xl font-bold text-primary">{character.hitPoints}/{character.maxHitPoints || character.hitPoints}</div>
                           </div>
                         )}
                         {character.armorClass !== undefined && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-1">Armor Class</div>
-                            <div className="text-xl font-bold text-blue-600">{character.armorClass}</div>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-1">Armor Class</div>
+                            <div className="text-xl font-bold text-primary">{character.armorClass}</div>
                           </div>
                         )}
                         {character.speed !== undefined && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-1">Speed</div>
-                            <div className="text-xl font-bold text-green-600">{character.speed} ft.</div>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-1">Speed</div>
+                            <div className="text-xl font-bold text-primary">{character.speed} ft.</div>
                           </div>
                         )}
                         {character.proficiencyBonus !== undefined && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-1">Proficiency</div>
-                            <div className="text-xl font-bold text-purple-600">+{character.proficiencyBonus}</div>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-1">Proficiency</div>
+                            <div className="text-xl font-bold text-primary">+{character.proficiencyBonus}</div>
                           </div>
                         )}
                       </div>
@@ -1163,27 +1160,27 @@ export default function Characters(): JSX.Element {
 
                   {/* Spells Section */}
                   {character.spells && character.spells.length > 0 && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">🔮</span>
                         Spells ({character.spells.length})
                       </h4>
                       <div className="space-y-3">
                         {character.spells.slice(0, 8).map((spell, idx) => (
-                          <div key={idx} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                          <div key={idx} className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                <span className={`badge badge-sm ${
                                   spell.level === 0
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-blue-100 text-blue-700'
+                                    ? 'badge-warning'
+                                    : 'badge-info'
                                 }`}>
                                   {spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`}
                                 </span>
-                                <span className="font-semibold text-gray-900">{spell.name}</span>
+                                <span className="font-semibold text-base-content">{spell.name}</span>
                               </div>
                               {spell.prepared && (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                <span className="badge badge-success badge-sm">
                                   Prepared
                                 </span>
                               )}
@@ -1191,7 +1188,7 @@ export default function Characters(): JSX.Element {
                           </div>
                         ))}
                         {character.spells.length > 8 && (
-                          <div className="text-center text-gray-500 text-sm">
+                          <div className="text-center text-base-content/60 text-sm">
                             ...and {character.spells.length - 8} more spells
                           </div>
                         )}
@@ -1201,12 +1198,12 @@ export default function Characters(): JSX.Element {
 
                   {/* Description Section */}
                   {character.description && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">📖</span>
                         Description
                       </h4>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                      <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
                         <div className="prose prose-sm max-w-none">
                           <ReactMarkdown children={character.description} />
                         </div>
@@ -1216,41 +1213,41 @@ export default function Characters(): JSX.Element {
 
                   {/* Background Section */}
                   {(character.personalityTraits || character.ideals || character.bonds || character.flaws || character.backstory) && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">🎭</span>
                         Background & Personality
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {character.personalityTraits && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-2">Personality Traits</div>
-                            <p className="text-sm text-gray-900">{character.personalityTraits}</p>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-2">Personality Traits</div>
+                            <p className="text-sm text-base-content">{character.personalityTraits}</p>
                           </div>
                         )}
                         {character.ideals && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-2">Ideals</div>
-                            <p className="text-sm text-gray-900">{character.ideals}</p>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-2">Ideals</div>
+                            <p className="text-sm text-base-content">{character.ideals}</p>
                           </div>
                         )}
                         {character.bonds && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-2">Bonds</div>
-                            <p className="text-sm text-gray-900">{character.bonds}</p>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-2">Bonds</div>
+                            <p className="text-sm text-base-content">{character.bonds}</p>
                           </div>
                         )}
                         {character.flaws && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                            <div className="text-sm font-medium text-gray-600 mb-2">Flaws</div>
-                            <p className="text-sm text-gray-900">{character.flaws}</p>
+                          <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300">
+                            <div className="text-sm font-medium text-base-content/70 mb-2">Flaws</div>
+                            <p className="text-sm text-base-content">{character.flaws}</p>
                           </div>
                         )}
                       </div>
                       {character.backstory && (
-                        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mt-4">
-                          <div className="text-sm font-medium text-gray-600 mb-2">Backstory</div>
-                          <p className="text-sm text-gray-900">{character.backstory}</p>
+                        <div className="bg-base-100 rounded-box p-4 shadow-sm border border-base-300 mt-4">
+                          <div className="text-sm font-medium text-base-content/70 mb-2">Backstory</div>
+                          <p className="text-sm text-base-content">{character.backstory}</p>
                         </div>
                       )}
                     </div>
@@ -1258,14 +1255,14 @@ export default function Characters(): JSX.Element {
 
                   {/* Tags Section */}
                   {character.tags && character.tags.length > 0 && (
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="bg-base-200 rounded-box p-6">
+                      <h4 className="text-lg font-bold text-base-content mb-4 flex items-center gap-2">
                         <span className="text-2xl">🏷️</span>
                         Tags
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {(character.tags).map(tag => (
-                          <span key={tag} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                          <span key={tag} className="badge badge-primary badge-outline">
                             {tag}
                           </span>
                         ))}
@@ -1275,8 +1272,8 @@ export default function Characters(): JSX.Element {
 
                   {/* Adventure Link */}
                   {character.adventure_id && (
-                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                      <div className="flex items-center gap-2 text-blue-700">
+                    <div className="bg-primary/10 rounded-box p-4 border border-primary/20">
+                      <div className="flex items-center gap-2 text-primary">
                         <span className="text-lg">🗺️</span>
                         <span className="font-medium">Adventure:</span>
                         <span>{adv.adventures.find(a => a.id === character.adventure_id)?.title || 'Unknown'}</span>
@@ -1285,6 +1282,7 @@ export default function Characters(): JSX.Element {
                   )}
                 </div>
               )}
+              </div>
             </div>
           );
         })}

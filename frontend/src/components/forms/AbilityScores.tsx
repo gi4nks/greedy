@@ -25,18 +25,22 @@ function AbilityScoreInput({ name, value, onChange }: AbilityScore): JSX.Element
   const modifier = Math.floor((value - 10) / 2);
 
   return (
-    <div className="text-center">
-      <label className="block text-sm font-medium mb-1">{name}</label>
+    <div className="form-control">
+      <label className="label">
+        <span className="label-text font-semibold">{name}</span>
+      </label>
       <input
         type="number"
         min="1"
         max="30"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value) || 10)}
-        className="w-full p-2 border rounded text-center font-bold"
+        className="input input-bordered w-full h-9 text-center font-bold"
       />
-      <div className="text-xs text-gray-600 mt-1">
-        {modifier >= 0 ? '+' : ''}{modifier}
+      <div className="label">
+        <span className="label-text-alt text-xs">
+          {modifier >= 0 ? '+' : ''}{modifier}
+        </span>
       </div>
     </div>
   );
@@ -58,7 +62,7 @@ export function AbilityScores({
 }: AbilityScoresProps): JSX.Element {
   return (
     <div className="space-y-6">
-      <h4 className="text-lg font-semibold mb-3">Ability Scores</h4>
+      <h4 className="text-xl font-semibold mb-3">Ability Scores</h4>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <AbilityScoreInput
           name="STR"

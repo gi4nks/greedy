@@ -161,7 +161,7 @@ export default function DiceRoller(): JSX.Element {
       <div className="flex gap-2">
         <button
           onClick={clearHistory}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
+          className="btn btn-outline btn-sm"
         >
           Clear History
         </button>
@@ -171,198 +171,208 @@ export default function DiceRoller(): JSX.Element {
         {/* Main Roller */}
         <div className="lg:col-span-2 space-y-6">
           {/* Roll Input */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">🎲 Dice Roller</h3>
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-xl">🎲 Dice Roller</h3>
 
-            <div className="space-y-4">
-              {/* Dice Input */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Dice Notation</label>
-                <input
-                  type="text"
-                  value={currentRoll}
-                  onChange={(e) => setCurrentRoll(e.target.value)}
-                  placeholder="e.g., d20, 3d6, 2d8+3"
-                  className="w-full p-3 border rounded-lg text-lg font-mono"
-                  onKeyPress={(e) => e.key === 'Enter' && handleRoll()}
-                />
-              </div>
-
-              {/* Modifier and Roll Type */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* Dice Input */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Modifier</label>
+                  <label className="block text-sm font-medium text-base-content mb-2">Dice Notation</label>
                   <input
-                    type="number"
-                    value={modifier}
-                    onChange={(e) => setModifier(parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="0"
+                    type="text"
+                    value={currentRoll}
+                    onChange={(e) => setCurrentRoll(e.target.value)}
+                    placeholder="e.g., d20, 3d6, 2d8+3"
+                    className="input input-bordered input-lg font-mono"
+                    onKeyPress={(e) => e.key === 'Enter' && handleRoll()}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Roll Type</label>
-                  <select
-                    value={rollType}
-                    onChange={(e) => setRollType(e.target.value as typeof rollType)}
-                    className="w-full p-3 border rounded-lg"
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="advantage">Advantage</option>
-                    <option value="disadvantage">Disadvantage</option>
-                  </select>
+
+                {/* Modifier and Roll Type */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-base-content mb-2">Modifier</label>
+                    <input
+                      type="number"
+                      value={modifier}
+                      onChange={(e) => setModifier(parseInt(e.target.value) || 0)}
+                      className="input input-bordered"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-base-content mb-2">Roll Type</label>
+                    <select
+                      value={rollType}
+                      onChange={(e) => setRollType(e.target.value as typeof rollType)}
+                      className="select select-bordered"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="advantage">Advantage</option>
+                      <option value="disadvantage">Disadvantage</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              {/* Custom Label */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Label (Optional)</label>
-                <input
-                  type="text"
-                  value={customLabel}
-                  onChange={(e) => setCustomLabel(e.target.value)}
-                  placeholder="e.g., Strength Check, Fireball Damage"
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
+                {/* Custom Label */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Label (Optional)</label>
+                  <input
+                    type="text"
+                    value={customLabel}
+                    onChange={(e) => setCustomLabel(e.target.value)}
+                    placeholder="e.g., Strength Check, Fireball Damage"
+                    className="input input-bordered"
+                  />
+                </div>
 
-              {/* Roll Button */}
-              <button
-                onClick={handleRoll}
-                disabled={!currentRoll.trim() || isRolling}
-                className={`w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-200 ${
-                  isRolling
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                {isRolling ? '🎲 Rolling...' : '🎲 Roll Dice'}
-              </button>
+                {/* Roll Button */}
+                <button
+                  onClick={handleRoll}
+                  disabled={!currentRoll.trim() || isRolling}
+                  className={`btn btn-primary btn-lg w-full ${
+                    isRolling ? 'loading' : ''
+                  }`}
+                >
+                  {isRolling ? 'Rolling...' : 'Roll Dice'}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Quick Roll Buttons */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">⚡ Quick Rolls</h3>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-              {['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100', '2d6', '3d6', '4d6'].map(die => (
-                <button
-                  key={die}
-                  onClick={() => quickRoll(die)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded font-medium transition-colors duration-200"
-                >
-                  {die}
-                </button>
-              ))}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-lg">⚡ Quick Rolls</h3>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                {['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100', '2d6', '3d6', '4d6'].map(die => (
+                  <button
+                    key={die}
+                    onClick={() => quickRoll(die)}
+                    className="btn btn-primary btn-sm"
+                  >
+                    {die}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Preset Rolls */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">🎯 Preset Rolls</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {presetRolls.map(preset => (
-                <button
-                  key={preset.name}
-                  onClick={() => usePreset(preset)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200 text-left"
-                >
-                  <div className="font-semibold">{preset.name}</div>
-                  <div className="text-sm opacity-90">{preset.dice}</div>
-                </button>
-              ))}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-lg">🎯 Preset Rolls</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {presetRolls.map(preset => (
+                  <button
+                    key={preset.name}
+                    onClick={() => usePreset(preset)}
+                    className="btn btn-success btn-block justify-start btn-sm"
+                  >
+                    <div>
+                      <div className="font-semibold">{preset.name}</div>
+                      <div className="text-sm opacity-90">{preset.dice}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Roll History */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">📜 Roll History</h3>
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-lg">📜 Roll History</h3>
 
-            {rollHistory.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <div className="text-4xl mb-2">🎲</div>
-                <p>No rolls yet. Try rolling some dice!</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {rollHistory.map(roll => (
-                  <div
-                    key={roll.id}
-                    className={`p-4 rounded-lg border transition-all duration-200 ${
-                      roll.critical === 'success'
-                        ? 'bg-green-50 border-green-200'
-                        : roll.critical === 'failure'
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">
-                          {roll.label || 'Roll'}
+              {rollHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">🎲</div>
+                  <p className="text-base-content/70">No rolls yet. Try rolling some dice!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {rollHistory.map(roll => (
+                    <div
+                      key={roll.id}
+                      className={`card card-compact ${
+                        roll.critical === 'success'
+                          ? 'bg-success/10 border-success'
+                          : roll.critical === 'failure'
+                          ? 'bg-error/10 border-error'
+                          : 'bg-base-200'
+                      }`}
+                    >
+                      <div className="card-body">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="font-semibold text-base-content">
+                              {roll.label || 'Roll'}
+                            </div>
+                            <div className="text-sm text-base-content/70 font-mono">
+                              {formatRoll(roll)}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-2xl font-bold ${
+                              roll.critical === 'success'
+                                ? 'text-success'
+                                : roll.critical === 'failure'
+                                ? 'text-error'
+                                : 'text-base-content'
+                            }`}>
+                              {roll.total}
+                            </div>
+                            <div className="text-xs text-base-content/50">
+                              {roll.timestamp.toLocaleTimeString()}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 font-mono">
-                          {formatRoll(roll)}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold ${
-                          roll.critical === 'success'
-                            ? 'text-green-600'
-                            : roll.critical === 'failure'
-                            ? 'text-red-600'
-                            : 'text-gray-900'
-                        }`}>
-                          {roll.total}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {roll.timestamp.toLocaleTimeString()}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="text-sm text-gray-700">
-                      {roll.type !== 'normal' && (
-                        <span className={`font-medium ${
-                          roll.type === 'advantage' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {roll.type.charAt(0).toUpperCase() + roll.type.slice(1)}:
-                        </span>
-                      )}
-                      {roll.individualRolls.length > 1 ? (
-                        <span className="font-mono ml-1">
-                          [{roll.individualRolls.join(', ')}]
-                          {roll.modifier !== 0 && (
-                            <span className={roll.modifier > 0 ? 'text-green-600' : 'text-red-600'}>
-                              {roll.modifier > 0 ? '+' : ''}{roll.modifier}
+                        <div className="text-sm text-base-content/80">
+                          {roll.type !== 'normal' && (
+                            <span className={`font-medium ${
+                              roll.type === 'advantage' ? 'text-success' : 'text-error'
+                            }`}>
+                              {roll.type.charAt(0).toUpperCase() + roll.type.slice(1)}:
                             </span>
                           )}
-                        </span>
-                      ) : (
-                        <span className="font-mono ml-1">
-                          {roll.result}
-                          {roll.modifier !== 0 && (
-                            <span className={roll.modifier > 0 ? 'text-green-600' : 'text-red-600'}>
-                              {roll.modifier > 0 ? '+' : ''}{roll.modifier}
+                          {roll.individualRolls.length > 1 ? (
+                            <span className="font-mono ml-1">
+                              [{roll.individualRolls.join(', ')}]
+                              {roll.modifier !== 0 && (
+                                <span className={roll.modifier > 0 ? 'text-success' : 'text-error'}>
+                                  {roll.modifier > 0 ? '+' : ''}{roll.modifier}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="font-mono ml-1">
+                              {roll.result}
+                              {roll.modifier !== 0 && (
+                                <span className={roll.modifier > 0 ? 'text-success' : 'text-error'}>
+                                  {roll.modifier > 0 ? '+' : ''}{roll.modifier}
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                    </div>
+                        </div>
 
-                    {roll.critical && (
-                      <div className={`text-xs font-bold mt-1 ${
-                        roll.critical === 'success' ? 'text-green-700' : 'text-red-700'
-                      }`}>
-                        {roll.critical === 'success' ? '🎉 CRITICAL SUCCESS!' : '💀 CRITICAL FAILURE!'}
+                        {roll.critical && (
+                          <div className={`text-xs font-bold mt-1 ${
+                            roll.critical === 'success' ? 'text-success' : 'text-error'
+                          }`}>
+                            {roll.critical === 'success' ? '🎉 CRITICAL SUCCESS!' : '💀 CRITICAL FAILURE!'}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -6,10 +6,10 @@ import { useAdventures } from '../contexts/AdventureContext';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded mr-2 mb-2">
+    <div className="badge badge-primary badge-outline gap-2">
       {label}
-      <button onClick={onRemove} className="ml-2 text-red-500">×</button>
-    </span>
+      <button onClick={onRemove} className="btn btn-circle btn-xs btn-error">×</button>
+    </div>
   );
 }
 
@@ -110,7 +110,7 @@ export default function Locations(): JSX.Element {
   };
 
   return (
-  <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={openCreateForm as any} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
+  <Page title="Locations" toolbar={<button type="button" onPointerDown={openCreateForm} onClick={openCreateForm as any} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
@@ -118,119 +118,119 @@ export default function Locations(): JSX.Element {
             placeholder="Search locations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered w-full"
           />
         </form>
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
-          <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit Location' : 'Add New Location'}</h3>
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
 
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-4">
-          <div className="flex border-b">
-            <button
-              type="button"
-              onClick={() => setActiveTab('description')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'description'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Description
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('notes')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'notes'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Notes
-            </button>
-          </div>
-        </div>
+              {/* Tab Navigation */}
+              <div className="tabs tabs-boxed">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('description')}
+                  className={`tab ${activeTab === 'description' ? 'tab-active' : ''}`}
+                >
+                  Description
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('notes')}
+                  className={`tab ${activeTab === 'notes' ? 'tab-active' : ''}`}
+                >
+                  Notes
+                </button>
+              </div>
 
-          {/* Tab Content */}
-          <div className="mb-4">
-            {activeTab === 'description' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <textarea
-                    placeholder="Description (Markdown supported)"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full p-2 border rounded h-64"
-                    required
-                  />
+              {/* Tab Content */}
+              {activeTab === 'description' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                    <textarea
+                      placeholder="Description (Markdown supported)"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="textarea textarea-bordered h-64"
+                      required
+                    />
+                  </div>
+                  <div className="bg-base-100 border border-base-300 rounded-box p-4 h-64 overflow-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown children={formData.description} />
+                    </div>
+                  </div>
                 </div>
-                <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
-                  <ReactMarkdown children={formData.description} />
+              )}
+
+              {activeTab === 'notes' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
+                    <textarea
+                      placeholder="Notes (Markdown supported)"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="textarea textarea-bordered h-64"
+                      required
+                    />
+                  </div>
+                  <div className="bg-base-100 border border-base-300 rounded-box p-4 h-64 overflow-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown children={formData.notes} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <div className="flex items-center gap-2">
+                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered flex-1" />
+                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(formData.tags || []).map(tag => (
+                    <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
+                  ))}
                 </div>
               </div>
-            )}
-
-            {activeTab === 'notes' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <textarea
-                    placeholder="Notes (Markdown supported)"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full p-2 border rounded h-64"
-                    required
-                  />
-                </div>
-                <div className="p-2 border rounded h-64 overflow-auto bg-white prose text-gray-900">
-                  <ReactMarkdown children={formData.notes} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <div className="flex items-center">
-              <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2" />
-              <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-1 rounded">Add Tag</button>
             </div>
-            <div className="mt-2">
-              {(formData.tags || []).map(tag => (
-                <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
-              ))}
-            </div>
-          </div>
 
-          <div className="flex justify-end space-x-2 mt-4">
-            <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
-              {editingId ? 'Update Location' : 'Add Location'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setFormData({ name: '', description: '', notes: '', tags: [] });
-                setEditingId(null);
-                setShowCreateForm(false);
-                setActiveTab('description');
-              }}
-              className="bg-gray-500 text-white px-6 py-2 rounded"
-            >
-              Cancel
-            </button>
+            <div className="card-actions justify-end">
+              <button type="submit" className="btn btn-secondary btn-sm">
+                {editingId ? 'Update' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ name: '', description: '', notes: '', tags: [] });
+                  setEditingId(null);
+                  setShowCreateForm(false);
+                  setActiveTab('description');
+                }}
+                className="btn btn-ghost btn-sm"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -239,53 +239,53 @@ export default function Locations(): JSX.Element {
         {locations.map(location => {
           const isCollapsed = location.id ? collapsed[location.id] ?? true : false;
           return (
-            <div key={location.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 border-b border-gray-100">
+            <div key={location.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleCollapse(location.id)}
-                      className="w-8 h-8 flex items-center justify-center border-2 border-orange-200 rounded-full bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-200"
+                      className="btn btn-outline btn-primary btn-sm"
                       aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
-                      <span className="text-lg font-bold text-orange-600">{isCollapsed ? '+' : '−'}</span>
+                      {isCollapsed ? '+' : '−'}
                     </button>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{location.name}</h3>
+                      <h3 className="card-title text-2xl">{location.name}</h3>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="card-actions">
                     <button
                       onClick={() => handleEdit(location as Location & { id: number })}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-secondary btn-sm"
                     >
-                      <span>✏️</span>
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(location.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-neutral btn-sm"
                     >
-                      <span>🗑️</span>
                       Delete
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {!isCollapsed && (
-                <div className="p-6 space-y-4">
-                  <p className="text-gray-600 mb-2">{location.description}</p>
-                  <div className="prose mb-2">
-                    <ReactMarkdown children={location.notes} />
+                {!isCollapsed && (
+                  <div className="space-y-4 mt-6">
+                    <p className="text-base-content/70 mb-2">{location.description}</p>
+                    <div className="prose">
+                      <ReactMarkdown children={location.notes} />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(location.tags || []).map(t => (
+                        <div key={t} className="badge badge-primary badge-outline">
+                          {t}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    {(location.tags || []).map(t => (
-                      <Chip key={t} label={t} onRemove={() => {}} />
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}

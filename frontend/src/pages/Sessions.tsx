@@ -78,65 +78,74 @@ export default function Sessions(): JSX.Element {
   const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return (
-    <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); console.log('Sessions + button clicked'); setShowCreateForm(true); }} onClick={() => { console.log('Sessions + onClick fired'); setShowCreateForm(true); }} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); console.log('Sessions + button clicked'); setShowCreateForm(true); }} onClick={() => { console.log('Sessions + onClick fired'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Create</button>}>
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
-          <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit Session' : 'Add Session'}</h3>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
-              <select
-                value={formData.adventure_id ?? (adv.selectedId ?? '')}
-                onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Global</option>
-                {adv.adventures.map(a => (
-                  <option key={a.id} value={a.id}>{a.title}</option>
-                ))}
-              </select>
-            </div>
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
 
-            <div className="mb-2">
-              <input
-                type="text"
-                placeholder="Title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <select
+                  value={formData.adventure_id ?? (adv.selectedId ?? '')}
+                  onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
+                  className="select select-bordered"
+                >
+                  <option value="">Global</option>
+                  {adv.adventures.map(a => (
+                    <option key={a.id} value={a.id}>{a.title}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="mb-2">
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-            <div className="mb-2">
-              <textarea
-                placeholder="Session notes (Markdown supported)"
-                value={formData.text}
-                onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                className="w-full p-2 border rounded h-40"
-                required
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-            <div className="mb-4">
-              <h4 className="font-semibold mb-2">Preview</h4>
-              <div className="p-2 border rounded h-40 overflow-auto bg-white prose text-gray-900">
-                <ReactMarkdown children={formData.text} />
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
+                <textarea
+                  placeholder="Session notes (Markdown supported)"
+                  value={formData.text}
+                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                  className="textarea textarea-bordered h-40"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div className="bg-base-100 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown children={formData.text} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 mt-4">
-              <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
-                {editingId ? 'Update Session' : 'Add Session'}
+            <div className="card-actions justify-end">
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
               </button>
               <button
                 type="button"
@@ -145,13 +154,14 @@ export default function Sessions(): JSX.Element {
                   setEditingId(null);
                   setShowCreateForm(false);
                 }}
-                className="bg-gray-500 text-white px-6 py-2 rounded"
+                className="btn btn-ghost btn-sm"
               >
                 Cancel
               </button>
             </div>
-          </form>
-        )}
+          </div>
+        </form>
+      )}
 
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
@@ -160,7 +170,7 @@ export default function Sessions(): JSX.Element {
             placeholder="Search sessions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered w-full"
           />
         </form>
       </div>
@@ -170,48 +180,46 @@ export default function Sessions(): JSX.Element {
         {sortedSessions.map(session => {
           const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
           return (
-            <div key={session.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 border-b border-gray-100">
+            <div key={session.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleCollapse(session.id)}
-                      className="w-8 h-8 flex items-center justify-center border-2 border-orange-200 rounded-full bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-colors duration-200"
+                      className="btn btn-outline btn-primary btn-sm"
                       aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
-                      <span className="text-lg font-bold text-orange-600">{isCollapsed ? '+' : '−'}</span>
+                      {isCollapsed ? '+' : '−'}
                     </button>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{session.title}</h3>
-                      <div className="text-sm text-gray-600 mt-1">{session.date}</div>
+                      <h3 className="card-title text-2xl">{session.title}</h3>
+                      <div className="text-sm text-base-content/70 mt-1">{session.date}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="card-actions">
                     <button
                       onClick={() => handleEdit(session as Session & { id: number })}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-secondary btn-sm"
                     >
-                      <span>✏️</span>
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(session.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-neutral btn-sm"
                     >
-                      <span>🗑️</span>
                       Delete
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {!isCollapsed && (
-                <div className="p-6 space-y-4">
-                  <div className="prose prose-sm max-w-none text-gray-900">
-                    <ReactMarkdown children={session.text} />
+                {!isCollapsed && (
+                  <div className="mt-6">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown children={session.text} />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}

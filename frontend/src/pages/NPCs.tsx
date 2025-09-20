@@ -6,10 +6,10 @@ import { useAdventures } from '../contexts/AdventureContext';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded mr-2 mb-2">
+    <div className="badge badge-primary badge-outline gap-2">
       {label}
-      <button onClick={onRemove} className="ml-2 text-red-500">×</button>
-    </span>
+      <button onClick={onRemove} className="btn btn-circle btn-xs btn-error">×</button>
+    </div>
   );
 }
 
@@ -103,7 +103,7 @@ export default function NPCs(): JSX.Element {
   };
 
   return (
-    <Page title="NPCs" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="bg-orange-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="NPCs" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowCreateForm(true); }} onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
@@ -111,89 +111,94 @@ export default function NPCs(): JSX.Element {
             placeholder="Search NPCs..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered w-full"
           />
         </form>
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-6 bg-white rounded-lg shadow-lg border">
-          <h3 className="text-xl font-bold mb-4 text-center">{editingId ? 'Edit NPC' : 'Create New NPC'}</h3>
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-xl justify-center">{editingId ? 'Edit NPC' : 'Create New NPC'}</h3>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input
-              type="text"
-              placeholder="NPC Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
+                <input
+                  type="text"
+                  placeholder="NPC Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Role</label>
-            <input
-              type="text"
-              placeholder="e.g., Innkeeper, Guard, Merchant, Villain"
-              value={formData.role || ''}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full p-2 border rounded"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Role</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Innkeeper, Guard, Merchant, Villain"
+                  value={formData.role || ''}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="input input-bordered"
+                />
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Adventure</label>
-            <select
-              value={formData.adventure_id ?? (adv.selectedId ?? '')}
-              onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Global NPC</option>
-              {adv.adventures.map(a => (
-                <option key={a.id} value={a.id}>{a.title}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <select
+                  value={formData.adventure_id ?? (adv.selectedId ?? '')}
+                  onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
+                  className="select select-bordered"
+                >
+                  <option value="">Global NPC</option>
+                  {adv.adventures.map(a => (
+                    <option key={a.id} value={a.id}>{a.title}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Description (Markdown supported)</label>
-            <textarea
-              placeholder="Describe the NPC's appearance, personality, background..."
-              value={formData.description || ''}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full p-2 border rounded h-32"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
+                <textarea
+                  placeholder="Describe the NPC's appearance, personality, background..."
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="textarea textarea-bordered h-32"
+                />
+              </div>
 
-          <div className="mb-4">
-            <div className="flex items-center">
-              <input ref={tagInputRef} type="text" placeholder="Add tag" className="p-2 border rounded mr-2 flex-1" />
-              <button type="button" onClick={handleAddTag} className="bg-gray-700 text-white px-3 py-2 rounded">Add Tag</button>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
+                <div className="flex items-center gap-2">
+                  <input ref={tagInputRef} type="text" placeholder="Add tag" className="input input-bordered flex-1" />
+                  <button type="button" onClick={handleAddTag} className="btn btn-secondary btn-sm">Add Tag</button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(formData.tags || []).map(tag => (
+                    <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="mt-2">
-              {(formData.tags || []).map(tag => (
-                <Chip key={tag} label={tag} onRemove={() => handleRemoveTag(tag)} />
-              ))}
-            </div>
-          </div>
 
-          <div className="flex justify-end space-x-2 mt-4">
-            <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded font-semibold">
-              {editingId ? 'Update NPC' : 'Create NPC'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setFormData({ name: '', role: '', description: '', tags: [] });
-                setEditingId(null);
-                setShowCreateForm(false);
-              }}
-              className="bg-gray-500 text-white px-6 py-2 rounded"
-            >
-              Cancel
-            </button>
+            <div className="card-actions justify-end">
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ name: '', role: '', description: '', tags: [] });
+                  setEditingId(null);
+                  setShowCreateForm(false);
+                }}
+                className="btn btn-ghost btn-sm"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -202,70 +207,68 @@ export default function NPCs(): JSX.Element {
         {npcs.map(npc => {
           const isCollapsed = npc.id ? collapsed[npc.id] ?? true : false;
           return (
-            <div key={npc.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 border-b border-gray-100">
+            <div key={npc.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleCollapse(npc.id)}
-                      className="w-8 h-8 flex items-center justify-center border-2 border-purple-200 rounded-full bg-purple-50 hover:bg-purple-100 hover:border-purple-300 transition-colors duration-200"
+                      className="btn btn-outline btn-primary btn-sm"
                       aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
-                      <span className="text-lg font-bold text-purple-600">{isCollapsed ? '+' : '−'}</span>
+                      {isCollapsed ? '+' : '−'}
                     </button>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{npc.name}</h3>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                      <h3 className="card-title text-2xl">{npc.name}</h3>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-base-content/70">
                         {npc.role && <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                          <div className="w-2 h-2 bg-secondary rounded-full"></div>
                           {npc.role}
                         </span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="card-actions">
                     <button
                       onClick={() => handleEdit(npc as NPC & { id: number })}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-secondary btn-sm"
                     >
-                      <span>✏️</span>
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(npc.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-neutral btn-sm"
                     >
-                      <span>🗑️</span>
                       Delete
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {!isCollapsed && (
-                <div className="p-6 space-y-4">
-                  {npc.description && (
-                    <div className="prose prose-sm max-w-none text-gray-900">
-                      <ReactMarkdown children={npc.description} />
-                    </div>
-                  )}
-                  {npc.tags && npc.tags.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <span className="text-purple-600">🏷️</span>
-                        Tags
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {npc.tags.map(tag => (
-                          <span key={tag} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {tag}
-                          </span>
-                        ))}
+                {!isCollapsed && (
+                  <div className="space-y-4 mt-6">
+                    {npc.description && (
+                      <div className="prose prose-sm max-w-none">
+                        <ReactMarkdown children={npc.description} />
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    {npc.tags && npc.tags.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center gap-2">
+                          <span className="text-secondary">🏷️</span>
+                          Tags
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {npc.tags.map(tag => (
+                            <div key={tag} className="badge badge-primary badge-outline">
+                              {tag}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}

@@ -24,8 +24,10 @@ export function FormInput({
   className = ''
 }: FormInputProps): JSX.Element {
   return (
-    <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
+    <div className="form-control">
+      <label className="label">
+        <span className="label-text font-semibold">{label}</span>
+      </label>
       <input
         type={type}
         value={value}
@@ -34,7 +36,7 @@ export function FormInput({
         required={required}
         min={min}
         max={max}
-        className={`w-full p-2 border rounded ${className}`}
+        className={`input input-bordered w-full h-9 ${className}`}
       />
     </div>
   );
@@ -58,13 +60,15 @@ export function FormSelect({
   className = ''
 }: FormSelectProps): JSX.Element {
   return (
-    <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
+    <div className="form-control">
+      <label className="label">
+        <span className="label-text font-semibold">{label}</span>
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className={`w-full p-2 border rounded ${className}`}
+        className={`select select-bordered w-full h-9 ${className}`}
       >
         {options.map(option => (
           <option key={option.value} value={option.value}>
@@ -96,15 +100,17 @@ export function FormTextarea({
   className = ''
 }: FormTextareaProps): JSX.Element {
   return (
-    <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
+    <div className="form-control">
+      <label className="label">
+        <span className="label-text font-semibold">{label}</span>
+      </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
         rows={rows}
-        className={`w-full p-2 border rounded ${className}`}
+        className={`textarea textarea-bordered w-full ${className}`}
       />
     </div>
   );

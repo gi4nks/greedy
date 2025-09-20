@@ -74,7 +74,7 @@ export default function Timeline(): JSX.Element {
   };
 
   return (
-    <Page title="Timeline" toolbar={<button onClick={() => setShowCreateForm(true)} className="bg-green-600 text-white px-3 py-1 rounded">+</button>}>
+    <Page title="Timeline" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <div className="mb-4">
         <form onSubmit={(e) => { e.preventDefault(); doSearch(searchTerm); }}>
           <input
@@ -82,70 +82,76 @@ export default function Timeline(): JSX.Element {
             placeholder="Search timeline..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered w-full"
           />
         </form>
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adventure</label>
-            <select
-              value={formData.adventure_id ?? (adv.selectedId ?? '')}
-              onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Global</option>
-              {adv.adventures.map(a => (
-                <option key={a.id} value={a.id}>{a.title}</option>
-              ))}
-            </select>
-          </div>
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
+                <select
+                  value={formData.adventure_id ?? (adv.selectedId ?? '')}
+                  onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
+                  className="select select-bordered"
+                >
+                  <option value="">Global</option>
+                  {adv.adventures.map(a => (
+                    <option key={a.id} value={a.id}>{a.title}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="mb-2">
-            <input
-              type="text"
-              placeholder="Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-          <div className="mb-2">
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
 
-          <div className="mb-2">
-            <textarea
-              placeholder="Session notes (Markdown supported)"
-              value={formData.text}
-              onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-              className="w-full p-2 border rounded h-40"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
+                <textarea
+                  placeholder="Session notes (Markdown supported)"
+                  value={formData.text}
+                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                  className="textarea textarea-bordered h-40"
+                  required
+                />
+              </div>
 
-          <div className="mb-4">
-            <h4 className="font-semibold mb-2">Preview</h4>
-            <div className="p-2 border rounded h-40 overflow-auto bg-white prose text-gray-900">
-              <ReactMarkdown children={formData.text} />
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div className="p-2 border rounded h-40 overflow-auto bg-base-100 prose text-base-content">
+                  <ReactMarkdown children={formData.text} />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
-              {editingId ? 'Update' : 'Add'} Session
-            </button>
-            {editingId && (
+            <div className="card-actions justify-end">
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -153,23 +159,11 @@ export default function Timeline(): JSX.Element {
                   setEditingId(null);
                   setShowCreateForm(false);
                 }}
-                className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
+                className="btn btn-ghost btn-sm"
               >
                 Cancel
               </button>
-            )}
-            {!editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ title: '', date: '', text: '', adventure_id: null });
-                  setShowCreateForm(false);
-                }}
-                className="ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            )}
+            </div>
           </div>
         </form>
       )}
@@ -178,47 +172,43 @@ export default function Timeline(): JSX.Element {
         {sessions.map(session => {
           const isCollapsed = session.id ? collapsed[session.id] ?? true : false;
           return (
-            <div key={session.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 border-b border-gray-100">
+            <div key={session.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleCollapse(session.id)}
-                      className="w-8 h-8 flex items-center justify-center border-2 border-green-200 rounded-full bg-green-50 hover:bg-green-100 hover:border-green-300 transition-colors duration-200"
+                      className="btn btn-outline btn-success btn-sm"
                       aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
-                      <span className="text-lg font-bold text-green-600">{isCollapsed ? '+' : '−'}</span>
+                      {isCollapsed ? '+' : '−'}
                     </button>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{session.title} - {session.date}</h3>
+                      <h3 className="card-title text-2xl">{session.title} - {session.date}</h3>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="card-actions">
                     <button
                       onClick={() => handleEdit(session as { id: number; title: string; date: string; text: string })}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-secondary btn-sm"
                     >
-                      <span>✏️</span>
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(session.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      className="btn btn-neutral btn-sm"
                     >
-                      <span>🗑️</span>
                       Delete
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {!isCollapsed && (
-                <div className="p-6 space-y-4">
-                  <div className="prose">
+                {!isCollapsed && (
+                  <div className="prose prose-sm max-w-none">
                     <ReactMarkdown children={session.text} />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}
