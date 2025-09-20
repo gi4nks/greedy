@@ -6,9 +6,9 @@ import { useAdventures } from '../contexts/AdventureContext';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <div className="badge badge-primary badge-outline gap-2">
+    <div className="badge badge-primary gap-2">
       {label}
-      <button onClick={onRemove} className="btn btn-circle btn-xs btn-error">×</button>
+      <button onClick={onRemove} className="btn btn-xs btn-ghost btn-circle">×</button>
     </div>
   );
 }
@@ -124,11 +124,11 @@ export default function Locations(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
@@ -136,7 +136,7 @@ export default function Locations(): JSX.Element {
                   placeholder="Name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
@@ -172,7 +172,7 @@ export default function Locations(): JSX.Element {
                       required
                     />
                   </div>
-                  <div className="bg-base-100 border border-base-300 rounded-box p-4 h-64 overflow-auto">
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-64 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown children={formData.description} />
                     </div>
@@ -192,7 +192,7 @@ export default function Locations(): JSX.Element {
                       required
                     />
                   </div>
-                  <div className="bg-base-100 border border-base-300 rounded-box p-4 h-64 overflow-auto">
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-64 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown children={formData.notes} />
                     </div>
@@ -215,7 +215,7 @@ export default function Locations(): JSX.Element {
             </div>
 
             <div className="card-actions justify-end">
-              <button type="submit" className="btn btn-secondary btn-sm">
+              <button type="submit" className="btn btn-primary btn-sm">
                 {editingId ? 'Update' : 'Create'}
               </button>
               <button

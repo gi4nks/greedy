@@ -199,26 +199,26 @@ export default function MagicItems(): JSX.Element {
   return (
     <Page title="Magic Items" toolbar={<button type="button" onPointerDown={(e) => { e.preventDefault(); setShowForm(true); }} onClick={() => setShowForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       {(showForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Magic Item' : 'Create Magic Item'}</h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Name</label>
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input input-bordered" required />
+                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input input-bordered w-full" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Rarity</label>
-                  <input value={form.rarity || ''} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="input input-bordered" />
+                  <input value={form.rarity || ''} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="input input-bordered w-full" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Type</label>
-                  <input value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })} className="input input-bordered" />
+                  <input value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })} className="input input-bordered w-full" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-base-content mb-2">Description / Properties (Markdown)</label>
-                  <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="textarea textarea-bordered h-32" />
+                  <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="textarea textarea-bordered w-full h-32" />
                 </div>
               </div>
             </div>

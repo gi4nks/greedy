@@ -10,7 +10,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <div className="badge badge-primary gap-2">
       {label}
-      <button onClick={onRemove} className="btn btn-circle btn-xs btn-ghost">×</button>
+      <button onClick={onRemove} className="btn btn-xs btn-ghost btn-circle">×</button>
     </div>
   );
 }
@@ -280,7 +280,7 @@ export default function Characters(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Character' : 'Create New Character'}</h3>
           <div className="flex flex-wrap border-b mb-6">
@@ -310,7 +310,7 @@ export default function Characters(): JSX.Element {
 
           {/* Tab Content */}
           {activeTab === 'basic' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Character Name</label>
@@ -391,7 +391,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'classes' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h4 className="text-lg font-semibold mb-3">Classes</h4>
                 <p className="text-sm text-base-content/70 mb-3">
@@ -465,7 +465,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'abilities' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold mb-3">Ability Scores</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center">
@@ -545,7 +545,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'combat' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold mb-3">Combat Statistics</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
@@ -615,7 +615,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'items' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold mb-3">Magical Items</h4>
 
               {/* Magical Items Section */}
@@ -713,7 +713,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'spells' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold mb-3">Spellcasting</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -819,7 +819,7 @@ export default function Characters(): JSX.Element {
           )}
 
           {activeTab === 'background' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold mb-3">Background & Personality</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

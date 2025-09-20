@@ -55,16 +55,14 @@ export default function Search(): JSX.Element {
       return (
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
-            <h3 className="font-bold text-lg">Create</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Adventure</span>
-                </label>
+            <h3 className="font-bold text-lg">Add New Session</h3>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
                   value={sessionForm.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setSessionForm({ ...sessionForm, adventure_id: e.target.value ? Number(e.target.value) : null })}
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                 >
                   <option value="">Global</option>
                   {adv.adventures.map(a => (
@@ -72,53 +70,47 @@ export default function Search(): JSX.Element {
                   ))}
                 </select>
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Title</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Title</label>
                 <input
                   type="text"
                   placeholder="Title"
                   value={sessionForm.title}
                   onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Date</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
                   type="date"
                   value={sessionForm.date}
                   onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Session notes (Markdown supported)</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Session notes (Markdown supported)</label>
                 <textarea
                   placeholder="Session notes (Markdown supported)"
                   value={sessionForm.text}
                   onChange={(e) => setSessionForm({ ...sessionForm, text: e.target.value })}
-                  className="textarea textarea-bordered h-40"
+                  className="textarea textarea-bordered w-full h-40"
                   required
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Preview</span>
-                </label>
-                <div className="p-2 border rounded h-40 overflow-auto bg-base-100 prose text-base-content">
-                  <ReactMarkdown>{sessionForm.text}</ReactMarkdown>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                <div className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown>{sessionForm.text}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
               <div className="modal-action">
-                <button type="submit" className="btn btn-primary btn-sm">Create</button>
+                <button type="submit" className="btn btn-primary btn-sm">Add Session</button>
                 <button
                   type="button"
                   onClick={() => { setShowCreateForm(false); setFormType(null); }}
@@ -135,60 +127,52 @@ export default function Search(): JSX.Element {
       return (
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
-            <h3 className="font-bold text-lg">Create</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Name</span>
-                </label>
+            <h3 className="font-bold text-lg">Add New NPC</h3>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
                   type="text"
                   placeholder="Name"
                   value={npcForm.name}
                   onChange={(e) => setNpcForm({ ...npcForm, name: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Role</label>
                 <input
                   type="text"
                   placeholder="Role"
                   value={npcForm.role}
                   onChange={(e) => setNpcForm({ ...npcForm, role: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Description (Markdown supported)</span>
-                  </label>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                   <textarea
                     placeholder="Description (Markdown supported)"
                     value={npcForm.description}
                     onChange={(e) => setNpcForm({ ...npcForm, description: e.target.value })}
-                    className="textarea textarea-bordered h-32"
+                    className="textarea textarea-bordered w-full h-32"
                     required
                   />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Preview</span>
-                  </label>
-                  <div className="p-2 border rounded h-32 overflow-auto bg-base-100 prose text-base-content">
-                    <ReactMarkdown>{npcForm.description}</ReactMarkdown>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>{npcForm.description}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Tags</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -201,15 +185,15 @@ export default function Search(): JSX.Element {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {npcForm.tags.map(tag => (
-                    <div key={tag} className="badge badge-primary gap-1">
+                    <div key={tag} className="badge badge-primary gap-2">
                       {tag}
-                      <button onClick={() => handleRemoveTag(tag)} className="btn btn-xs btn-ghost">Remove</button>
+                      <button onClick={() => handleRemoveTag(tag)} className="btn btn-xs btn-ghost btn-circle">×</button>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="modal-action">
-                <button type="submit" className="btn btn-primary btn-sm">Create</button>
+                <button type="submit" className="btn btn-primary btn-sm">Add NPC</button>
                 <button
                   type="button"
                   onClick={() => { setShowCreateForm(false); setFormType(null); }}
@@ -227,68 +211,60 @@ export default function Search(): JSX.Element {
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg">Add New Location</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Name</span>
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
                   type="text"
                   placeholder="Name"
                   value={locationForm.name}
                   onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Description</span>
-                  </label>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Description</label>
                   <textarea
                     placeholder="Description"
                     value={locationForm.description}
                     onChange={(e) => setLocationForm({ ...locationForm, description: e.target.value })}
-                    className="textarea textarea-bordered h-20"
+                    className="textarea textarea-bordered w-full h-20"
                     required
                   />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Preview</span>
-                  </label>
-                  <div className="p-2 border rounded h-20 overflow-auto bg-base-100 prose text-base-content">
-                    <ReactMarkdown>{locationForm.description}</ReactMarkdown>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-20 overflow-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>{locationForm.description}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Notes (Markdown supported)</span>
-                  </label>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Notes (Markdown supported)</label>
                   <textarea
                     placeholder="Notes (Markdown supported)"
                     value={locationForm.notes}
                     onChange={(e) => setLocationForm({ ...locationForm, notes: e.target.value })}
-                    className="textarea textarea-bordered h-32"
+                    className="textarea textarea-bordered w-full h-32"
                     required
                   />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Preview</span>
-                  </label>
-                  <div className="p-2 border rounded h-32 overflow-auto bg-base-100 prose text-base-content">
-                    <ReactMarkdown>{locationForm.notes}</ReactMarkdown>
+                <div>
+                  <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>{locationForm.notes}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Tags</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-base-content mb-2">Tags</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -301,9 +277,9 @@ export default function Search(): JSX.Element {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {locationForm.tags.map(tag => (
-                    <div key={tag} className="badge badge-primary gap-1">
+                    <div key={tag} className="badge badge-primary gap-2">
                       {tag}
-                      <button onClick={() => handleRemoveTag(tag)} className="btn btn-xs btn-ghost">Remove</button>
+                      <button onClick={() => handleRemoveTag(tag)} className="btn btn-xs btn-ghost btn-circle">×</button>
                     </div>
                   ))}
                 </div>
@@ -464,7 +440,7 @@ export default function Search(): JSX.Element {
                     className="btn btn-outline btn-primary btn-sm"
                     aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                   >
-                    {isCollapsed ? '+' : '−'}
+                    {isCollapsed ? 'Expand' : 'Collapse'}
                   </button>
                   <h4 className="card-title text-lg">{l.name}</h4>
                 </div>

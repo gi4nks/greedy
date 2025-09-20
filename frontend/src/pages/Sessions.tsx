@@ -80,17 +80,17 @@ export default function Sessions(): JSX.Element {
   return (
     <Page title="Sessions" toolbar={<button type="button" onMouseDown={(e) => { e.preventDefault(); console.log('Sessions + button clicked'); setShowCreateForm(true); }} onClick={() => { console.log('Sessions + onClick fired'); setShowCreateForm(true); }} className="btn btn-primary btn-sm">Create</button>}>
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit' : 'Create'}</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">Adventure</label>
                 <select
                   value={formData.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                 >
                   <option value="">Global</option>
                   {adv.adventures.map(a => (
@@ -106,7 +106,7 @@ export default function Sessions(): JSX.Element {
                   placeholder="Title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
@@ -117,7 +117,7 @@ export default function Sessions(): JSX.Element {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
@@ -128,14 +128,14 @@ export default function Sessions(): JSX.Element {
                   placeholder="Session notes (Markdown supported)"
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                  className="textarea textarea-bordered h-40"
+                  className="textarea textarea-bordered w-full h-40"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                <div className="bg-base-100 border border-base-300 rounded-box p-4 h-40 overflow-auto">
+                <div className="bg-base-200 border border-base-300 rounded-box p-4 h-40 overflow-auto">
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown children={formData.text} />
                   </div>

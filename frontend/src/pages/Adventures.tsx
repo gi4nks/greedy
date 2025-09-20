@@ -74,13 +74,12 @@ export default function Adventures(): JSX.Element {
   return (
     <Page title="Adventures" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       {(showCreateForm || editingId) && (
-        <div className="mb-4">
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300">
+        <div className="mb-6">
+          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Adventure' : 'Create New Adventure'}</h3>
 
-              <div className="space-y-4">
-                {/* Title Field */}
+              <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Title</label>
                   <input
@@ -93,7 +92,6 @@ export default function Adventures(): JSX.Element {
                   />
                 </div>
 
-                {/* Description and Preview */}
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Description (Markdown supported)</label>
                   <textarea
@@ -106,7 +104,7 @@ export default function Adventures(): JSX.Element {
 
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Preview</label>
-                  <div className="bg-base-100 border border-base-300 rounded-box p-4 h-32 overflow-auto">
+                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown children={formData.description || ''} />
                     </div>
@@ -114,8 +112,7 @@ export default function Adventures(): JSX.Element {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="card-actions justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -127,7 +124,7 @@ export default function Adventures(): JSX.Element {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-secondary btn-sm">
+                <button type="submit" className="btn btn-primary btn-sm">
                   {editingId ? 'Update' : 'Create'}
                 </button>
               </div>

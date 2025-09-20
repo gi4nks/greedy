@@ -254,13 +254,13 @@ export const Quests: React.FC = () => {
       <div className="space-y-6">
         {/* Create/Edit Form */}
         {showCreateForm && (
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
             <div className="card-body">
               <h3 className="card-title text-xl justify-center">
                 {editingId ? 'Edit Quest' : 'Create New Quest'}
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-base-content mb-2">Title *</label>
@@ -269,7 +269,7 @@ export const Quests: React.FC = () => {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                     placeholder="Enter quest title"
                   />
                 </div>
@@ -282,7 +282,7 @@ export const Quests: React.FC = () => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={4}
-                    className="textarea textarea-bordered"
+                    className="textarea textarea-bordered w-full"
                     placeholder="Describe the quest"
                   />
                 </div>
@@ -293,7 +293,7 @@ export const Quests: React.FC = () => {
                   <select
                     value={formData.adventure_id || ''}
                     onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? parseInt(e.target.value) : null })}
-                    className="select select-bordered"
+                    className="select select-bordered w-full"
                     required
                   >
                     <option value="">Select Adventure</option>
@@ -312,7 +312,7 @@ export const Quests: React.FC = () => {
                   <select
                     value={formData.assigned_to || ''}
                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    className="select select-bordered"
+                    className="select select-bordered w-full"
                     disabled={!formData.adventure_id}
                   >
                     <option value="">
@@ -341,7 +341,7 @@ export const Quests: React.FC = () => {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as Quest['status'] })}
-                      className="select select-bordered"
+                      className="select select-bordered w-full"
                     >
                       <option value="active">Active</option>
                       <option value="completed">Completed</option>
@@ -355,7 +355,7 @@ export const Quests: React.FC = () => {
                     <select
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: e.target.value as Quest['priority'] })}
-                      className="select select-bordered"
+                      className="select select-bordered w-full"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -370,7 +370,7 @@ export const Quests: React.FC = () => {
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as Quest['type'] })}
-                      className="select select-bordered"
+                      className="select select-bordered w-full"
                     >
                       <option value="main">Main Quest</option>
                       <option value="side">Side Quest</option>
@@ -388,7 +388,7 @@ export const Quests: React.FC = () => {
                     type="date"
                     value={formData.due_date || ''}
                     onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                   />
                 </div>
 
@@ -402,7 +402,7 @@ export const Quests: React.FC = () => {
                       ...formData,
                       tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
                     })}
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                     placeholder="Enter tags separated by commas"
                   />
                 </div>

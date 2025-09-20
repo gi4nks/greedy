@@ -6,9 +6,9 @@ import { useAdventures } from '../contexts/AdventureContext';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <div className="badge badge-primary badge-outline gap-2">
+    <div className="badge badge-primary gap-2">
       {label}
-      <button onClick={onRemove} className="btn btn-circle btn-xs btn-error">×</button>
+      <button onClick={onRemove} className="btn btn-xs btn-ghost btn-circle">×</button>
     </div>
   );
 }
@@ -117,11 +117,11 @@ export default function NPCs(): JSX.Element {
       </div>
 
       {(showCreateForm || editingId) && (
-        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl border border-base-300 mb-6">
+        <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl mb-6">
           <div className="card-body">
             <h3 className="card-title text-xl justify-center">{editingId ? 'Edit NPC' : 'Create New NPC'}</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">Name</label>
                 <input
@@ -129,7 +129,7 @@ export default function NPCs(): JSX.Element {
                   placeholder="NPC Name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                   required
                 />
               </div>
@@ -141,7 +141,7 @@ export default function NPCs(): JSX.Element {
                   placeholder="e.g., Innkeeper, Guard, Merchant, Villain"
                   value={formData.role || ''}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="input input-bordered"
+                  className="input input-bordered w-full"
                 />
               </div>
 
@@ -150,7 +150,7 @@ export default function NPCs(): JSX.Element {
                 <select
                   value={formData.adventure_id ?? (adv.selectedId ?? '')}
                   onChange={(e) => setFormData({ ...formData, adventure_id: e.target.value ? Number(e.target.value) : null })}
-                  className="select select-bordered"
+                  className="select select-bordered w-full"
                 >
                   <option value="">Global NPC</option>
                   {adv.adventures.map(a => (
@@ -165,7 +165,7 @@ export default function NPCs(): JSX.Element {
                   placeholder="Describe the NPC's appearance, personality, background..."
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="textarea textarea-bordered h-32"
+                  className="textarea textarea-bordered w-full h-32"
                 />
               </div>
 
@@ -184,9 +184,6 @@ export default function NPCs(): JSX.Element {
             </div>
 
             <div className="card-actions justify-end">
-              <button type="submit" className="btn btn-primary btn-sm">
-                {editingId ? 'Update' : 'Create'}
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -197,6 +194,9 @@ export default function NPCs(): JSX.Element {
                 className="btn btn-ghost btn-sm"
               >
                 Cancel
+              </button>
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>

@@ -399,7 +399,7 @@ export default function CombatTracker(): JSX.Element {
 
                         {/* Conditions */}
                         <div className="mb-3">
-                          <div className="flex flex-wrap gap-1 mb-2">
+                          <div className="flex flex-wrap gap-2 mb-2">
                             {combatant.conditions.map(condition => (
                               <div
                                 key={condition}
@@ -408,9 +408,9 @@ export default function CombatTracker(): JSX.Element {
                                 {condition}
                                 <button
                                   onClick={() => removeCondition(combatant.id, condition)}
-                                  className="btn btn-xs btn-ghost"
+                                  className="btn btn-xs btn-ghost btn-circle"
                                 >
-                                  Remove
+                                  ×
                                 </button>
                               </div>
                             ))}
