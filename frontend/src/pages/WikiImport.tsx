@@ -515,14 +515,6 @@ export default function WikiImport(): JSX.Element {
                                   </div>
                                   <button
                                     onClick={() => {
-                                      // Debug functionality removed
-                                    }}
-                                    className="btn btn-outline btn-xs"
-                                  >
-                                    Debug
-                                  </button>
-                                  <button
-                                    onClick={() => {
                                       const contentToShow = articleData.isFullContent ? articleData.content : articleData.extract;
                                       setFeedbackMessage({ type: 'info', message: `Raw Content:\n\n${contentToShow || 'No content'}` });
                                     }}

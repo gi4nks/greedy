@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+ import express, { Request, Response } from 'express';
 import { db } from '../../db';
 import { parseTags, stringifyTags } from '../utils';
 import { validateBody, validateId, characterSchema } from '../middleware/validation';
@@ -27,7 +27,7 @@ router.get('/', (req: Request, res: Response) => {
 
 router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request, res: Response) => {
   const {
-    adventure_id, name, race, class: charClass, level, background, alignment, experience,
+    adventure_id, name, character_type, race, class: charClass, level, background, alignment, experience,
     classes,
     strength, dexterity, constitution, intelligence, wisdom, charisma,
     hitPoints, maxHitPoints, armorClass, initiative, speed, proficiencyBonus,
@@ -39,7 +39,7 @@ router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request
 
   const info = db.prepare(`
     INSERT INTO characters (
-      id, adventure_id, name, race, class, level, background, alignment, experience,
+      id, adventure_id, character_type, name, race, class, level, background, alignment, experience,
       strength, dexterity, constitution, intelligence, wisdom, charisma,
       hit_points, max_hit_points, armor_class, initiative, speed, proficiency_bonus,
       saving_throws, skills, equipment, weapons, spells,
@@ -47,7 +47,7 @@ router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request
       personality_traits, ideals, bonds, flaws, backstory,
       role, description, tags, classes
     ) VALUES (
-      $id, $adventure_id, $name, $race, $class, $level, $background, $alignment, $experience,
+      $id, $adventure_id, $character_type, $name, $race, $class, $level, $background, $alignment, $experience,
       $strength, $dexterity, $constitution, $intelligence, $wisdom, $charisma,
       $hit_points, $max_hit_points, $armor_class, $initiative, $speed, $proficiency_bonus,
       $saving_throws, $skills, $equipment, $weapons, $spells,
@@ -58,6 +58,7 @@ router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request
   `).run({
     id: null,
     adventure_id: adventure_id || null,
+    character_type: character_type || 'pc',
     name: name,
     race: race || null,
     class: charClass || null,
@@ -111,7 +112,7 @@ router.post('/', validateBody(characterSchema), asyncHandler(async (req: Request
 
 router.put('/:id', validateId, validateBody(characterSchema), asyncHandler(async (req: Request, res: Response) => {
   const {
-    name, race, class: charClass, level, background, alignment, experience,
+    name, character_type, race, class: charClass, level, background, alignment, experience,
     classes,
     strength, dexterity, constitution, intelligence, wisdom, charisma,
     hitPoints, maxHitPoints, armorClass, initiative, speed, proficiencyBonus,
@@ -123,7 +124,7 @@ router.put('/:id', validateId, validateBody(characterSchema), asyncHandler(async
 
   db.prepare(`
     UPDATE characters SET
-      adventure_id = $adventure_id, name = $name, race = $race, class = $class, level = $level, background = $background, alignment = $alignment, experience = $experience,
+      adventure_id = $adventure_id, character_type = $character_type, name = $name, race = $race, class = $class, level = $level, background = $background, alignment = $alignment, experience = $experience,
       strength = $strength, dexterity = $dexterity, constitution = $constitution, intelligence = $intelligence, wisdom = $wisdom, charisma = $charisma,
       hit_points = $hit_points, max_hit_points = $max_hit_points, armor_class = $armor_class, initiative = $initiative, speed = $speed, proficiency_bonus = $proficiency_bonus,
       saving_throws = $saving_throws, skills = $skills, equipment = $equipment, weapons = $weapons, spells = $spells,
@@ -134,6 +135,7 @@ router.put('/:id', validateId, validateBody(characterSchema), asyncHandler(async
   `).run({
     id: req.params.id as any,
     adventure_id: adventure_id || null,
+    character_type: character_type || 'pc',
     name: name,
     race: race || null,
     class: charClass || null,

@@ -227,7 +227,7 @@ export default function Sessions(): JSX.Element {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(session.id)}
+                      onClick={() => void handleDelete(session.id)}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete

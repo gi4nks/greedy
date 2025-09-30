@@ -380,6 +380,19 @@ export default function Characters(): JSX.Element {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="character-type" className="block text-sm font-medium text-base-content mb-2">Character Type</label>
+                  <select
+                    id="character-type"
+                    value={formData.character_type || 'pc'}
+                    onChange={(e) => setFormData({ ...formData, character_type: e.target.value as 'pc' | 'npc' | 'monster' })}
+                    className="select select-bordered w-full"
+                  >
+                    <option value="pc">Player Character</option>
+                    <option value="npc">Non-Player Character</option>
+                    <option value="monster">Monster</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}

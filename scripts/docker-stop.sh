@@ -5,7 +5,7 @@ echo "🛑 Stopping Greedy Application"
 echo "============================="
 
 # Stop and remove containers
-docker compose down
+docker compose --profile dev down
 
 echo "✅ Application stopped successfully!"
 echo ""

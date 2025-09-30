@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAdventures as useAdventuresQuery } from '../hooks/useAdventures';
 import { useAdventureCounts } from '../hooks/useAdventureCounts';
-
-type Adventure = { id?: number; slug?: string; title: string; description?: string };
+import { Adventure } from '@greedy/shared';
 
 type AdventureContextValue = {
   adventures: Adventure[];

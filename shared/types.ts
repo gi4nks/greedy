@@ -21,6 +21,7 @@ export interface CharacterSpell {
 export interface Character {
   id?: number;
   adventure_id?: number | null;
+  character_type?: 'pc' | 'npc' | 'monster';
   name: string;
   race?: string;
   class?: string;
@@ -64,11 +65,17 @@ export interface Character {
   flaws?: string;
   backstory?: string;
 
-  // Legacy fields (for backward compatibility)
+  // NPC-specific fields
   role?: string;
+  npc_relationships?: Array<{
+    characterId: number;
+    relationship: 'ally' | 'enemy' | 'neutral' | 'romantic' | 'family' | 'friend' | 'rival';
+    strength: number; // -10 to +10
+    notes: string;
+  }>;
+  classes?: CharacterClass[];
   description?: string;
   tags?: string[];
-  classes?: CharacterClass[];
 }
 
 export interface MagicItem {
@@ -141,6 +148,8 @@ export interface CharacterForm extends Omit<Character, 'id' | 'saving_throws' | 
   weapons?: any[];
   spells?: CharacterSpell[];
   classes?: CharacterClass[];
+  description?: string;
+  tags?: string[];
 }
 
 export interface MagicItemForm extends Omit<MagicItem, 'id' | 'owners'> {}
@@ -195,4 +204,102 @@ export interface Quest {
 
 export interface QuestWithObjectives extends Quest {
   objectives: QuestObjective[];
+}
+
+// Enhanced Combat System Types
+export interface CombatCondition {
+  id: string;
+  name: string;
+  description: string;
+  duration: number; // rounds remaining, -1 for permanent
+  source: string;
+  effects: ConditionEffect[];
+  createdAt: string;
+}
+
+export interface ConditionEffect {
+  type: 'advantage' | 'disadvantage' | 'immunity' | 'resistance' | 'vulnerability' | 'bonus' | 'penalty';
+  target: 'attack' | 'damage' | 'saving_throw' | 'ability_check' | 'speed' | 'ac';
+  value?: number;
+  description: string;
+}
+
+export interface CombatEncounter {
+  id?: number;
+  sessionId: number;
+  name: string;
+  round: number;
+  activeCombatantId?: number;
+  environment?: EnvironmentEffect[];
+  status: 'active' | 'paused' | 'completed';
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface EnvironmentEffect {
+  id: string;
+  name: string;
+  description: string;
+  type: 'hazard' | 'terrain' | 'weather' | 'magical';
+  effects: ConditionEffect[];
+  area: string; // affected area description
+}
+
+export interface CombatParticipant {
+  id?: number;
+  encounterId: number;
+  characterId: number;
+  character?: Character; // populated when needed
+  initiative: number;
+  currentHp: number;
+  maxHp: number;
+  armorClass: number;
+  conditions: CombatCondition[];
+  notes: string;
+  isNpc: boolean;
+  // Action economy tracking
+  hasAction: boolean;
+  hasBonusAction: boolean;
+  hasReaction: boolean;
+  hasMovement: boolean;
+  position?: string; // grid position like "A5" or "x:5,y:3"
+}
+
+// Enhanced NPC Relationship Types
+export interface NPCRelationship {
+  id?: number;
+  npcId: number;
+  characterId: number;
+  relationshipType: 'ally' | 'enemy' | 'neutral' | 'romantic' | 'family' | 'friend' | 'rival' | 'acquaintance';
+  strength: number; // -10 to +10, where -10 is mortal enemy, +10 is best friend
+  trust: number; // 0-100, how much they trust the character
+  fear: number; // 0-100, how much they fear the character
+  respect: number; // 0-100, how much they respect the character
+  notes: string;
+  history: RelationshipEvent[];
+  latestEvent?: {
+    id?: number;
+    description?: string;
+    impactValue?: number;
+    trustChange?: number;
+    fearChange?: number;
+    respectChange?: number;
+    date?: string;
+    sessionTitle?: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RelationshipEvent {
+  id?: number;
+  relationshipId: number;
+  sessionId?: number;
+  description: string;
+  impactValue: number; // change in relationship strength (-10 to +10)
+  trustChange: number; // change in trust (-100 to +100)
+  fearChange: number; // change in fear (-100 to +100)
+  respectChange: number; // change in respect (-100 to +100)
+  date: string;
+  createdAt: string;
 }

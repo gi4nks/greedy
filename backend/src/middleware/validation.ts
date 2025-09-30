@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 // Character validation schemas
 export const characterSchema = Joi.object({
   name: Joi.string().required().min(1).max(100).trim(),
+  character_type: Joi.string().valid('pc', 'npc', 'monster').default('pc'),
   race: Joi.string().max(50).trim().allow(null, ''),
   class: Joi.string().max(50).trim().allow(null, ''),
   level: Joi.number().integer().min(1).max(20).default(1),

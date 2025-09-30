@@ -204,7 +204,7 @@ export default function Adventures(): JSX.Element {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(adventure.id)}
+                      onClick={() => void handleDelete(adventure.id)}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete

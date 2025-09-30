@@ -88,21 +88,54 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ message: 'Magic item deleted' });
 });
 
-// Assign to character
+// Assign to character(s)
+// Accepts either { characterId, attuned } or { characterIds: number[] }
 router.post('/:id/assign', (req: Request, res: Response) => {
-  const { characterId, attuned } = req.body;
-  if (!characterId) return res.status(400).json({ error: 'characterId is required' });
-  // insert or ignore to avoid duplicates
-  db.prepare(`INSERT OR IGNORE INTO character_magic_items (character_id, magic_item_id, attuned) VALUES ($characterId, $magicItemId, $attuned)`).run({
-    characterId, magicItemId: req.params.id as any, attuned: attuned ? 1 : 0
-  });
+  const { characterId, characterIds, attuned } = req.body as any;
+  const itemId = req.params.id as any;
+
+  if (!characterId && !(Array.isArray(characterIds) && characterIds.length > 0)) {
+    return res.status(400).json({ error: 'characterId or characterIds is required' });
+  }
+
+  const insertStmt = db.prepare(`INSERT OR IGNORE INTO character_magic_items (character_id, magic_item_id, equipped) VALUES ($characterId, $magicItemId, $equipped)`);
+
+  if (Array.isArray(characterIds) && characterIds.length > 0) {
+    const txn = db.transaction((ids: number[]) => {
+      for (const cid of ids) {
+        insertStmt.run({ characterId: cid, magicItemId: itemId, equipped: 0 });
+      }
+    });
+    txn(characterIds as number[]);
+  } else {
+    insertStmt.run({ characterId, magicItemId: itemId, equipped: attuned ? 1 : 0 });
+  }
+
   const owners = db.prepare(`
     SELECT ch.* FROM characters ch
     JOIN character_magic_items cmi ON cmi.character_id = ch.id
     WHERE cmi.magic_item_id = ?
-  `).all(req.params.id as any);
-  const row = db.prepare('SELECT * FROM magic_items WHERE id = ?').get(req.params.id as any) as any;
-  if (row.properties) row.properties = JSON.parse(row.properties);
+  `).all(itemId);
+  const row = db.prepare('SELECT * FROM magic_items WHERE id = ?').get(itemId) as any;
+  if (row && row.properties) row.properties = JSON.parse(row.properties);
+  row.owners = owners;
+  res.json(row);
+});
+
+// Support unassign via DELETE /:id/assign/:characterId (frontend uses this)
+router.delete('/:id/assign/:characterId', (req: Request, res: Response) => {
+  const itemId = req.params.id as any;
+  const characterIdParam = req.params.characterId;
+  if (!characterIdParam) return res.status(400).json({ error: 'characterId is required' });
+  const characterIdNum = Number(characterIdParam);
+  db.prepare('DELETE FROM character_magic_items WHERE character_id = $characterId AND magic_item_id = $magicItemId').run({ characterId: characterIdNum, magicItemId: itemId });
+  const owners = db.prepare(`
+    SELECT ch.* FROM characters ch
+    JOIN character_magic_items cmi ON cmi.character_id = ch.id
+    WHERE cmi.magic_item_id = ?
+  `).all(itemId);
+  const row = db.prepare('SELECT * FROM magic_items WHERE id = ?').get(itemId) as any;
+  if (row && row.properties) row.properties = JSON.parse(row.properties);
   row.owners = owners;
   res.json(row);
 });

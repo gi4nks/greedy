@@ -1,11 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-export interface Adventure {
-  id?: number;
-  slug?: string;
-  title: string;
-  description?: string;
-}
+import { Adventure } from '@greedy/shared';
 
 export function useAdventures() {
   return useQuery({

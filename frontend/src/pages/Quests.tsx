@@ -14,7 +14,7 @@ import {
 } from '../hooks/useQuests';
 import { useCharacters } from '../hooks/useCharacters';
 import { useSearch } from '../hooks/useSearch';
-import { Quest, QuestObjective } from '@greedy/shared';
+import { Quest, QuestObjective, SearchResult } from '@greedy/shared';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -37,7 +37,7 @@ export const Quests: React.FC = () => {
   // React Query hooks
   const { data: quests = [], isLoading } = useQuests(adv.selectedId || undefined);
   const { data: characters = [] } = useCharacters(adv.selectedId || undefined);
-  const { data: searchResults } = useSearch(searchTerm, adv.selectedId ?? undefined);
+  const { data: searchResults, isError: searchError } = useSearch(searchTerm, adv.selectedId ?? undefined) as { data: SearchResult | undefined; isError: boolean };
 
   // Mutations
   const createQuestMutation = useCreateQuest();
@@ -464,7 +464,7 @@ export const Quests: React.FC = () => {
 
         {/* Quests List */}
         <div className="grid gap-4">
-          {(searchTerm ? searchResults?.quests || [] : quests).map((quest: Quest) => {
+          {(searchTerm && !searchError && searchResults ? searchResults.quests : quests).map((quest: Quest) => {
             return (
               <div key={quest.id} className="card bg-base-100 shadow-xl">
                 <div className="card-body">

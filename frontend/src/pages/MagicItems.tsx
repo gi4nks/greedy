@@ -24,6 +24,7 @@ export default function MagicItems(): JSX.Element {
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState<number | null>(null);
   const [charSearch, setCharSearch] = useState('');
+  const [charTypeFilter, setCharTypeFilter] = useState<'all' | 'pc' | 'npc'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   // Collapsed state for each magic item
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
@@ -148,8 +149,10 @@ export default function MagicItems(): JSX.Element {
   const filteredCharacters = useMemo(() => {
     const q = charSearch.trim().toLowerCase();
     const validCharacters = characters.filter(c => c.id !== undefined);
-    if (!q) return validCharacters;
-    return validCharacters.filter(c => c.name.toLowerCase().includes(q));
+    let list = validCharacters;
+    if (charTypeFilter !== 'all') list = list.filter(c => c.character_type === charTypeFilter);
+    if (!q) return list;
+    return list.filter(c => c.name.toLowerCase().includes(q));
   }, [characters, charSearch]);
 
   const saveAssignments = async () => {
@@ -311,18 +314,18 @@ export default function MagicItems(): JSX.Element {
                         Owners ({(item.owners || []).length})
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {(item.owners || []).map(o => (
-                          <div key={o.id} className="badge badge-secondary gap-2">
-                            <span>{o.name}</span>
-                            <button
-                              onClick={() => { void unassignFromCharacter(item.id!, o.id!); }}
-                              className="btn btn-circle btn-xs btn-error"
-                              disabled={unassigning === o.id}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
+                          {(item.owners || []).map(o => (
+                            <div key={o.id} className="badge badge-secondary gap-2 flex items-center">
+                              <span className="font-medium">{o.name}</span>
+                              <button
+                                onClick={() => { void unassignFromCharacter(item.id!, o.id!); }}
+                                className="btn btn-circle btn-xs btn-error ml-2"
+                                disabled={unassigning === o.id}
+                              >
+                                x
+                              </button>
+                            </div>
+                          ))}
                         <button
                           onClick={() => openAssignModal(item.id!)}
                           className="btn btn-success btn-sm"
@@ -346,6 +349,11 @@ export default function MagicItems(): JSX.Element {
             <div className="py-4">
               <div className="mb-3 flex gap-2">
                 <input className="input input-bordered flex-1" placeholder="Search characters..." value={charSearch} onChange={(e) => setCharSearch(e.target.value)} />
+                <select className="select select-bordered" value={charTypeFilter} onChange={(e) => setCharTypeFilter(e.target.value as any)}>
+                  <option value="all">All</option>
+                  <option value="pc">Players</option>
+                  <option value="npc">NPCs</option>
+                </select>
                 <button onClick={() => { setSelectedCharIds(filteredCharacters.map(c => c.id!)); }} className="btn btn-secondary btn-sm">Select All</button>
                 <button onClick={() => { setSelectedCharIds([]); }} className="btn btn-ghost btn-sm">Clear</button>
               </div>
@@ -356,7 +364,8 @@ export default function MagicItems(): JSX.Element {
                       if (e.target.checked) setSelectedCharIds(prev => [...prev, c.id!]);
                       else setSelectedCharIds(prev => prev.filter(id => id !== c.id));
                     }} />
-                    <span>{c.name}</span>
+                    <span className="flex-1">{c.name}</span>
+                    <span className="text-xs px-2 py-1 rounded bg-base-200">{c.character_type || 'pc'}</span>
                   </label>
                 ))}
                 {filteredCharacters.length === 0 && <div className="text-sm text-base-content/60 p-2">No characters found</div>}

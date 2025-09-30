@@ -1,4 +1,6 @@
 import request from 'supertest';
+process.env.DB_FILE = ':memory:';
+process.env.SKIP_MIGRATIONS = '1';
 import { createApp } from '../src/app';
 
 const app = createApp();

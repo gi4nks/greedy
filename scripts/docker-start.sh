@@ -15,7 +15,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 echo "📦 Bringing up containers (detached)..."
-if ! docker compose up --build -d; then
+if ! docker compose --profile dev up --build -d; then
   echo "❌ docker compose up failed. Showing diagnostics..."
   echo "--- docker compose config ---"
   docker compose config || true
@@ -28,18 +28,18 @@ echo "⏳ Waiting for services to start..."
 sleep 5
 
 echo "🔍 Current service status:"
-docker compose ps --all
+docker compose --profile dev ps --all
 
 # Backend running?
-if docker compose ps --services --filter "status=running" | grep -q backend; then
+if docker compose --profile dev ps --services --filter "status=running" | grep -q backend; then
   echo "✅ Backend container is running"
 else
   echo "❌ Backend container is not running"
 fi
 
 # DB file check (only if backend container exists)
-if docker compose ps --services | grep -q backend; then
-  if docker compose exec -T backend test -f /app/data/campaign.db > /dev/null 2>&1; then
+if docker compose --profile dev ps --services | grep -q backend; then
+  if docker compose --profile dev exec -T backend test -f /app/data/campaign.db > /dev/null 2>&1; then
     echo "✅ Database file exists"
   else
     echo "ℹ️  Database file not found at /app/data/campaign.db (it may be created on first run)"
@@ -61,6 +61,6 @@ else
 fi
 
 echo ""
-echo "🎉 Done. To follow logs: docker compose logs -f"
-echo "To run in foreground (see build/runtime output): docker compose up --build"
+echo "🎉 Done. To follow logs: docker compose --profile dev logs -f"
+echo "To run in foreground (see build/runtime output): docker compose --profile dev up --build"
 echo "To rebuild only a service: make rebuild-frontend  # or make rebuild-backend"
