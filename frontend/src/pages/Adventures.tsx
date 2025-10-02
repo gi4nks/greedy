@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
@@ -9,8 +9,8 @@ import {
   useUpdateAdventure,
   useDeleteAdventure
 } from '../hooks/useAdventures';
-
-type Adventure = { id?: number; slug?: string; title: string; description?: string };
+import { useQueryClient } from '@tanstack/react-query';
+import { Adventure } from '@greedy/shared';
 
 export default function Adventures(): JSX.Element {
   const [formData, setFormData] = useState<Adventure>({ title: '', description: '' });
@@ -21,11 +21,15 @@ export default function Adventures(): JSX.Element {
   const adv = useAdventures();
   const toast = useToast();
 
+  const queryClient = useQueryClient();
+
   // React Query hooks
   const { data: adventures = [], isLoading } = useAdventuresQuery();
   const createAdventureMutation = useCreateAdventure();
   const updateAdventureMutation = useUpdateAdventure();
   const deleteAdventureMutation = useDeleteAdventure();
+
+
 
   // Toggle collapse for an adventure
   const toggleCollapse = (id?: number) => {
@@ -40,7 +44,7 @@ export default function Adventures(): JSX.Element {
       try {
         await updateAdventureMutation.mutateAsync({
           id: editingId,
-          adventure: payload
+          data: payload
         });
         toast.push('Adventure updated successfully', { type: 'success' });
         setFormData({ title: '', description: '' });
@@ -104,7 +108,7 @@ export default function Adventures(): JSX.Element {
     <Page title="Adventures" toolbar={<button onClick={() => setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       {(showCreateForm || editingId) && (
         <div className="mb-6">
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl">
+          <form onSubmit={async (e) => { await handleSubmit(e); }} className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h3 className="card-title text-xl justify-center">{editingId ? 'Edit Adventure' : 'Create New Adventure'}</h3>
 
@@ -131,15 +135,6 @@ export default function Adventures(): JSX.Element {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="textarea textarea-bordered w-full h-32"
                   />
-                </div>
-
-                <div>
-                  <div className="block text-sm font-medium text-base-content mb-2">Preview</div>
-                  <div className="bg-base-200 border border-base-300 rounded-box p-4 h-32 overflow-auto">
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown>{formData.description || ''}</ReactMarkdown>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -214,6 +209,27 @@ export default function Adventures(): JSX.Element {
 
                 {!isCollapsed && (
                   <div className="space-y-6 mt-6">
+                    {/* Adventure Images Display Only */}
+                    {(adventure as any).images && Array.isArray((adventure as any).images) && (adventure as any).images.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <span className="text-lg">🖼️</span>
+                          Images ({(adventure as any).images.length})
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {(adventure as any).images.map((image: any, index: number) => (
+                            <div key={image.id || index} className="aspect-square rounded-lg overflow-hidden bg-base-200">
+                              <img 
+                                src={`/api/images/adventures/${image.image_path?.split('/').pop() || 'placeholder.jpg'}`} 
+                                alt={`Adventure image ${index + 1}`}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     {counts && (
                       <div className="bg-primary/10 rounded-box p-4 border border-primary/20">
                         <div className="flex items-center gap-4 text-sm text-base-content">

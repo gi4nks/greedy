@@ -60,13 +60,13 @@ export function useUpdateLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, location }: { id: number; location: Partial<Location> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Location> }) => {
       const response = await fetch(`/api/locations/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(location),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json() as Promise<Location>;

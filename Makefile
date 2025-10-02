@@ -1,4 +1,4 @@
-.PHONY: build build-dev up start stop status down clean dev-up dev-start dev-frontend dev-backend rebuild-frontend rebuild-backend logs help
+.PHONY: build build-dev up start stop status down clean dev-up dev-start dev-frontend dev-backend rebuild-frontend rebuild-backend logs help dev-fast dev-watch
 
 # Build all images (no-cache, verbose)
 build:
@@ -67,6 +67,32 @@ rebuild-backend:
 logs:
 	docker compose --profile dev logs -f --tail=200
 
+# ⚡ FAST DEVELOPMENT COMMANDS ⚡
+# Start optimized development environment (uses dev-specific compose file)
+dev-fast:
+	@echo "⚡ Starting FAST development environment..."
+	@echo "🔥 Using optimized docker-compose.dev.yml configuration"
+	docker compose -f docker-compose.dev.yml --profile dev up --build
+
+# Start development with file watching (Docker Compose Watch)
+dev-watch:
+	@echo "👀 Starting development with file watching..."
+	@echo "🔥 Hot reload enabled for source files only"
+	docker compose -f docker-compose.dev.yml --profile dev watch
+
+# Rebuild development containers with cache optimization
+dev-rebuild:
+	@echo "🔄 Rebuilding development containers with optimizations..."
+	docker compose -f docker-compose.dev.yml --profile dev build --parallel
+	docker compose -f docker-compose.dev.yml --profile dev up -d
+
+# Clean development volumes and restart fresh
+dev-clean:
+	@echo "🧹 Cleaning development environment..."
+	docker compose -f docker-compose.dev.yml --profile dev down -v
+	docker volume rm greedy_frontend_node_modules greedy_backend_node_modules 2>/dev/null || true
+	$(MAKE) dev-fast
+
 help:
 	@echo "Available targets:"
 	@echo ""
@@ -86,6 +112,12 @@ help:
 	@echo "  rebuild-frontend  - Rebuild and restart frontend (dev)"
 	@echo "  rebuild-backend   - Rebuild and restart backend (dev)"
 	@echo "  logs              - Follow logs (dev profile)"
+	@echo ""
+	@echo "⚡ FAST Development Commands:"
+	@echo "  dev-fast          - Start optimized development environment"
+	@echo "  dev-watch         - Start development with file watching"
+	@echo "  dev-rebuild       - Rebuild development containers with cache"
+	@echo "  dev-clean         - Clean and restart development environment"
 	@echo ""
 	@echo "🔧 Backend Development Commands:"
 	@echo "  backend-dev           - Start backend development server"

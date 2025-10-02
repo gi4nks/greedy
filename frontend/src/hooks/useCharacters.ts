@@ -52,13 +52,13 @@ export function useUpdateCharacter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, character }: { id: number; character: Omit<Character, 'id'> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Omit<Character, 'id'> }) => {
       const response = await fetch(`/api/characters/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(character),
+        body: JSON.stringify(data),
       });
       if (!response.ok) {
         // Log the error response for debugging
@@ -67,7 +67,7 @@ export function useUpdateCharacter() {
           status: response.status,
           statusText: response.statusText,
           body: errorText,
-          requestData: character
+          requestData: data
         });
         throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${errorText}`);
       }

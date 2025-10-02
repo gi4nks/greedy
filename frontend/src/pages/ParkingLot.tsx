@@ -49,8 +49,8 @@ export default function ParkingLot(): JSX.Element {
           <div className="card-body">
             <h2 className="card-title text-xl">🅿️ Parking Lot</h2>
             <p className="text-base-content/70 mb-4">
-              Temporary storage for imported wiki content that doesn't have a dedicated section yet.
-              Items here can be moved to appropriate sections when they're created.
+              Temporary storage for imported wiki content that doesn&apos;t have a dedicated section yet.
+              Items here can be moved to appropriate sections when they&apos;re created.
             </p>
 
             {(!items || items.length === 0) ? (
@@ -100,7 +100,7 @@ export default function ParkingLot(): JSX.Element {
                           <select
                             onChange={(e) => {
                               if (e.target.value) {
-                                moveToSection(item, e.target.value);
+                                void moveToSection(item, e.target.value);
                                 e.target.value = '';
                               }
                             }}
@@ -115,7 +115,7 @@ export default function ParkingLot(): JSX.Element {
                           </select>
                           {item.id && (
                             <button
-                              onClick={() => deleteItem(item.id!)}
+                              onClick={() => void deleteItem(item.id!)}
                               className="btn btn-error btn-sm"
                             >
                               Delete

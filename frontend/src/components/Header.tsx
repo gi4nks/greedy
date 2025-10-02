@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import ThemeSwitcher from './ThemeSwitcher';
 
 export default function Header(): JSX.Element {
   const [open, setOpen] = useState(false);
@@ -96,6 +97,7 @@ export default function Header(): JSX.Element {
       </div>
 
       <div className="navbar-end">
+        <ThemeSwitcher />
         {/* Search functionality moved to AdventureSelector component */}
       </div>
     </div>

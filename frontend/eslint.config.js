@@ -56,6 +56,7 @@ export default [
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-floating-promises': 'off',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'jsx-a11y/anchor-is-valid': 'off',

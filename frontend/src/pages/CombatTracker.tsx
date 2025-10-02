@@ -13,13 +13,16 @@ import {
   useCombatParticipants,
   useCreateCombatParticipant,
   useUpdateCombatParticipant,
-  useDeleteCombatParticipant,
-  useCombatConditions,
-  useCreateCombatCondition,
-  useUpdateCombatCondition,
-  useDeleteCombatCondition
+  useDeleteCombatParticipant
 } from '../hooks/useCombat';
-import { CombatEncounter, CombatParticipant, CombatCondition } from '@greedy/shared';
+import { CombatEncounter, CombatParticipant } from '@greedy/shared';
+import {
+  CombatEncounterList,
+  CombatStatus,
+  CombatParticipants,
+  CombatEncounterForm,
+  AddParticipantModal
+} from '../components/combat';
 
 export default function CombatTracker(): JSX.Element {
   const [selectedEncounterId, setSelectedEncounterId] = useState<number | null>(null);
@@ -41,9 +44,6 @@ export default function CombatTracker(): JSX.Element {
   const createParticipantMutation = useCreateCombatParticipant();
   const updateParticipantMutation = useUpdateCombatParticipant();
   const deleteParticipantMutation = useDeleteCombatParticipant();
-  const createConditionMutation = useCreateCombatCondition();
-  const updateConditionMutation = useUpdateCombatCondition();
-  const deleteConditionMutation = useDeleteCombatCondition();
 
   // Available characters and NPCs for adding to combat
   const { data: availableCharacters = [] } = useCharacters(adv.selectedId || undefined);
@@ -166,30 +166,6 @@ export default function CombatTracker(): JSX.Element {
     }
   };
 
-  const handleAddCondition = async (participantId: number, conditionName: string) => {
-    try {
-      await createConditionMutation.mutateAsync({
-        name: conditionName,
-        description: '',
-        duration: 1,
-        source: 'manual',
-        effects: [],
-      });
-      toast.push('Condition added successfully', { type: 'success' });
-    } catch {
-      toast.push('Failed to add condition', { type: 'error' });
-    }
-  };
-
-  const handleRemoveCondition = async (conditionId: string) => {
-    try {
-      await deleteConditionMutation.mutateAsync(conditionId);
-      toast.push('Condition removed successfully', { type: 'success' });
-    } catch {
-      toast.push('Failed to remove condition', { type: 'error' });
-    }
-  };
-
   const nextTurn = () => {
     if (!selectedEncounter) return;
 
@@ -202,7 +178,7 @@ export default function CombatTracker(): JSX.Element {
       newRound += 1;
     }
 
-    handleUpdateEncounter({
+    void handleUpdateEncounter({
       activeCombatantId: nextParticipant?.id,
       round: newRound
     });
@@ -220,7 +196,7 @@ export default function CombatTracker(): JSX.Element {
       newRound = Math.max(1, newRound - 1);
     }
 
-    handleUpdateEncounter({
+    void handleUpdateEncounter({
       activeCombatantId: prevParticipant?.id,
       round: newRound
     });
@@ -229,7 +205,7 @@ export default function CombatTracker(): JSX.Element {
   const startCombat = () => {
     if (participants.length === 0) return;
 
-    handleUpdateEncounter({
+    void handleUpdateEncounter({
       status: 'active',
       activeCombatantId: participants[0]?.id,
       round: 1
@@ -237,7 +213,7 @@ export default function CombatTracker(): JSX.Element {
   };
 
   const endCombat = () => {
-    handleUpdateEncounter({
+    void handleUpdateEncounter({
       status: 'completed',
       completedAt: new Date().toISOString()
     });
@@ -250,14 +226,6 @@ export default function CombatTracker(): JSX.Element {
   const filteredNpcs = availableNpcs.filter(n =>
     n.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getHpColor = (current: number, max: number) => {
-    const percentage = (current / max) * 100;
-    if (percentage >= 75) return 'text-success';
-    if (percentage >= 50) return 'text-warning';
-    if (percentage >= 25) return 'text-orange-500';
-    return 'text-error';
-  };
 
   if (encountersLoading) {
     return (
@@ -292,375 +260,57 @@ export default function CombatTracker(): JSX.Element {
       }
     >
       <div className="space-y-6">
-        {/* Encounters List */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title">Combat Encounters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {encounters.map((encounter: CombatEncounter) => (
-                <div
-                  key={encounter.id}
-                  className={`card bg-base-200 cursor-pointer transition-colors ${
-                    selectedEncounterId === encounter.id ? 'ring-2 ring-primary' : 'hover:bg-base-300'
-                  }`}
-                  onClick={() => setSelectedEncounterId(encounter.id!)}
-                >
-                  <div className="card-body">
-                    <h4 className="card-title text-lg">{encounter.name}</h4>
-                    <p className="text-sm text-base-content/70">
-                      Round: {encounter.round} | Status: {encounter.status}
-                    </p>
-                    <div className={`badge ${
-                      encounter.status === 'active' ? 'badge-success' :
-                      encounter.status === 'completed' ? 'badge-info' :
-                      'badge-warning'
-                    }`}>
-                      {encounter.status}
-                    </div>
-                    <div className="card-actions justify-end">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (encounter.id) handleDeleteEncounter(encounter.id); }}
-                        className="btn btn-neutral btn-xs"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {encounters.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-base-content/60">No combat encounters found. Create your first encounter!</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <CombatEncounterList
+          encounters={encounters}
+          selectedEncounterId={selectedEncounterId}
+          onSelectEncounter={setSelectedEncounterId}
+          onDeleteEncounter={handleDeleteEncounter}
+        />
 
         {/* Selected Encounter Details */}
         {selectedEncounter && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Combat Status */}
-            <div className="lg:col-span-1">
-              <div className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h3 className="card-title text-xl">⚔️ Combat Status</h3>
+            <CombatStatus
+              encounter={selectedEncounter}
+              participants={participants}
+              onPreviousTurn={previousTurn}
+              onNextTurn={nextTurn}
+              onStartCombat={startCombat}
+              onEndCombat={endCombat}
+            />
 
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-primary">{selectedEncounter.round}</div>
-                      <div className="text-sm text-base-content/70">Round</div>
-                    </div>
-
-                    {selectedEncounter.status === 'active' && (
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-base-content">
-                          {participants.find((p: CombatParticipant) => p.id === selectedEncounter.activeCombatantId)?.character?.name || 'Unknown'}
-                        </div>
-                        <div className="text-sm text-base-content/70">Current Turn</div>
-                      </div>
-                    )}
-
-                    <div className={`text-center p-2 rounded ${
-                      selectedEncounter.status === 'active' ? 'bg-success/20 text-success' :
-                      selectedEncounter.status === 'completed' ? 'bg-info/20 text-info' :
-                      'bg-warning/20 text-warning'
-                    }`}>
-                      {selectedEncounter.status.toUpperCase()}
-                    </div>
-
-                    <div className="flex justify-center gap-2">
-                      <button
-                        onClick={previousTurn}
-                        disabled={selectedEncounter.status !== 'active'}
-                        className="btn btn-outline btn-sm"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={nextTurn}
-                        disabled={selectedEncounter.status !== 'active'}
-                        className="btn btn-primary btn-sm"
-                      >
-                        Next
-                      </button>
-                    </div>
-
-                    {selectedEncounter.status === 'active' ? (
-                      <button
-                        onClick={endCombat}
-                        className="btn btn-neutral btn-sm w-full"
-                      >
-                        End Combat
-                      </button>
-                    ) : selectedEncounter.status === 'paused' ? (
-                      <button
-                        onClick={startCombat}
-                        className="btn btn-success btn-sm w-full"
-                      >
-                        Resume Combat
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Participants List */}
             <div className="lg:col-span-3">
-              <div className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h3 className="card-title text-xl">👥 Participants ({participants.length})</h3>
-
-                  {participants.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-6xl mb-4">⚔️</div>
-                      <p className="text-lg mb-4 text-base-content/70">No participants added yet</p>
-                      <button
-                        onClick={() => setShowAddParticipantModal(true)}
-                        className="btn btn-primary btn-sm"
-                      >
-                        Add Participant
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {participants
-                        .sort((a: CombatParticipant, b: CombatParticipant) => b.initiative - a.initiative)
-                        .map((participant: CombatParticipant) => (
-                        <div
-                          key={participant.id}
-                          className={`card border-2 transition-all duration-200 ${
-                            selectedEncounter.activeCombatantId === participant.id
-                              ? 'border-primary bg-primary/5 shadow-lg'
-                              : 'border-base-300 bg-base-200'
-                          }`}
-                        >
-                          <div className="card-body p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                {selectedEncounter.activeCombatantId === participant.id && (
-                                  <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-                                )}
-                                <div>
-                                  <h4 className="card-title text-lg">{participant.character?.name || 'Unknown'}</h4>
-                                  <div className="text-sm text-base-content/70">
-                                    Initiative: {participant.initiative} | AC: {participant.armorClass}
-                                  </div>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => { if (participant.id) handleRemoveParticipant(participant.id); }}
-                                className="btn btn-error btn-xs"
-                              >
-                                Remove
-                              </button>
-                            </div>
-
-                            {/* HP Bar */}
-                            <div className="mb-3">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm font-medium">HP</span>
-                                <span className={`text-sm font-bold ${getHpColor(participant.currentHp, participant.maxHp)}`}>
-                                  {participant.currentHp}/{participant.maxHp}
-                                </span>
-                              </div>
-                              <progress
-                                className="progress w-full"
-                                value={(participant.currentHp / participant.maxHp) * 100}
-                                max="100"
-                              ></progress>
-                            </div>
-
-                            {/* Action Economy */}
-                            <div className="grid grid-cols-4 gap-2 mb-3">
-                              <div className={`text-center p-2 rounded text-xs ${
-                                participant.hasAction ? 'bg-success/20 text-success' : 'bg-base-300 text-base-content/50'
-                              }`}>
-                                Action
-                              </div>
-                              <div className={`text-center p-2 rounded text-xs ${
-                                participant.hasBonusAction ? 'bg-success/20 text-success' : 'bg-base-300 text-base-content/50'
-                              }`}>
-                                Bonus
-                              </div>
-                              <div className={`text-center p-2 rounded text-xs ${
-                                participant.hasReaction ? 'bg-success/20 text-success' : 'bg-base-300 text-base-content/50'
-                              }`}>
-                                Reaction
-                              </div>
-                              <div className={`text-center p-2 rounded text-xs ${
-                                participant.hasMovement ? 'bg-success/20 text-success' : 'bg-base-300 text-base-content/50'
-                              }`}>
-                                Move
-                              </div>
-                            </div>
-
-                            {/* Conditions */}
-                            <div className="mb-3">
-                              <div className="text-sm font-medium mb-2">Conditions:</div>
-                              <div className="flex flex-wrap gap-2">
-                                {participant.conditions.map((condition: CombatCondition) => (
-                                  <div
-                                    key={condition.id}
-                                    className="badge badge-error gap-1"
-                                  >
-                                    {condition.name}
-                                    <button
-                                      onClick={() => handleRemoveCondition(condition.id)}
-                                      className="btn btn-xs btn-ghost btn-circle"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Notes */}
-                            <textarea
-                              value={participant.notes}
-                              onChange={(e) => {
-                                if (participant.id) {
-                                  handleUpdateParticipant(participant.id, { notes: e.target.value });
-                                }
-                              }}
-                              placeholder="Notes..."
-                              className="textarea textarea-bordered textarea-sm w-full"
-                              rows={2}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <CombatParticipants
+                encounter={selectedEncounter}
+                participants={participants}
+                onUpdateParticipant={handleUpdateParticipant}
+                onRemoveParticipant={handleRemoveParticipant}
+                onAddParticipant={() => setShowAddParticipantModal(true)}
+              />
             </div>
           </div>
         )}
 
         {/* Create Encounter Form */}
         {showCreateEncounterForm && (
-          <form onSubmit={(e) => void handleCreateEncounter(e)} className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <h3 className="card-title text-xl justify-center">Create New Combat Encounter</h3>
-
-              <div className="space-y-6">
-                <div>
-                  <label htmlFor="encounter-name" className="block text-sm font-medium text-base-content mb-2">Encounter Name *</label>
-                  <input
-                    id="encounter-name"
-                    type="text"
-                    required
-                    value={encounterFormData.name}
-                    onChange={(e) => setEncounterFormData({ ...encounterFormData, name: e.target.value })}
-                    className="input input-bordered w-full"
-                    placeholder="Enter encounter name"
-                  />
-                </div>
-              </div>
-
-              <div className="card-actions justify-end">
-                <button
-                  type="button"
-                  onClick={() => { setEncounterFormData(resetEncounterForm()); setShowCreateEncounterForm(false); }}
-                  className="btn btn-ghost btn-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-sm"
-                >
-                  Create Encounter
-                </button>
-              </div>
-            </div>
-          </form>
+          <CombatEncounterForm
+            formData={encounterFormData}
+            onFormDataChange={setEncounterFormData}
+            onSubmit={handleCreateEncounter}
+            onCancel={() => { setEncounterFormData(resetEncounterForm()); setShowCreateEncounterForm(false); }}
+          />
         )}
 
         {/* Add Participant Modal */}
-        {showAddParticipantModal && (
-          <div className="modal modal-open">
-            <div className="modal-box max-w-4xl max-h-[80vh] overflow-y-auto">
-              <h3 className="font-bold text-lg">Add Combat Participants</h3>
-
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Search characters and NPCs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input input-bordered w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3 text-success">🧙 Characters</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {filteredCharacters.map(character => (
-                      <div key={character.id} className="card card-compact bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="card-body">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{character.name}</div>
-                              <div className="text-sm text-base-content/70">
-                                HP: {character.hitPoints || 0} | AC: {character.armorClass || 10}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => { if (character.id) handleAddParticipant(character.id, false); }}
-                              className="btn btn-success btn-sm"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3 text-secondary">👤 NPCs</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {filteredNpcs.map(npc => (
-                      <div key={npc.id} className="card card-compact bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="card-body">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{npc.name}</div>
-                              <div className="text-sm text-base-content/70">
-                                {npc.role || 'NPC'}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => { if (npc.id) handleAddParticipant(npc.id, true); }}
-                              className="btn btn-secondary btn-sm"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-action">
-                <button
-                  onClick={() => setShowAddParticipantModal(false)}
-                  className="btn btn-ghost btn-sm"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AddParticipantModal
+          isOpen={showAddParticipantModal}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          characters={availableCharacters}
+          npcs={availableNpcs}
+          onAddParticipant={handleAddParticipant}
+          onClose={() => setShowAddParticipantModal(false)}
+        />
       </div>
     </Page>
   );

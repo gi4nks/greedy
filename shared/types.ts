@@ -1,9 +1,17 @@
 // Shared types between frontend and backend
+export interface EntityImage {
+  id: number;
+  image_path: string;
+  display_order: number;
+}
+
 export interface Adventure {
   id?: number;
   slug?: string;
   title: string;
   description?: string;
+  campaign_id?: number | null;
+  images?: EntityImage[];
 }
 
 export interface CharacterClass {
@@ -76,6 +84,7 @@ export interface Character {
   classes?: CharacterClass[];
   description?: string;
   tags?: string[];
+  images?: EntityImage[];
 }
 
 export interface MagicItem {
@@ -87,6 +96,7 @@ export interface MagicItem {
   properties?: Record<string, any>;
   attunement_required: boolean;
   owners?: Character[];
+  images?: EntityImage[];
 }
 
 export interface CharacterItem {
@@ -105,6 +115,7 @@ export interface Session {
   title: string;
   date: string;
   text: string;
+  images?: EntityImage[];
 }
 
 export interface Location {
@@ -150,6 +161,7 @@ export interface CharacterForm extends Omit<Character, 'id' | 'saving_throws' | 
   classes?: CharacterClass[];
   description?: string;
   tags?: string[];
+  images?: EntityImage[];
 }
 
 export interface MagicItemForm extends Omit<MagicItem, 'id' | 'owners'> {}
@@ -159,6 +171,14 @@ export interface SessionForm extends Omit<Session, 'id'> {}
 export interface LocationForm extends Omit<Location, 'id'> {}
 
 export interface NPCForm extends Omit<NPC, 'id'> {}
+
+export interface AdventureForm extends Omit<Adventure, 'id'> {
+  campaign_id?: number | null;
+}
+
+export interface QuestForm extends Omit<Quest, 'id'> {}
+
+export interface CampaignForm extends Omit<Campaign, 'id'> {}
 
 // Search and filter types
 export interface SearchFilters {
@@ -200,6 +220,7 @@ export interface Quest {
   due_date?: string | null;
   assigned_to?: string | null;
   tags?: string[];
+  images?: EntityImage[];
 }
 
 export interface QuestWithObjectives extends Quest {
@@ -302,4 +323,15 @@ export interface RelationshipEvent {
   respectChange: number; // change in respect (-100 to +100)
   date: string;
   createdAt: string;
+}
+
+export interface Campaign {
+  id?: number;
+  title: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'on-hold' | 'cancelled';
+  start_date?: string;
+  end_date?: string;
+  tags?: string[];
+  images?: EntityImage[];
 }

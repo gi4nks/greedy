@@ -51,13 +51,13 @@ export function useUpdateNPC() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, npc }: { id: number; npc: Partial<NPC> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<NPC> }) => {
       const response = await fetch(`/api/npcs/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(npc),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json() as Promise<NPC>;

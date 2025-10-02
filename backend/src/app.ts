@@ -86,6 +86,18 @@ export function createApp(): Express {
     const misc = require('./routes/misc').default;
     app.use('/api', misc);
     console.log('APP: loaded misc');
+
+    console.log('APP: requiring routes/images');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const images = require('./routes/images').default;
+    app.use('/api/images', images);
+    console.log('APP: loaded images');
+
+    console.log('APP: requiring routes/campaigns');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const campaigns = require('./routes/campaigns').default;
+    app.use('/api/campaigns', campaigns);
+    console.log('APP: loaded campaigns');
   } catch (err) {
     console.error('APP: error while requiring routes', err);
     throw err;

@@ -54,13 +54,13 @@ export function useUpdateSession() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, session }: { id: number; session: Partial<Session> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Session> }) => {
       const response = await fetch(`/api/sessions/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(session),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json() as Promise<Session>;

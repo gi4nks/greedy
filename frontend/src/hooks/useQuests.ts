@@ -52,13 +52,13 @@ export function useUpdateQuest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, quest }: { id: number; quest: Partial<Quest> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Quest> }) => {
       const response = await fetch(`/api/quests/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(quest),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json() as Promise<Quest>;

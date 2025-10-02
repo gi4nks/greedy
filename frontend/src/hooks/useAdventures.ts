@@ -50,13 +50,13 @@ export function useUpdateAdventure() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, adventure }: { id: number; adventure: Partial<Adventure> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Adventure> }) => {
       const response = await fetch(`/api/adventures/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(adventure),
+        body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json() as Promise<Adventure>;

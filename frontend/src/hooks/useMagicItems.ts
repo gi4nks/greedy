@@ -56,13 +56,13 @@ export function useUpdateMagicItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, item }: { id: number; item: Partial<MagicItem> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<MagicItem> }) => {
       const response = await fetch(`/api/magic-items/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(item),
+        body: JSON.stringify(data),
       });
       if (!response.ok) {
         throw new Error('Failed to update magic item');
@@ -98,7 +98,7 @@ export function useDeleteMagicItem() {
 export function useAssignMagicItem() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation({ // eslint-disable-line @typescript-eslint/no-floating-promises
     mutationFn: async ({ itemId, characterIds }: { itemId: number; characterIds: number[] }) => {
       const response = await fetch(`/api/magic-items/${itemId}/assign`, {
         method: 'POST',

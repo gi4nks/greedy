@@ -1,4 +1,5 @@
-@import 'daisyui/theme/cmyk.css';
+/* @import 'daisyui/theme/cmyk.css'; */
+@import 'daisyui/theme/emerald.css';
 
 @tailwind base;
 @tailwind components;
