@@ -22,7 +22,6 @@ import { EntityList } from '../components/common/EntityComponents';
 export default function Characters(): JSX.Element {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const adv = useAdventures();
-  const queryClient = useQueryClient();
 
   // Use the new generic CRUD hook
   const crud = useCharacterCRUD(adv.selectedId || undefined);

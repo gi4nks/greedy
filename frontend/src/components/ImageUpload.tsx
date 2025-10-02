@@ -82,7 +82,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Upload error:', error);
       toast.push(error instanceof Error ? error.message : 'Failed to upload image', { type: 'error' });
     }
   };
@@ -104,7 +103,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       // Refresh images
       void refreshImages();
     } catch (error) {
-      console.error('Delete error:', error);
       toast.push(error instanceof Error ? error.message : 'Failed to delete image', { type: 'error' });
     } finally {
       setIsDeleting(null);
@@ -120,7 +118,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onImagesChanged?.(newImages);
       }
     } catch (error) {
-      console.error('Failed to refresh images:', error);
+      // Failed to refresh images - ignore silently as this is a background operation
     }
   }, [entityId, entityType, onImagesChanged]);
 

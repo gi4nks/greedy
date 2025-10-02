@@ -146,13 +146,3 @@ export function FormActions({
   );
 }
 
-// Hook for creating forms with validation - TODO: Fix TypeScript issues with current versions
-// export function useFormWithValidation<T extends Record<string, any>>(
-//   schema: z.ZodSchema<T>,
-//   defaultValues?: Partial<T>
-// ) {
-//   return useForm<T>({
-//     resolver: zodResolver(schema),
-//     defaultValues: defaultValues as T,
-//   });
-// }

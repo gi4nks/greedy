@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Page from '../components/Page';
 import { useToast } from '../components/Toast';
 import { useAdventures } from '../contexts/AdventureContext';
@@ -21,14 +21,13 @@ import {
 export const Quests: React.FC = () => {
   const toast = useToast();
   const adv = useAdventures();
-  const queryClient = useQueryClient();
 
   // Use the CRUD hook
   const crud = useQuestCRUD(adv.selectedId || undefined);
 
   // Additional hooks for quest-specific functionality
   const { data: characters = [] } = useCharacters(adv.selectedId || undefined);
-  const { data: searchResults, isError: searchError } = useSearch(crud.state.searchTerm, adv.selectedId ?? undefined) as { data: SearchResult | undefined; isError: boolean };
+
 
   // Mutations for objectives
   const addObjectiveMutation = useAddQuestObjective();
@@ -58,8 +57,7 @@ export const Quests: React.FC = () => {
     await crud.actions.handleDelete(id);
   };
 
-  // Get full quest data with objectives when editing
-  const { data: editingQuest } = crud.queries.item(crud.state.editingId || 0);
+
 
   // Objective management functions
   const addObjective = async (description: string) => {

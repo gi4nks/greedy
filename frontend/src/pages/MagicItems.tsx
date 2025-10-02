@@ -9,9 +9,8 @@ import { useCharacters } from '../hooks/useCharacters';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   MagicItemForm,
-  MagicItemSearch,
+  MagicItemCard,
   CharacterAssignmentModal,
-  MagicItemList,
 } from '../components/magicItem';
 import { EntityList } from '../components/common/EntityComponents';
 
@@ -19,10 +18,7 @@ export default function MagicItems(): JSX.Element {
   const [assignModalItem, setAssignModalItem] = useState<number | null>(null);
   const [selectedCharIds, setSelectedCharIds] = useState<number[]>([]);
   const [assigning, setAssigning] = useState(false);
-  const [unassigning, setUnassigning] = useState<number | null>(null);
-
   const toast = useToast();
-  const queryClient = useQueryClient();
 
   // Use the new generic CRUD hook
   const crud = useMagicItemCRUD();
@@ -66,43 +62,7 @@ export default function MagicItems(): JSX.Element {
     }
   };
 
-  const handleUnassign = (itemId: number, charId: number) => {
-    if (!confirm('Unassign this item from character?')) return;
-    setUnassigning(charId);
-    unassignMutation.mutate(
-      { itemId, characterId: charId },
-      {
-        onSuccess: () => {
-          toast.push('Unassigned', {
-            actions: [
-              {
-                label: 'Undo',
-                onClick: () => {
-                  assignMutation.mutate(
-                    { itemId, characterIds: [charId] },
-                    {
-                      onSuccess: () => toast.push('Reassigned'),
-                      onError: (err) => {
-                        logError(err, 'undo-unassign');
-                        toast.push('Undo failed', { type: 'error' });
-                      },
-                    }
-                  );
-                },
-              },
-            ],
-          });
-        },
-        onError: (err) => {
-          logError(err, 'unassign-item');
-          toast.push('Failed to unassign', { type: 'error' });
-        },
-        onSettled: () => {
-          setUnassigning(null);
-        },
-      }
-    );
-  };
+
 
   const handleOpenAssignModal = (itemId: number) => {
     setAssignModalItem(itemId);

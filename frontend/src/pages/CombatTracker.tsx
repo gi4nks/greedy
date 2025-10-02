@@ -219,13 +219,7 @@ export default function CombatTracker(): JSX.Element {
     });
   };
 
-  const filteredCharacters = availableCharacters.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  const filteredNpcs = availableNpcs.filter(n =>
-    n.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (encountersLoading) {
     return (

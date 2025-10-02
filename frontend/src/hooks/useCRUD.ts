@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface CRUDState<T> {
   formData: Partial<T>;
@@ -60,7 +60,7 @@ export function useCRUD<T extends { id?: number }>(
     onError?: (action: 'create' | 'update' | 'delete', error: Error) => void;
   }
 ): CRUDHooks<T> {
-  const queryClient = useQueryClient();
+
 
   // State management
   const [formData, setFormData] = useState<Partial<T>>(initialFormData);

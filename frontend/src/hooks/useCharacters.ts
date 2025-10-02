@@ -61,14 +61,7 @@ export function useUpdateCharacter() {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        // Log the error response for debugging
         const errorText = await response.text();
-        console.error('Character update failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText,
-          requestData: data
-        });
         throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${errorText}`);
       }
       return response.json() as Promise<Character>;

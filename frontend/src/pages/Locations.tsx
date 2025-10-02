@@ -10,7 +10,6 @@ import { EntityList } from '../components/common/EntityComponents';
 export default function Locations(): JSX.Element {
   const [activeTab, setActiveTab] = useState<'description' | 'notes'>('description');
   const adv = useAdventures();
-  const toast = useToast();
 
   // Use the CRUD hook
   const crud = useLocationCRUD(adv.selectedId || undefined);

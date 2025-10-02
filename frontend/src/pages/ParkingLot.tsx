@@ -1,5 +1,6 @@
 import React from 'react';
 import Page from '../components/Page';
+import { useToast } from '../components/Toast';
 import { useParkingLot, useDeleteParkingLotItem, useMoveParkingLotItem, ParkingLotItem } from '../hooks/useParkingLot';
 
 export default function ParkingLot(): JSX.Element {
@@ -7,6 +8,7 @@ export default function ParkingLot(): JSX.Element {
   const { data: items, isLoading } = useParkingLot();
   const deleteItemMutation = useDeleteParkingLotItem();
   const moveItemMutation = useMoveParkingLotItem();
+  const toast = useToast();
 
   const deleteItem = async (id: number) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
@@ -15,7 +17,7 @@ export default function ParkingLot(): JSX.Element {
       await deleteItemMutation.mutateAsync(id);
       alert('Item deleted successfully!');
     } catch (error) {
-      console.error('Failed to delete item:', error);
+      toast.push('Failed to delete item', { type: 'error' });
       alert('Failed to delete item');
     }
   };
@@ -27,7 +29,7 @@ export default function ParkingLot(): JSX.Element {
       await moveItemMutation.mutateAsync({ id: item.id, targetSection });
       alert(`Item moved to ${targetSection} successfully!`);
     } catch (error) {
-      console.error('Failed to move item:', error);
+      toast.push('Failed to move item', { type: 'error' });
       alert('Failed to move item');
     }
   };

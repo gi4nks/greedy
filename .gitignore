@@ -3,3 +3,10 @@ node_modules/
 .DS_Store
 backend/data/
 dist/
+coverage/
+*.log
+.vscode/
+.env.*
+!.env.example
+frontend/campaign.db
+backend/campaign.db

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Page from '../components/Page';
 import { useAdventures } from '../contexts/AdventureContext';
@@ -20,8 +20,6 @@ export default function Adventures(): JSX.Element {
   const [collapsed, setCollapsed] = useState<{ [id: number]: boolean }>({});
   const adv = useAdventures();
   const toast = useToast();
-
-  const queryClient = useQueryClient();
 
   // React Query hooks
   const { data: adventures = [], isLoading } = useAdventuresQuery();
