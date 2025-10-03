@@ -82,7 +82,7 @@ export default function Locations(): JSX.Element {
                             className={`badge badge-sm gap-1 ${rel.is_current ? 'badge-primary' : 'badge-outline'}`}
                           >
                             <span>{rel.relationship_type === 'lives_at' ? '🏠' : rel.relationship_type === 'works_at' ? '💼' : rel.relationship_type === 'owns' ? '👑' : rel.relationship_type === 'frequents' ? '🔄' : rel.relationship_type === 'avoids' ? '❌' : '👋'}</span>
-                            <span>{(rel as any).character_name}</span>
+                            <span>{rel.character_name}</span>
                             {rel.is_current && <span className="text-xs">📍</span>}
                           </div>
                         ))}
@@ -100,7 +100,7 @@ export default function Locations(): JSX.Element {
                             className={`badge badge-sm gap-1 ${rel.is_primary ? 'badge-primary' : 'badge-outline'}`}
                           >
                             <span>{rel.relationship_type === 'starts_at' ? '🚀' : rel.relationship_type === 'ends_at' ? '🏁' : rel.relationship_type === 'leads_to' ? '➡️' : rel.relationship_type === 'involves' ? '🔗' : '📍'}</span>
-                            <span>{(rel as any).quest_title}</span>
+                            <span>{rel.quest_title}</span>
                             {rel.is_primary && <span className="text-xs">⭐</span>}
                           </div>
                         ))}
@@ -196,7 +196,6 @@ export default function Locations(): JSX.Element {
                   value={crud.state.formData.description || ''}
                   onChange={(e) => crud.actions.setFormData({ ...crud.state.formData, description: e.target.value })}
                   className="textarea textarea-bordered w-full h-48"
-                  required
                 />
               </div>
             </div>
@@ -212,7 +211,6 @@ export default function Locations(): JSX.Element {
                   value={crud.state.formData.notes || ''}
                   onChange={(e) => crud.actions.setFormData({ ...crud.state.formData, notes: e.target.value })}
                   className="textarea textarea-bordered w-full h-48"
-                  required
                 />
               </div>
             </div>

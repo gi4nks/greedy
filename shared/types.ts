@@ -138,6 +138,10 @@ export interface LocationCharacter {
   relationship_type: 'lives_at' | 'visits' | 'works_at' | 'owns' | 'frequents' | 'avoids';
   notes?: string;
   is_current: boolean;
+  character_name?: string;
+  character_type?: string;
+  created_at?: string;
+  updated_at?: string;
   character?: Character;
 }
 
@@ -148,6 +152,10 @@ export interface LocationQuest {
   relationship_type: 'takes_place_at' | 'starts_at' | 'ends_at' | 'leads_to' | 'involves';
   notes?: string;
   is_primary: boolean;
+  quest_title?: string;
+  quest_status?: string;
+  created_at?: string;
+  updated_at?: string;
   quest?: Quest;
 }
 

@@ -231,7 +231,6 @@ export default function LocationRelationships({ location }: LocationRelationship
                   value={characterForm.character_id}
                   onChange={(e) => setCharacterForm({ ...characterForm, character_id: e.target.value })}
                   className="select select-bordered select-sm"
-                  required
                 >
                   <option value="">Select Character</option>
                   {characters.map(char => (
@@ -291,7 +290,7 @@ export default function LocationRelationships({ location }: LocationRelationship
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{getCharacterRelationshipIcon(rel.relationship_type)}</span>
                   <div>
-                    <span className="font-medium">{(rel as any).character_name}</span>
+                    <span className="font-medium">{rel.character_name}</span>
                     <div className="text-sm text-base-content/70 capitalize">
                       {rel.relationship_type.replace('_', ' ')}
                       {rel.is_current && <span className="badge badge-primary badge-xs ml-2">Current</span>}
@@ -330,7 +329,6 @@ export default function LocationRelationships({ location }: LocationRelationship
                   value={questForm.quest_id}
                   onChange={(e) => setQuestForm({ ...questForm, quest_id: e.target.value })}
                   className="select select-bordered select-sm"
-                  required
                 >
                   <option value="">Select Quest</option>
                   {quests.map(quest => (
@@ -389,7 +387,7 @@ export default function LocationRelationships({ location }: LocationRelationship
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{getQuestRelationshipIcon(rel.relationship_type)}</span>
                   <div>
-                    <span className="font-medium">{(rel as any).quest_title}</span>
+                    <span className="font-medium">{rel.quest_title}</span>
                     <div className="text-sm text-base-content/70 capitalize">
                       {rel.relationship_type.replace('_', ' ')}
                       {rel.is_primary && <span className="badge badge-primary badge-xs ml-2">Primary</span>}
