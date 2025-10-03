@@ -21,6 +21,7 @@ const CombatTracker = lazy(() => import('./pages/CombatTracker'));
 const WikiImport = lazy(() => import('./pages/WikiImport'));
 const ParkingLot = lazy(() => import('./pages/ParkingLot'));
 const Relationships = lazy(() => import('./pages/Relationships').then(module => ({ default: module.Relationships })));
+const Network = lazy(() => import('./pages/Network').then(module => ({ default: module.Network })));
 
 function App(): JSX.Element {
   // Initialize theme on app startup
@@ -49,6 +50,7 @@ function App(): JSX.Element {
                   <Route path="/dice-roller" element={<DiceRoller />} />
                   <Route path="/combat-tracker" element={<CombatTracker />} />
                   <Route path="/relationships" element={<Relationships />} />
+                  <Route path="/network" element={<Network />} />
                   <Route path="/wiki-import" element={<WikiImport />} />
                   <Route path="/parking-lot" element={<ParkingLot />} />
                   <Route path="/" element={<Sessions />} />

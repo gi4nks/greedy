@@ -56,6 +56,15 @@ router.get('/:id', validateId, (req: Request, res: Response) => {
     ORDER BY display_order ASC
   `).all(row.id);
 
+  // Add location relationships
+  row.locations = db.prepare(`
+    SELECT cl.*, l.name as location_name
+    FROM character_locations cl
+    JOIN locations l ON cl.location_id = l.id
+    WHERE cl.character_id = ?
+    ORDER BY cl.is_current DESC, l.name ASC
+  `).all(row.id);
+
   res.json(row);
 });
 

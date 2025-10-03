@@ -52,7 +52,7 @@ router.post('/:category/:id', upload.single('image'), (req, res) => {
     }
 
     // Validate category
-    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs'];
+    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs', 'locations'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
@@ -86,7 +86,7 @@ router.delete('/:category/:id/:imageId', (req, res) => {
     const { category, id, imageId } = req.params;
 
     // Validate category
-    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs'];
+    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs', 'locations'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
@@ -138,7 +138,7 @@ router.put('/:category/:id/reorder', (req, res) => {
     }
 
     // Validate category
-    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs'];
+    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs', 'locations'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
@@ -175,7 +175,7 @@ router.get('/:category/:id(\\d+)', (req, res) => {
     const { category, id } = req.params;
 
     // Validate category
-    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs'];
+    const validCategories = ['adventures', 'sessions', 'quests', 'characters', 'magic_items', 'npcs', 'locations'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }

@@ -5,6 +5,7 @@ import { useAdventures } from '../contexts/AdventureContext';
 import { NPC } from '@greedy/shared';
 import { useNPCCrud } from '../hooks/useNPCCrud';
 import { EntityList } from '../components/common/EntityComponents';
+import ImageUpload from '../components/ImageUpload';
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -44,6 +45,7 @@ export default function NPCs(): JSX.Element {
       await crud.actions.handleUpdate(crud.state.editingId, payload);
     } else {
       await crud.actions.handleCreate(payload);
+      // Don't set editingId after creation - let the form close and reset
     }
   };
 
@@ -58,18 +60,18 @@ export default function NPCs(): JSX.Element {
   };
 
   return (
-    <Page title="NPCs" toolbar={<button type="button" onClick={() => crud.actions.setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
+  <Page title="NPCs" toolbar={<button type="button" onClick={() => { crud.actions.setShowCreateForm(true); }} className="btn btn-primary btn-sm">Create</button>}>
       <EntityList
         query={crud.queries.list}
-        renderItem={(npc: NPC & { id: number }) => {
-          const isCollapsed = crud.state.collapsed[npc.id] ?? true;
+        renderItem={(npc: NPC & { id?: number }) => {
+          const isCollapsed = crud.state.collapsed[npc.id!] ?? true;
           return (
             <div key={npc.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
               <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => crud.actions.toggleCollapsed(npc.id)}
+                      onClick={() => crud.actions.toggleCollapsed(npc.id!)}
                       className="btn btn-outline btn-primary btn-sm"
                       aria-label={isCollapsed ? '+' : '-'}
                     >
@@ -87,13 +89,13 @@ export default function NPCs(): JSX.Element {
                   </div>
                   <div className="card-actions">
                     <button
-                      onClick={() => handleEdit(npc)}
+                      onClick={() => { void handleEdit(npc as NPC & { id: number }); }}
                       className="btn btn-secondary btn-sm"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(npc.id)}
+                      onClick={() => { void handleDelete(npc.id!); }}
                       className="btn btn-neutral btn-sm"
                     >
                       Delete
@@ -213,6 +215,19 @@ export default function NPCs(): JSX.Element {
                   className="textarea textarea-bordered w-full h-32"
                 />
               </div>
+
+              {/* Image upload (only when editing an existing NPC) */}
+              {crud.state.editingId && (
+                <div>
+                  <div className="block text-sm font-medium text-base-content mb-2">Images</div>
+                  <ImageUpload
+                    entityId={crud.state.editingId}
+                    entityType="npcs"
+                    showInForm={true}
+                    onImagesChanged={(images) => crud.actions.setFormData({ ...crud.state.formData, images })}
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="npc-tags" className="block text-sm font-medium text-base-content mb-2">Tags</label>

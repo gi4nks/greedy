@@ -12,6 +12,7 @@ import {
   MagicItemCard,
   CharacterAssignmentModal,
 } from '../components/magicItem';
+import ImageUpload from '../components/ImageUpload';
 import { EntityList } from '../components/common/EntityComponents';
 
 export default function MagicItems(): JSX.Element {
@@ -37,7 +38,11 @@ export default function MagicItems(): JSX.Element {
         await crud.actions.handleUpdate(crud.state.editingId, data);
         toast.push('Magic item updated');
       } else {
-        await crud.actions.handleCreate(data);
+        const created = await crud.actions.handleCreate(data);
+        if (created && (created as any).id) {
+          // open edit mode so images can be added
+          crud.actions.setEditingId((created as any).id);
+        }
         toast.push('Magic item created');
       }
     } catch (error) {
@@ -134,22 +139,34 @@ export default function MagicItems(): JSX.Element {
     <Page title="Magic Items" toolbar={<button type="button" onClick={() => crud.actions.setShowCreateForm(true)} className="btn btn-primary btn-sm">Create</button>}>
       <EntityList
         query={crud.queries.list}
-        renderItem={(item: MagicItem & { id: number }) => (
-          <div key={item.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+        renderItem={(item: MagicItem & { id?: number }) => (
+          <div key={item.id!} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
             <div className="card-body">
-              <div className="flex justify-between items-center">
-                <div>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
                   <h3 className="card-title text-xl">{item.name}</h3>
-                  <div className="text-sm text-base-content/70">{item.type} • {item.rarity}</div>
+                  <div className="text-sm text-base-content/70 mb-2">{item.type} • {item.rarity}</div>
+                  
+                  {/* Display assigned characters */}
+                  {(item as any).owners && Array.isArray((item as any).owners) && (item as any).owners.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <span className="text-sm text-base-content/60 mr-2">Assigned to:</span>
+                      {(item as any).owners.map((owner: Character) => (
+                        <div key={owner.id} className="badge badge-primary badge-sm">
+                          {owner.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="card-actions">
-                  <button onClick={() => handleEdit(item)} className="btn btn-secondary btn-sm">
+                  <button onClick={() => { crud.actions.handleEdit(item as MagicItem & { id: number }); }} className="btn btn-secondary btn-sm">
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(item.id)} className="btn btn-neutral btn-sm">
+                  <button onClick={() => { void handleDelete(item.id!); }} className="btn btn-neutral btn-sm">
                     Delete
                   </button>
-                  <button onClick={() => handleOpenAssignModal(item.id)} className="btn btn-primary btn-sm">
+                  <button onClick={() => { handleOpenAssignModal(item.id!); }} className="btn btn-primary btn-sm">
                     Assign
                   </button>
                 </div>
@@ -194,10 +211,23 @@ export default function MagicItems(): JSX.Element {
       {(crud.state.showCreateForm || crud.state.editingId) && (
         <MagicItemForm
           initialData={crud.state.formData}
-          onSubmit={handleFormSubmit}
-          onCancel={crud.actions.handleCancel}
+          onSubmit={(data) => { void handleFormSubmit(data); }}
+          onCancel={() => { crud.actions.handleCancel(); }}
           isEditing={!!crud.state.editingId}
         />
+      )}
+
+      {/* Image upload (only when editing an existing magic item) */}
+      {crud.state.editingId && (
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-base-content mb-2">Images</div>
+          <ImageUpload
+            entityId={crud.state.editingId}
+            entityType="magic_items"
+            showInForm={true}
+            onImagesChanged={(images) => crud.actions.setFormData({ ...(crud.state.formData as any), images })}
+          />
+        </div>
       )}
 
       <CharacterAssignmentModal

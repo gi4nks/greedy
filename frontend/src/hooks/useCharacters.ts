@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@greedy/shared';
 
 export function useCharacters(adventureId?: number) {
-  return useQuery({
+  return useQuery<Character[], Error>({
     queryKey: ['characters', adventureId],
     queryFn: async () => {
       const params = adventureId ? `?adventure=${adventureId}` : '';
@@ -15,7 +15,7 @@ export function useCharacters(adventureId?: number) {
 }
 
 export function useCharacter(id: number) {
-  return useQuery({
+  return useQuery<Character, Error>({
     queryKey: ['character', id],
     queryFn: async () => {
       const response = await fetch(`/api/characters/${id}`);

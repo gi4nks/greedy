@@ -21,12 +21,13 @@ export default function Header(): JSX.Element {
               <li><Link to="/adventures" onClick={() => setOpen(false)}>🏰 Adventures</Link></li>
               <li><Link to="/sessions" onClick={() => setOpen(false)}>📖 Sessions</Link></li>
               <li><Link to="/quests" onClick={() => setOpen(false)}>🎯 Quests</Link></li>
+              <li><Link to="/locations" onClick={() => setOpen(false)}>🗺️ Locations</Link></li>
               <li className="menu-title">👥 Entities</li>
               <li><Link to="/characters" onClick={() => setOpen(false)}>🧙 Characters</Link></li>
               <li><Link to="/npcs" onClick={() => setOpen(false)}>👤 NPCs</Link></li>
               <li><Link to="/relationships" onClick={() => setOpen(false)}>🤝 Relationships</Link></li>
+              <li><Link to="/network" onClick={() => setOpen(false)}>🕸️ Network</Link></li>
               <li><Link to="/magic-items" onClick={() => setOpen(false)}>💍 Magic Items</Link></li>
-              <li><Link to="/locations" onClick={() => setOpen(false)}>🗺️ Locations</Link></li>
               <li className="menu-title">🛠️ Tools</li>
               <li><Link to="/dice-roller" onClick={() => setOpen(false)}>🎲 Dice Roller</Link></li>
               <li><Link to="/combat-tracker" onClick={() => setOpen(false)}>⚔️ Combat Tracker</Link></li>
@@ -56,6 +57,7 @@ export default function Header(): JSX.Element {
                 <li><Link to="/adventures">🏰 Adventures</Link></li>
                 <li><Link to="/sessions">📖 Sessions</Link></li>
                 <li><Link to="/quests">🎯 Quests</Link></li>
+                <li><Link to="/locations">🗺️ Locations</Link></li>
               </ul>
             </div>
 
@@ -71,8 +73,8 @@ export default function Header(): JSX.Element {
                 <li><Link to="/characters">🧙 Characters</Link></li>
                 <li><Link to="/npcs">👤 NPCs</Link></li>
                 <li><Link to="/relationships">🤝 Relationships</Link></li>
+                <li><Link to="/network">🕸️ Network</Link></li>
                 <li><Link to="/magic-items">💍 Magic Items</Link></li>
-                <li><Link to="/locations">🗺️ Locations</Link></li>
               </ul>
             </div>
 

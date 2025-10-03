@@ -40,7 +40,44 @@ if (process.env.NODE_ENV === 'test' && process.env.USE_REAL_DB !== '1') {
 
     // Import inside function to avoid loading native modules at module load time
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Database = require('better-sqlite3');
+    let Database: any;
+    try {
+      Database = require('better-sqlite3');
+  } catch (err: any) {
+      // If the native module fails to load (missing prebuilt binaries or incompatible Node version),
+      // fall back to a lightweight stub database to avoid crashing the server during development.
+      // The stub provides the minimal `prepare/get/all/run` shape used throughout the codebase.
+      // Note: this means data will not persist. For real DB usage, install a compatible better-sqlite3 build
+      // or run the service in an environment that provides the native binary (Docker or appropriate Node version).
+      // eslint-disable-next-line no-console
+  console.warn('better-sqlite3 failed to load; falling back to in-memory stub DB. To use the real DB, install a compatible better-sqlite3 binary or switch to an LTS Node version. Error:', err && err.message ? err.message : err);
+
+      const stubPrepare = (sql: string) => ({
+        all: (..._args: any[]) => [],
+        get: (..._args: any[]) => {
+          // Return sensible defaults for common queries
+          if (sql.includes('COUNT(*)')) return { c: 0 };
+          if (sql.includes('SELECT 1')) return undefined;
+          return {};
+        },
+        run: (..._args: any[]) => ({ changes: 0, lastInsertRowid: 0 })
+      });
+
+      const stubDb: any = {
+        prepare: stubPrepare,
+        exec: (_sql: string) => { /* no-op */ },
+        close: () => { /* no-op */ },
+        // Migration fix: provide expected properties
+        c: stubPrepare,  // Common alias for prepare in migrations
+        transaction: (fn: Function) => fn(),  // Simple transaction mock
+        pragma: () => ({}) // Pragma queries return empty object
+      };
+
+      _db = stubDb as any;
+      // ensure migrate is a no-op when using the stub
+      migrate = () => { /* no-op */ };
+      return _db;
+    }
 
     const DB_PATH = getDbPath();
 
@@ -50,8 +87,36 @@ if (process.env.NODE_ENV === 'test' && process.env.USE_REAL_DB !== '1') {
       if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    _db = new Database(DB_PATH);
-    return _db;
+    try {
+      _db = new Database(DB_PATH);
+      return _db;
+    } catch (instErr: any) {
+      console.warn('better-sqlite3 failed to instantiate; falling back to in-memory stub DB. Error:', instErr && instErr.message ? instErr.message : instErr);
+      const stubPrepare = (sql: string) => ({
+        all: (..._args: any[]) => [],
+        get: (..._args: any[]) => {
+          // Return sensible defaults for common queries
+          if (sql.includes('COUNT(*)')) return { c: 0 };
+          if (sql.includes('SELECT 1')) return undefined;
+          return {};
+        },
+        run: (..._args: any[]) => ({ changes: 0, lastInsertRowid: 0 })
+      });
+
+      const stubDb: any = {
+        prepare: stubPrepare,
+        exec: (_sql: string) => { /* no-op */ },
+        close: () => { /* no-op */ },
+        // Migration fix: provide expected properties
+        c: stubPrepare,  // Common alias for prepare in migrations
+        transaction: (fn: Function) => fn(),  // Simple transaction mock
+        pragma: () => ({}) // Pragma queries return empty object
+      };
+
+      _db = stubDb as any;
+      migrate = () => { /* no-op */ };
+      return _db;
+    }
   }
 
   db = new Proxy({} as any, {

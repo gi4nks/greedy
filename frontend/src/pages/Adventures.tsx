@@ -11,6 +11,7 @@ import {
 } from '../hooks/useAdventures';
 import { useQueryClient } from '@tanstack/react-query';
 import { Adventure } from '@greedy/shared';
+import ImageUpload from '../components/ImageUpload';
 
 export default function Adventures(): JSX.Element {
   const [formData, setFormData] = useState<Adventure>({ title: '', description: '' });
@@ -134,6 +135,19 @@ export default function Adventures(): JSX.Element {
                     className="textarea textarea-bordered w-full h-32"
                   />
                 </div>
+
+                {/* Image upload (only when editing an existing adventure) */}
+                {editingId && (
+                  <div>
+                    <label className="block text-sm font-medium text-base-content mb-2">Images</label>
+                    <ImageUpload
+                      entityId={editingId}
+                      entityType="adventures"
+                      showInForm={true}
+                      onImagesChanged={(images) => setFormData({ ...formData, images })}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="card-actions justify-end">

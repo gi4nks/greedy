@@ -157,6 +157,7 @@ help:
 	@echo "  test                  - Run tests for all packages"
 	@echo "  test-coverage         - Run tests with coverage"
 	@echo "  typecheck             - Type check all packages"
+	@echo "  ts-prune              - Find unused exports with ts-prune"
 	@echo ""
 	@echo "🌱 Database Commands:"
 	@echo "  seed-magic-items      - Seed magic items into backend DB"
@@ -351,3 +352,14 @@ test-coverage:
 typecheck:
 	@echo "🔍 Type checking all packages..."
 	$(MAKE) backend-typecheck
+
+# Run ts-prune to find unused exports in packages (uses npx so no global install required)
+.PHONY: ts-prune
+ts-prune:
+	@echo "🔎 Running ts-prune in frontend, backend, and shared (this may install ts-prune via npx)..."
+	@echo "--- frontend ---"
+	@cd frontend && npx -y ts-prune || true
+	@echo "--- backend ---"
+	@cd backend && npx -y ts-prune || true
+	@echo "--- shared ---"
+	@cd shared && npx -y ts-prune || true

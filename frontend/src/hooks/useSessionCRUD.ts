@@ -5,7 +5,8 @@ import { Session, SessionForm } from '@greedy/shared';
 // Session-specific CRUD hook
 export function useSessionCRUD(adventureId?: number) {
   const listQuery = useSessions(adventureId);
-  const itemQuery = (id: number) => useSession(id);
+  // Item query must be a hook so rules-of-hooks allow calling other hooks inside it
+  const useItemQuery = (id: number) => useSession(id);
   const createMutation = useCreateSession();
   const updateMutation = useUpdateSession();
   const deleteMutation = useDeleteSession();
@@ -19,19 +20,12 @@ export function useSessionCRUD(adventureId?: number) {
     images: []
   };
 
-  return {
-    ...useCRUD<Session>('session', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  return useCRUD<Session>('session', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }

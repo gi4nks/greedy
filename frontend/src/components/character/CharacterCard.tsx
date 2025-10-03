@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Character } from '@greedy/shared';
 
 interface CharacterCardProps {
-  character: Character & { id: number };
+  character: Character & { id?: number };
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onEdit: () => void;

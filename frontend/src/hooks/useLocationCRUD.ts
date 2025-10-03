@@ -5,7 +5,8 @@ import { Location, LocationForm } from '@greedy/shared';
 // Location-specific CRUD hook
 export function useLocationCRUD(adventureId?: number) {
   const listQuery = useLocations(adventureId);
-  const itemQuery = (id: number) => useLocation(id);
+  // Item query must be a hook so rules-of-hooks allow calling other hooks inside it
+  const useItemQuery = (id: number) => useLocation(id);
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
   const deleteMutation = useDeleteLocation();
@@ -19,19 +20,12 @@ export function useLocationCRUD(adventureId?: number) {
     adventure_id: adventureId,
   };
 
-  return {
-    ...useCRUD<Location>('location', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  return useCRUD<Location>('location', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }

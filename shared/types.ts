@@ -85,6 +85,7 @@ export interface Character {
   description?: string;
   tags?: string[];
   images?: EntityImage[];
+  locations?: LocationCharacter[];
 }
 
 export interface MagicItem {
@@ -125,6 +126,29 @@ export interface Location {
   description?: string;
   notes?: string;
   tags?: string[];
+  images?: EntityImage[];
+  characters?: LocationCharacter[];
+  quests?: LocationQuest[];
+}
+
+export interface LocationCharacter {
+  id?: number;
+  character_id: number;
+  location_id: number;
+  relationship_type: 'lives_at' | 'visits' | 'works_at' | 'owns' | 'frequents' | 'avoids';
+  notes?: string;
+  is_current: boolean;
+  character?: Character;
+}
+
+export interface LocationQuest {
+  id?: number;
+  quest_id: number;
+  location_id: number;
+  relationship_type: 'takes_place_at' | 'starts_at' | 'ends_at' | 'leads_to' | 'involves';
+  notes?: string;
+  is_primary: boolean;
+  quest?: Quest;
 }
 
 export interface NPC {
@@ -134,6 +158,7 @@ export interface NPC {
   role?: string;
   description?: string;
   tags?: string[];
+  images?: EntityImage[];
 }
 
 // API Response types
@@ -221,6 +246,7 @@ export interface Quest {
   assigned_to?: string | null;
   tags?: string[];
   images?: EntityImage[];
+  locations?: LocationQuest[];
 }
 
 export interface QuestWithObjectives extends Quest {

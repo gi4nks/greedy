@@ -1,7 +1,7 @@
 import React from 'react';
 import { UseQueryResult } from '@tanstack/react-query';
 
-export interface EntityListProps<T extends { id: number }> {
+export interface EntityListProps<T extends { id?: number }> {
   query: UseQueryResult<T[], Error>;
   renderItem: (item: T) => React.ReactNode;
   searchTerm?: string;
@@ -12,7 +12,7 @@ export interface EntityListProps<T extends { id: number }> {
   className?: string;
 }
 
-export function EntityList<T extends { id: number }>({
+export function EntityList<T extends { id?: number }>({
   query,
   renderItem,
   searchTerm = '',
@@ -79,7 +79,7 @@ export function EntityList<T extends { id: number }>({
   );
 }
 
-export interface EntityCardProps<T extends { id: number }> {
+export interface EntityCardProps<T extends { id?: number }> {
   item: T;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -91,7 +91,7 @@ export interface EntityCardProps<T extends { id: number }> {
   className?: string;
 }
 
-export function EntityCard<T extends { id: number }>({
+export function EntityCard<T extends { id?: number }>({
   item,
   isCollapsed,
   onToggleCollapse,
@@ -140,7 +140,7 @@ export function EntityCard<T extends { id: number }>({
 }
 
 export interface EntityFormProps<T extends Record<string, any>> {
-  item?: T & { id: number };
+  item?: T & { id?: number };
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Partial<T>) => void;

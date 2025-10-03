@@ -17,6 +17,7 @@ import {
   QuestList,
   QuestForm as QuestFormComponent
 } from '../components/quest';
+import ImageUpload from '../components/ImageUpload';
 
 export const Quests: React.FC = () => {
   const toast = useToast();
@@ -106,13 +107,13 @@ export const Quests: React.FC = () => {
     >
       <EntityList
         query={crud.queries.list}
-        renderItem={(quest: Quest & { id: number }) => {
+        renderItem={(quest: Quest & { id?: number }) => {
           return (
-            <QuestList
-              quests={[quest]}
+              <QuestList
+              quests={[quest as Quest & { id: number }]}
               searchTerm=""
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={(id) => { void handleDelete(id); }}
             />
           );
         }}
@@ -132,13 +133,24 @@ export const Quests: React.FC = () => {
           onFormDataChange={crud.actions.setFormData}
           onSubmit={(e) => {
             e.preventDefault();
-            handleSubmit(crud.state.formData as QuestForm);
+            void handleSubmit(crud.state.formData as QuestForm);
           }}
           onCancel={crud.actions.handleCancel}
           onAddObjective={addObjective}
           onUpdateObjective={updateObjective}
           onDeleteObjective={deleteObjective}
         />
+      )}
+      {crud.state.editingId && (
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-base-content mb-2">Images</div>
+          <ImageUpload
+            entityId={crud.state.editingId}
+            entityType="quests"
+            showInForm={true}
+            onImagesChanged={(images) => crud.actions.setFormData({ ...crud.state.formData, images })}
+          />
+        </div>
       )}
     </Page>
   );

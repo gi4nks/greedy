@@ -370,7 +370,7 @@ export default function WikiImport(): JSX.Element {
           loading={loading}
           onSearchQueryChange={setSearchQuery}
           onCategoryChange={setSelectedCategory}
-          onSearch={() => void handleSearch()}
+          onSearch={() => { void handleSearch(); }}
           onKeyPress={handleKeyPress}
         />
 

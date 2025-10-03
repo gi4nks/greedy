@@ -2,15 +2,16 @@ import { useCRUD } from './useCRUD';
 import { useNPCs, useNPC, useCreateNPC, useUpdateNPC, useDeleteNPC } from './useNPCs';
 import { NPC } from '@greedy/shared';
 
-// NPC-specific CRUD hook
+// Thin adapter: wire domain-specific queries/mutations into the generic useCRUD
 export function useNPCCrud(adventureId?: number) {
   const listQuery = useNPCs(adventureId);
-  const itemQuery = (id: number) => useNPC(id);
+  // Item query must be a hook (name starts with `use`) so eslint's rules-of-hooks
+  // allow calling other hooks inside it. We expose it as `item` in the CRUD API.
+  const useItemQuery = (id: number) => useNPC(id);
   const createMutation = useCreateNPC();
   const updateMutation = useUpdateNPC();
   const deleteMutation = useDeleteNPC();
 
-  // Default form data for NPCs
   const initialFormData: Partial<NPC> = {
     name: '',
     role: '',
@@ -19,19 +20,13 @@ export function useNPCCrud(adventureId?: number) {
     adventure_id: adventureId,
   };
 
-  return {
-    ...useCRUD<NPC>('NPC', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  // Delegate to the generic hook and expose the same shape as before.
+  return useCRUD<NPC>('NPC', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }

@@ -5,80 +5,77 @@ import { RelationshipEvent } from '@greedy/shared/types';
 const router = Router();
 
 import { mapRelationshipRow, mapEventRowToSummary } from '../utils/dbMappers';
+import { asyncHandler } from '../middleware/errorHandler';
+import { Request, Response } from 'express';
 
 // Get all relationships (with optional filtering)
-router.get('/', (req, res) => {
-  try {
-    const { npcId, characterId } = req.query;
-    
-    let query = `
-      SELECT nr.*, 
-             npc.name as npc_name, npc.character_type as npc_type,
-             target.name as target_name, target.character_type as target_type,
-             le.id as latest_event_id, le.description as latest_event_description, le.strength_change as latest_event_strength_change,
-             le.trust_change as latest_event_trust_change, le.fear_change as latest_event_fear_change, le.respect_change as latest_event_respect_change,
-             le.event_date as latest_event_date, le.session_title as latest_event_session_title
-      FROM npc_relationships nr
-      JOIN characters npc ON nr.npc_id = npc.id
-      JOIN characters target ON nr.target_id = target.id
-      LEFT JOIN (
-        SELECT re.relationship_id, re.id, re.description, re.strength_change, re.trust_change, re.fear_change, re.respect_change, re.event_date, s.title as session_title
-        FROM relationship_events re
-        LEFT JOIN sessions s ON re.session_id = s.id
-        WHERE re.id IN (
-          SELECT id FROM relationship_events re2 WHERE re2.relationship_id = re.relationship_id ORDER BY re2.event_date DESC LIMIT 1
-        )
-      ) le ON le.relationship_id = nr.id
-    `;
-    
-    const params: any[] = [];
-    
-    if (npcId) {
-      query += ' WHERE nr.npc_id = ?';
-      params.push(npcId);
-    } else if (characterId) {
-      query += ' WHERE (nr.npc_id = ? OR nr.target_id = ?) AND nr.target_type = "character"';
-      params.push(characterId, characterId);
-    }
-    
-    query += ' ORDER BY nr.strength DESC';
-    
-    const relationships = db.prepare(query).all(...params) as any[];
-    
-    // Transform database column names to frontend field names
-    const transformedRelationships = relationships.map(rel => {
-      const base = mapRelationshipRow(rel);
-      // Attach optional latestEvent summary
-      const latestEvent = rel.latest_event_id ? mapEventRowToSummary({
-        id: rel.latest_event_id,
-        description: rel.latest_event_description,
-        strength_change: rel.latest_event_strength_change,
-        trust_change: rel.latest_event_trust_change,
-        fear_change: rel.latest_event_fear_change,
-        respect_change: rel.latest_event_respect_change,
-        event_date: rel.latest_event_date,
-        session_title: rel.latest_event_session_title
-      }) : null;
+router.get('/', asyncHandler((req: Request, res: Response) => {
+  const { npcId, characterId } = req.query;
 
-      return {
-        ...base,
-        history: [],
-        createdAt: rel.created_at,
-        updatedAt: rel.updated_at,
-        npc_name: rel.npc_name,
-        npc_type: rel.npc_type,
-        target_name: rel.target_name,
-        target_type: rel.target_type,
-        latestEvent
-      };
-    });
-    
-    res.json(transformedRelationships);
-  } catch (error) {
-    console.error('Error fetching relationships:', error);
-    res.status(500).json({ error: 'Failed to fetch relationships' });
+  let query = `
+    SELECT nr.*, 
+           npc.name as npc_name, npc.character_type as npc_type,
+           target.name as target_name, target.character_type as target_type,
+           le.id as latest_event_id, le.description as latest_event_description, le.strength_change as latest_event_strength_change,
+           le.trust_change as latest_event_trust_change, le.fear_change as latest_event_fear_change, le.respect_change as latest_event_respect_change,
+           le.event_date as latest_event_date, le.session_title as latest_event_session_title
+    FROM npc_relationships nr
+    JOIN characters npc ON nr.npc_id = npc.id
+    JOIN characters target ON nr.target_id = target.id
+    LEFT JOIN (
+      SELECT re.relationship_id, re.id, re.description, re.strength_change, re.trust_change, re.fear_change, re.respect_change, re.event_date, s.title as session_title
+      FROM relationship_events re
+      LEFT JOIN sessions s ON re.session_id = s.id
+      WHERE re.id IN (
+        SELECT id FROM relationship_events re2 WHERE re2.relationship_id = re.relationship_id ORDER BY re2.event_date DESC LIMIT 1
+      )
+    ) le ON le.relationship_id = nr.id
+  `;
+
+  const params: any[] = [];
+
+  if (npcId) {
+    query += ' WHERE nr.npc_id = ?';
+    params.push(npcId);
+  } else if (characterId) {
+    query += ' WHERE (nr.npc_id = ? OR nr.target_id = ?) AND nr.target_type = "character"';
+    params.push(characterId, characterId);
   }
-});
+
+  query += ' ORDER BY nr.strength DESC';
+
+  const relationships = db.prepare(query).all(...params) as any[];
+
+  // Transform database column names to frontend field names
+  const transformedRelationships = relationships.map(rel => {
+    const base = mapRelationshipRow(rel);
+    // Attach optional latestEvent summary
+    const latestEvent = rel.latest_event_id ? mapEventRowToSummary({
+      id: rel.latest_event_id,
+      description: rel.latest_event_description,
+      strength_change: rel.latest_event_strength_change,
+      trust_change: rel.latest_event_trust_change,
+      fear_change: rel.latest_event_fear_change,
+      respect_change: rel.latest_event_respect_change,
+      event_date: rel.latest_event_date,
+      session_title: rel.latest_event_session_title
+    }) : null;
+
+    return {
+      ...base,
+      history: [],
+      createdAt: rel.created_at,
+      updatedAt: rel.updated_at,
+      npc_name: rel.npc_name,
+      npc_type: rel.npc_type,
+      target_name: rel.target_name,
+      target_type: rel.target_type,
+      latestEvent
+    };
+  });
+
+  res.json(transformedRelationships);
+}));
 
 // Get a single relationship
 router.get('/:relationshipId', (req, res) => {
@@ -151,7 +148,7 @@ router.get('/npcs/:npcId/relationships', (req, res) => {
       FROM npc_relationships nr
       JOIN characters c ON nr.target_id = c.id
       LEFT JOIN (
-        SELECT re.relationship_id, re.id, re.description, re.strength_change, re.trust_change, re.fear_change, re.respect_change, re.event_date, s.title as session_title
+        SELECT re.relationship_id, re.id, re.description, re.strength_change, re.event_date, s.title as session_title
         FROM relationship_events re
         LEFT JOIN sessions s ON re.session_id = s.id
         WHERE re.id IN (

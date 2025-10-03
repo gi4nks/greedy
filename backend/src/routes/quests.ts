@@ -53,6 +53,15 @@ router.get('/:id', validateId, (req: Request, res: Response) => {
     ORDER BY display_order ASC
   `).all((quest as any).id);
 
+  // Add location relationships
+  (quest as any).locations = db.prepare(`
+    SELECT ql.*, l.name as location_name
+    FROM quest_locations ql
+    JOIN locations l ON ql.location_id = l.id
+    WHERE ql.quest_id = ?
+    ORDER BY ql.is_primary DESC, l.name ASC
+  `).all((quest as any).id);
+
   res.json({ ...quest, objectives });
 });
 

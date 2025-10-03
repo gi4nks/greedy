@@ -5,6 +5,7 @@ import Page from '../components/Page';
 import { Session } from '@greedy/shared';
 import { useSessionCRUD } from '../hooks/useSessionCRUD';
 import { EntityList } from '../components/common/EntityComponents';
+import ImageUpload from '../components/ImageUpload';
 
 export default function Sessions(): JSX.Element {
   const adv = useAdventures();
@@ -13,15 +14,15 @@ export default function Sessions(): JSX.Element {
   const crud = useSessionCRUD(adv.selectedId || undefined);
 
   // Custom render function for session items
-  const renderSession = (session: Session & { id: number }) => {
-    const isCollapsed = crud.state.collapsed[session.id] ?? true;
+  const renderSession = (session: Session & { id?: number }) => {
+    const isCollapsed = crud.state.collapsed[session.id!] ?? true;
     return (
       <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => crud.actions.toggleCollapsed(session.id)}
+                onClick={() => crud.actions.toggleCollapsed(session.id!)}
                 className="btn btn-outline btn-primary btn-sm"
                 aria-label={isCollapsed ? '+' : '-'}
               >
@@ -34,13 +35,13 @@ export default function Sessions(): JSX.Element {
             </div>
             <div className="card-actions">
               <button
-                onClick={() => crud.actions.handleEdit(session)}
+                onClick={() => { crud.actions.handleEdit(session as Session & { id: number }); }}
                 className="btn btn-secondary btn-sm"
               >
                 Edit
               </button>
               <button
-                onClick={() => crud.actions.handleDelete(session.id)}
+                onClick={() => { void crud.actions.handleDelete(session.id!); }}
                 className="btn btn-neutral btn-sm"
               >
                 Delete
@@ -86,9 +87,9 @@ export default function Sessions(): JSX.Element {
     <form onSubmit={(e) => {
       e.preventDefault();
       if (crud.state.editingId) {
-        crud.actions.handleUpdate(crud.state.editingId, crud.state.formData);
+        void crud.actions.handleUpdate(crud.state.editingId, crud.state.formData);
       } else {
-        crud.actions.handleCreate(crud.state.formData);
+        void crud.actions.handleCreate(crud.state.formData);
       }
     }} className="card bg-base-100 shadow-xl mb-6">
       <div className="card-body">
@@ -147,6 +148,19 @@ export default function Sessions(): JSX.Element {
             />
           </div>
         </div>
+
+        {/* Image upload (only when editing an existing session) */}
+        {crud.state.editingId && (
+          <div>
+            <label className="block text-sm font-medium text-base-content mb-2">Images</label>
+            <ImageUpload
+              entityId={crud.state.editingId}
+              entityType="sessions"
+              showInForm={true}
+              onImagesChanged={(images) => crud.actions.setFormData({ ...crud.state.formData, images })}
+            />
+          </div>
+        )}
 
         <div className="card-actions justify-end">
           <button

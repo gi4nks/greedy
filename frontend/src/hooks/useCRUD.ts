@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
 
 export interface CRUDState<T> {
   formData: Partial<T>;
@@ -17,7 +17,7 @@ export interface CRUDActions<T> {
   setCollapsed: (collapsed: { [id: number]: boolean }) => void;
   toggleCollapsed: (id: number) => void;
 
-  handleCreate: (data: Partial<T>) => Promise<void>;
+  handleCreate: (data: Partial<T>) => Promise<T | undefined>;
   handleUpdate: (id: number, data: Partial<T>) => Promise<void>;
   handleDelete: (id: number) => Promise<void>;
   handleEdit: (item: T & { id: number }) => void;
@@ -28,8 +28,9 @@ export interface CRUDHooks<T> {
   state: CRUDState<T>;
   actions: CRUDActions<T>;
   queries: {
-    list: ReturnType<typeof useQuery>;
-    item: (id: number) => ReturnType<typeof useQuery>;
+    // Accept query results where `id` may be optional (shared types commonly define `id?: number`).
+    list: UseQueryResult<(T & { id?: number })[], Error>;
+    item: (id: number) => UseQueryResult<T & { id?: number }, Error>;
   };
   mutations: {
     create: any;
@@ -53,8 +54,9 @@ export function useCRUD<T extends { id?: number }>(
     createMutation: any;
     updateMutation: any;
     deleteMutation: any;
-    listQuery: ReturnType<typeof useQuery>;
-    itemQuery: (id: number) => ReturnType<typeof useQuery>;
+  // Accept query shapes where `id` may be optional to align with shared types
+  listQuery: UseQueryResult<(T & { id?: number })[], Error>;
+  itemQuery: (id: number) => UseQueryResult<T & { id?: number }, Error>;
     initialFormData?: Partial<T>;
     onSuccess?: (action: 'create' | 'update' | 'delete', data?: any) => void;
     onError?: (action: 'create' | 'update' | 'delete', error: Error) => void;
@@ -76,12 +78,14 @@ export function useCRUD<T extends { id?: number }>(
 
   const handleCreate = useCallback(async (data: Partial<T>) => {
     try {
-      await createMutation.mutateAsync(data);
+      const created = await createMutation.mutateAsync(data);
       setShowCreateForm(false);
       setFormData(initialFormData);
-      onSuccess?.('create', data);
+      onSuccess?.('create', created);
+      return created as T | undefined;
     } catch (error) {
       onError?.('create', error as Error);
+      return undefined;
     }
   }, [createMutation, initialFormData, onSuccess, onError]);
 

@@ -1,5 +1,6 @@
 import express, { Express } from 'express';
 import cors from 'cors';
+import { info, error as logError } from './logger';
 
 // Route modules will be required lazily inside createApp to avoid heavy imports at module load time
 
@@ -11,13 +12,13 @@ export function createApp(): Express {
 
   // In tests or when explicitly skipped, do not run migrations to avoid IO or heavy operations
   if (process.env.NODE_ENV !== 'test' && process.env.SKIP_MIGRATIONS !== '1') {
-    try {
+  try {
       // Lazy-require migrations to avoid DB open on module import
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { migrate } = require('../db');
       migrate();
-    } catch (err) {
-      console.error('APP: failed to run migrations', err);
+      } catch (err) {
+      logError('APP: failed to run migrations', err);
       throw err;
     }
   }
@@ -26,80 +27,86 @@ export function createApp(): Express {
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
   // Lazy-require routes and add logging to trace heavy imports during tests
   try {
-    console.log('APP: requiring routes/adventures');
+  info('APP: requiring routes/adventures');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const adventures = require('./routes/adventures').default;
     app.use('/api/adventures', adventures);
-    console.log('APP: loaded adventures');
+  info('APP: loaded adventures');
 
-    console.log('APP: requiring routes/sessions');
+  info('APP: requiring routes/sessions');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sessions = require('./routes/sessions').default;
     app.use('/api/sessions', sessions);
-    console.log('APP: loaded sessions');
+  info('APP: loaded sessions');
 
-    console.log('APP: requiring routes/characters');
+  info('APP: requiring routes/characters');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const characters = require('./routes/characters').default;
     app.use('/api/characters', characters);
-    console.log('APP: loaded characters');
+  info('APP: loaded characters');
 
-    console.log('APP: requiring routes/locations');
+  info('APP: requiring routes/locations');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const locations = require('./routes/locations').default;
     app.use('/api/locations', locations);
-    console.log('APP: loaded locations');
+  info('APP: loaded locations');
 
-    console.log('APP: requiring routes/npcs');
+  info('APP: requiring routes/npcs');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const npcs = require('./routes/npcs').default;
     app.use('/api/npcs', npcs);
-    console.log('APP: loaded npcs');
+  info('APP: loaded npcs');
 
-    console.log('APP: requiring routes/quests');
+  info('APP: requiring routes/quests');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const quests = require('./routes/quests').default;
     app.use('/api/quests', quests);
-    console.log('APP: loaded quests');
+  info('APP: loaded quests');
 
-    console.log('APP: requiring routes/magicItems');
+  info('APP: requiring routes/magicItems');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const magicItems = require('./routes/magicItems').default;
     app.use('/api/magic-items', magicItems);
-    console.log('APP: loaded magicItems');
+  info('APP: loaded magicItems');
 
-    console.log('APP: requiring routes/combat');
+  info('APP: requiring routes/combat');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const combat = require('./routes/combat').default;
     app.use('/api/combat', combat);
-    console.log('APP: loaded combat');
+  info('APP: loaded combat');
 
-    console.log('APP: requiring routes/relationships');
+  info('APP: requiring routes/relationships');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const relationships = require('./routes/relationships').default;
     app.use('/api/relationships', relationships);
-    console.log('APP: loaded relationships');
+  info('APP: loaded relationships');
 
-    console.log('APP: requiring routes/misc');
+  info('APP: requiring routes/misc');
     // misc handles /api/global_notes, /api/export, /api/import, /api/search
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const misc = require('./routes/misc').default;
     app.use('/api', misc);
-    console.log('APP: loaded misc');
+  info('APP: loaded misc');
 
-    console.log('APP: requiring routes/images');
+  info('APP: requiring routes/images');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const images = require('./routes/images').default;
     app.use('/api/images', images);
-    console.log('APP: loaded images');
+  info('APP: loaded images');
 
-    console.log('APP: requiring routes/campaigns');
+  info('APP: requiring routes/campaigns');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const campaigns = require('./routes/campaigns').default;
     app.use('/api/campaigns', campaigns);
-    console.log('APP: loaded campaigns');
+  info('APP: loaded campaigns');
+
+  info('APP: requiring routes/adventureNetwork');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const adventureNetwork = require('./routes/adventureNetwork').default;
+    app.use('/api/adventures', adventureNetwork);
+  info('APP: loaded adventureNetwork');
   } catch (err) {
-    console.error('APP: error while requiring routes', err);
+    logError('APP: error while requiring routes', err);
     throw err;
   }
 

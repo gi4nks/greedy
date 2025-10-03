@@ -6,6 +6,8 @@ import { useToast } from '../components/Toast';
 import { Location } from '@greedy/shared';
 import { useLocationCRUD } from '../hooks/useLocationCRUD';
 import { EntityList } from '../components/common/EntityComponents';
+import ImageUpload from '../components/ImageUpload';
+import LocationRelationships from '../components/LocationRelationships';
 
 export default function Locations(): JSX.Element {
   const [activeTab, setActiveTab] = useState<'description' | 'notes'>('description');
@@ -15,15 +17,15 @@ export default function Locations(): JSX.Element {
   const crud = useLocationCRUD(adv.selectedId || undefined);
 
   // Custom render function for location items
-  const renderLocation = (location: Location & { id: number }) => {
-    const isCollapsed = crud.state.collapsed[location.id] ?? true;
+  const renderLocation = (location: Location & { id?: number }) => {
+    const isCollapsed = crud.state.collapsed[location.id!] ?? true;
     return (
       <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => crud.actions.toggleCollapsed(location.id)}
+                onClick={() => crud.actions.toggleCollapsed(location.id!)}
                 className="btn btn-outline btn-primary btn-sm"
                 aria-label={isCollapsed ? '+' : '-'}
               >
@@ -35,13 +37,13 @@ export default function Locations(): JSX.Element {
             </div>
             <div className="card-actions">
               <button
-                onClick={() => crud.actions.handleEdit(location)}
+                onClick={() => { crud.actions.handleEdit(location as Location & { id: number }); }}
                 className="btn btn-secondary btn-sm"
               >
                 Edit
               </button>
               <button
-                onClick={() => crud.actions.handleDelete(location.id)}
+                onClick={() => { void crud.actions.handleDelete(location.id!); }}
                 className="btn btn-neutral btn-sm"
               >
                 Delete
@@ -57,6 +59,8 @@ export default function Locations(): JSX.Element {
               <div className="prose">
                 <ReactMarkdown>{location.notes || ''}</ReactMarkdown>
               </div>
+              
+              {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 {(location.tags || []).map(t => (
                   <div key={t} className="badge badge-primary">
@@ -64,8 +68,50 @@ export default function Locations(): JSX.Element {
                   </div>
                 ))}
               </div>
+              
+              {/* Relationship Summary Chips */}
+              {location.id && ((location.characters?.length || 0) > 0 || (location.quests?.length || 0) > 0) && (
+                <div className="space-y-3">
+                  {location.characters && location.characters.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">👥 Characters</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {location.characters.map((rel) => (
+                          <div 
+                            key={`${rel.character_id}-${rel.relationship_type}`} 
+                            className={`badge badge-sm gap-1 ${rel.is_current ? 'badge-primary' : 'badge-outline'}`}
+                          >
+                            <span>{rel.relationship_type === 'lives_at' ? '🏠' : rel.relationship_type === 'works_at' ? '💼' : rel.relationship_type === 'owns' ? '👑' : rel.relationship_type === 'frequents' ? '🔄' : rel.relationship_type === 'avoids' ? '❌' : '👋'}</span>
+                            <span>{(rel as any).character_name}</span>
+                            {rel.is_current && <span className="text-xs">📍</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {location.quests && location.quests.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">🎯 Quests</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {location.quests.map((rel) => (
+                          <div 
+                            key={`${rel.quest_id}-${rel.relationship_type}`} 
+                            className={`badge badge-sm gap-1 ${rel.is_primary ? 'badge-primary' : 'badge-outline'}`}
+                          >
+                            <span>{rel.relationship_type === 'starts_at' ? '🚀' : rel.relationship_type === 'ends_at' ? '🏁' : rel.relationship_type === 'leads_to' ? '➡️' : rel.relationship_type === 'involves' ? '🔗' : '📍'}</span>
+                            <span>{(rel as any).quest_title}</span>
+                            {rel.is_primary && <span className="text-xs">⭐</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
+            {/* Image Upload Component */}
         </div>
       </div>
     );
@@ -76,9 +122,14 @@ export default function Locations(): JSX.Element {
     <form onSubmit={(e) => {
       e.preventDefault();
       if (crud.state.editingId) {
-        crud.actions.handleUpdate(crud.state.editingId, crud.state.formData);
+        void crud.actions.handleUpdate(crud.state.editingId, crud.state.formData);
       } else {
-        crud.actions.handleCreate(crud.state.formData);
+        (async () => {
+          const created = await crud.actions.handleCreate(crud.state.formData);
+          if (created && (created as any).id) {
+            crud.actions.setEditingId((created as any).id);
+          }
+        })();
       }
     }} className="card bg-base-100 shadow-xl mb-6">
       <div className="card-body">
@@ -96,6 +147,7 @@ export default function Locations(): JSX.Element {
               className="input input-bordered w-full"
               required
             />
+            {/* Image Upload Component (removed) */}
           </div>
 
           <div>
@@ -186,14 +238,34 @@ export default function Locations(): JSX.Element {
               {(crud.state.formData.tags || []).map(tag => (
                 <div key={tag} className="badge badge-primary gap-2">
                   {tag}
-                  <button onClick={() => crud.actions.setFormData({
+                  <button onClick={() => { crud.actions.setFormData({
                     ...crud.state.formData,
                     tags: (crud.state.formData.tags || []).filter(t => t !== tag)
-                  })} className="btn btn-xs btn-ghost btn-circle">×</button>
+                  }); }} className="btn btn-xs btn-ghost btn-circle">×</button>
                 </div>
               ))}
             </div>
           </div>
+
+            {/* Image upload (only when editing an existing location) */}
+            {crud.state.editingId && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-base-content mb-2">Images</label>
+                <ImageUpload
+                  entityId={crud.state.editingId}
+                  entityType="locations"
+                  showInForm={true}
+                  onImagesChanged={(images) => crud.actions.setFormData({ ...(crud.state.formData as any), images })}
+                />
+              </div>
+            )}
+
+            {/* Location Relationships (only when editing an existing location) */}
+            {crud.state.editingId && (
+              <div className="mb-6">
+                <LocationRelationships location={{ ...crud.state.formData, id: crud.state.editingId } as Location & { id: number }} />
+              </div>
+            )}
         </div>
 
         <div className="card-actions justify-end">

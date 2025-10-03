@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../../db';
 import { CombatEncounter, CombatParticipant, EnvironmentEffect } from '@greedy/shared/types';
+import { error as logError } from '../logger';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/', (req, res) => {
 
     res.json(encounters);
   } catch (error) {
-    console.error('Error fetching combat encounters:', error);
+    logError('Error fetching combat encounters:', error);
     res.status(500).json({ error: 'Failed to fetch combat encounters' });
   }
 });
@@ -44,7 +45,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json(encounter);
   } catch (error) {
-    console.error('Error creating combat encounter:', error);
+    logError('Error creating combat encounter:', error);
     res.status(500).json({ error: 'Failed to create combat encounter' });
   }
 });
@@ -61,7 +62,7 @@ router.get('/:id', (req, res) => {
 
     res.json(encounter);
   } catch (error) {
-    console.error('Error fetching combat encounter:', error);
+    logError('Error fetching combat encounter:', error);
     res.status(500).json({ error: 'Failed to fetch combat encounter' });
   }
 });
@@ -81,7 +82,7 @@ router.put('/:id', (req, res) => {
     const encounter = db.prepare('SELECT * FROM combat_encounters WHERE id = ?').get(id) as CombatEncounter;
     res.json(encounter);
   } catch (error) {
-    console.error('Error updating combat encounter:', error);
+    logError('Error updating combat encounter:', error);
     res.status(500).json({ error: 'Failed to update combat encounter' });
   }
 });
@@ -93,7 +94,7 @@ router.delete('/:id', (req, res) => {
     db.prepare('DELETE FROM combat_encounters WHERE id = ?').run(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting combat encounter:', error);
+    logError('Error deleting combat encounter:', error);
     res.status(500).json({ error: 'Failed to delete combat encounter' });
   }
 });
@@ -112,7 +113,7 @@ router.get('/:encounterId/participants', (req, res) => {
 
     res.json(participants);
   } catch (error) {
-    console.error('Error fetching combat participants:', error);
+    logError('Error fetching combat participants:', error);
     res.status(500).json({ error: 'Failed to fetch combat participants' });
   }
 });
@@ -136,7 +137,7 @@ router.post('/participants', (req, res) => {
     const participant = db.prepare('SELECT * FROM combat_participants WHERE id = ?').get(result.lastInsertRowid) as CombatParticipant;
     res.status(201).json(participant);
   } catch (error) {
-    console.error('Error creating combat participant:', error);
+    logError('Error creating combat participant:', error);
     res.status(500).json({ error: 'Failed to create combat participant' });
   }
 });
@@ -156,7 +157,7 @@ router.put('/participants/:id', (req, res) => {
     const participant = db.prepare('SELECT * FROM combat_participants WHERE id = ?').get(id) as CombatParticipant;
     res.json(participant);
   } catch (error) {
-    console.error('Error updating combat participant:', error);
+    logError('Error updating combat participant:', error);
     res.status(500).json({ error: 'Failed to update combat participant' });
   }
 });
@@ -168,7 +169,7 @@ router.delete('/participants/:id', (req, res) => {
     db.prepare('DELETE FROM combat_participants WHERE id = ?').run(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting combat participant:', error);
+    logError('Error deleting combat participant:', error);
     res.status(500).json({ error: 'Failed to delete combat participant' });
   }
 });

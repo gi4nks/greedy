@@ -1,13 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-export interface Location {
-  id?: number;
-  adventure_id?: number;
-  name: string;
-  description?: string;
-  notes?: string;
-  tags?: string[];
-}
+import { Location } from '@greedy/shared';
 
 export function useLocations(adventureId?: number) {
   return useQuery({

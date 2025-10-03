@@ -1,11 +1,12 @@
 import { useCRUD } from './useCRUD';
-import { useMagicItems, useCreateMagicItem, useUpdateMagicItem, useDeleteMagicItem } from './useMagicItems';
+import { useMagicItems, useMagicItem, useCreateMagicItem, useUpdateMagicItem, useDeleteMagicItem } from './useMagicItems';
 import { MagicItem } from '@greedy/shared';
 
 // Magic Item-specific CRUD hook
 export function useMagicItemCRUD() {
   const listQuery = useMagicItems();
-  const itemQuery = (_id: number) => ({ data: null, isLoading: false, error: null, isError: false, isPending: false, isLoadingError: false, isRefetchError: false, isSuccess: false, isFetched: false, isFetchedAfterMount: false, isFetching: false, isRefetching: false, isStale: false, refetch: () => Promise.resolve({ data: null }), dataUpdatedAt: 0, errorUpdatedAt: 0, failureCount: 0, failureReason: null, errorUpdateCount: 0, isPaused: false, fetchStatus: 'idle' as const, isPlaceholderData: false, status: 'pending' as const, isInitialLoading: false, isEnabled: true, promise: Promise.resolve() }); // Not implemented yet
+  // Item query must be a hook so rules-of-hooks allow calling other hooks inside it
+  const useItemQuery = (id: number) => useMagicItem(id);
   const createMutation = useCreateMagicItem();
   const updateMutation = useUpdateMagicItem();
   const deleteMutation = useDeleteMagicItem();
@@ -19,19 +20,12 @@ export function useMagicItemCRUD() {
     attunement_required: false,
   };
 
-  return {
-    ...useCRUD<MagicItem>('magic item', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  return useCRUD<MagicItem>('magic item', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }

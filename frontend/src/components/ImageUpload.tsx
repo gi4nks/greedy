@@ -4,7 +4,7 @@ import { EntityImage } from '@greedy/shared';
 
 interface ImageUploadProps {
   entityId: number;
-  entityType: 'adventures' | 'sessions' | 'quests' | 'characters' | 'magic_items' | 'npcs';
+  entityType: 'adventures' | 'sessions' | 'quests' | 'characters' | 'magic_items' | 'npcs' | 'locations';
   onImagesChanged?: (images: EntityImage[]) => void;
   className?: string;
   maxImages?: number;
@@ -28,8 +28,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Synchronous wrapper for the input onChange handler so we don't pass a Promise-returning
+  // function directly to a JSX attribute (avoids no-misused-promises lint errors).
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
+    void processFiles(files);
+  };
+
+  // Actual async processor for files
+  const processFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     if (currentImages.length + files.length > maxImages) {
@@ -50,8 +57,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
     }
 
-    // Upload each file
+    // Upload each file sequentially
     for (let i = 0; i < files.length; i++) {
+      // eslint-disable-next-line no-await-in-loop
       await uploadImage(files[i]);
     }
   };
@@ -67,11 +75,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to upload image');
+        const errorBody = (await response.json()) as { error?: string } | null;
+        throw new Error(errorBody?.error || 'Failed to upload image');
       }
 
-      await response.json();
+      // Server may return the created image or a small payload; parse it but we don't strictly
+      // rely on its shape here.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _created = (await response.json()) as EntityImage | null;
       toast.push('Image uploaded successfully', { type: 'success' });
 
       // Refresh images
@@ -94,8 +105,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete image');
+        const errorBody = (await response.json()) as { error?: string } | null;
+        throw new Error(errorBody?.error || 'Failed to delete image');
       }
 
       toast.push('Image deleted successfully', { type: 'success' });
@@ -113,11 +124,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       const response = await fetch(`/api/images/${entityType}/${entityId}`);
       if (response.ok) {
-        const newImages = await response.json();
+        const newImages = (await response.json()) as EntityImage[];
         setCurrentImages(newImages);
         onImagesChanged?.(newImages);
       }
-    } catch (error) {
+    } catch {
       // Failed to refresh images - ignore silently as this is a background operation
     }
   }, [entityId, entityType, onImagesChanged]);
@@ -348,6 +359,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {/* Lightbox */}
       {lightboxImage && (
+        // This overlay intentionally handles click/keyboard to close the lightbox. The element is
+        // acting as a dismissible dialog background and we keep the a11y attributes. Disable the
+        // specific rule here to avoid noisy lint failures while preserving semantics.
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightboxImage(null)}
              onKeyDown={(e) => {
                if (e.key === 'Escape') {

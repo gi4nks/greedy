@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import Database from 'better-sqlite3';
+import { info, error as logError } from './logger';
 
 const DB_PATH = process.env.DB_FILE === ':memory:'
   ? ':memory:'
@@ -36,7 +37,7 @@ export function runMigrations(): void {
     const version = parseInt(file.split('_')[0]);
     if (executedVersions.has(version)) continue;
 
-    console.log(`Running migration: ${file}`);
+  info(`Running migration: ${file}`);
 
     try {
       // Dynamic import of migration
@@ -48,10 +49,10 @@ export function runMigrations(): void {
           migration.up(db);
           db.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(version, file);
         })();
-        console.log(`✅ Migration ${file} completed successfully`);
+  info(`✅ Migration ${file} completed successfully`);
       }
     } catch (error) {
-      console.error(`❌ Migration ${file} failed:`, error);
+  logError(`❌ Migration ${file} failed:`, error);
       throw error;
     }
   }

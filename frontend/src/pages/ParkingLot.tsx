@@ -117,7 +117,7 @@ export default function ParkingLot(): JSX.Element {
                           </select>
                           {item.id && (
                             <button
-                              onClick={() => void deleteItem(item.id!)}
+                              onClick={() => { void deleteItem(item.id!); }}
                               className="btn btn-error btn-sm"
                             >
                               Delete

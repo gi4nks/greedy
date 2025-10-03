@@ -81,18 +81,18 @@ export default function Search(): JSX.Element {
         onToggleCollapseSession={toggleCollapseSession}
         onToggleCollapseNpc={toggleCollapseNpc}
         onToggleCollapseLocation={toggleCollapseLocation}
-        onAddSession={() => handleCreateItem('session')}
-        onAddNpc={() => handleCreateItem('npc')}
-        onAddLocation={() => handleCreateItem('location')}
+        onAddSession={() => { handleCreateItem('session'); }}
+        onAddNpc={() => { handleCreateItem('npc'); }}
+        onAddLocation={() => { handleCreateItem('location'); }}
       />
 
       {showCreateForm && formType && (
         <CreateItemModal
           type={formType}
           onClose={handleCloseModal}
-          onCreateSession={handleCreateSession}
-          onCreateNPC={handleCreateNPC}
-          onCreateLocation={handleCreateLocation}
+          onCreateSession={(data) => { void handleCreateSession(data); }}
+          onCreateNPC={(data) => { void handleCreateNPC(data); }}
+          onCreateLocation={(data) => { void handleCreateLocation(data); }}
           adventures={adv.adventures}
           selectedAdventureId={adv.selectedId || undefined}
         />

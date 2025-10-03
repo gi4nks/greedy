@@ -5,7 +5,8 @@ import { Quest, QuestForm } from '@greedy/shared';
 // Quest-specific CRUD hook
 export function useQuestCRUD(adventureId?: number) {
   const listQuery = useQuests(adventureId);
-  const itemQuery = (id: number) => useQuest(id);
+  // Item query must be a hook so rules-of-hooks allow calling other hooks inside it
+  const useItemQuery = (id: number) => useQuest(id);
   const createMutation = useCreateQuest();
   const updateMutation = useUpdateQuest();
   const deleteMutation = useDeleteQuest();
@@ -24,19 +25,12 @@ export function useQuestCRUD(adventureId?: number) {
     images: []
   };
 
-  return {
-    ...useCRUD<Quest>('quest', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  return useCRUD<Quest>('quest', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }

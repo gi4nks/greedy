@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import { db } from '../../db';
 import { parseTags } from '../utils';
+import { info, error as logError } from '../logger';
 
 const router = express.Router();
 
@@ -182,7 +183,7 @@ router.get('/wiki/search', async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('Wiki search error:', error.message);
+  logError('Wiki search error:', error.message);
     res.status(500).json({
       error: 'Failed to search wiki',
       details: error.message
@@ -194,18 +195,18 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { full = 'false' } = req.query;
-    console.log(`Received request for wiki article with ID: "${id}" (type: ${typeof id}), full: ${full}`);
+  info(`Received request for wiki article with ID: "${id}" (type: ${typeof id}), full: ${full}`);
 
     // Validate ID parameter
     const articleId = parseInt(id);
-    console.log(`Parsed article ID: ${articleId} (isNaN: ${isNaN(articleId)}, <= 0: ${articleId <= 0})`);
+  info(`Parsed article ID: ${articleId} (isNaN: ${isNaN(articleId)}, <= 0: ${articleId <= 0})`);
 
     if (isNaN(articleId) || articleId <= 0) {
-      console.log(`Invalid article ID validation failed for: "${id}"`);
+  info(`Invalid article ID validation failed for: "${id}"`);
       return res.status(400).json({ error: 'Invalid article ID' });
     }
 
-    console.log(`Fetching wiki article details for ID: ${articleId}`);
+  info(`Fetching wiki article details for ID: ${articleId}`);
 
     if (full === 'true') {
       // Get full article content using MediaWiki API
@@ -220,11 +221,11 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
         timeout: 10000
       });
 
-      console.log(`MediaWiki API response status: ${response.status}`);
+  info(`MediaWiki API response status: ${response.status}`);
 
       const pages = response.data?.query?.pages;
       if (!pages || !pages[articleId]) {
-        console.error('Article not found in MediaWiki API response');
+  logError('Article not found in MediaWiki API response');
         return res.status(404).json({ error: 'Article not found' });
       }
 
@@ -232,11 +233,11 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
       const revision = page.revisions?.[0];
 
       if (!revision || !revision['*']) {
-        console.error('No content found in article revision');
+  logError('No content found in article revision');
         return res.status(404).json({ error: 'Article content not found' });
       }
 
-      console.log(`Successfully retrieved full article: ${page.title}`);
+  info(`Successfully retrieved full article: ${page.title}`);
 
       res.json({
         id: page.pageid,
@@ -256,18 +257,18 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
         timeout: 10000 // 10 second timeout
       });
 
-      console.log(`Fandom API response status: ${response.status}`);
+  info(`Fandom API response status: ${response.status}`);
 
       const items = response.data?.items;
       if (!items) {
-        console.error('No items found in Fandom API response');
+  logError('No items found in Fandom API response');
         return res.status(404).json({ error: 'Article not found - no items in response' });
       }
 
       const article = items ? items[Object.keys(items)[0]] : null;
 
       if (!article) {
-        console.error('Article not found in items:', Object.keys(items));
+  logError('Article not found in items:', Object.keys(items));
         return res.status(404).json({ error: 'Article not found' });
       }
 
@@ -284,7 +285,7 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
     }
 
   } catch (error: any) {
-    console.error('Wiki article error for ID', req.params.id, ':', error.message);
+  logError('Wiki article error for ID', req.params.id, ':', error.message);
 
     // Handle different types of errors with specific responses
     if (error.code === 'ECONNABORTED') {
@@ -295,7 +296,7 @@ router.get('/wiki/article/:id', async (req: Request, res: Response) => {
     }
 
     if (error.response) {
-      console.error('API error response:', error.response.status, error.response.data);
+      logError('API error response:', error.response.status, error.response.data);
 
       // Handle specific HTTP status codes
       if (error.response.status === 404) {

@@ -18,6 +18,7 @@ import {
   CharacterAssignModal
 } from '../components/character';
 import { EntityList } from '../components/common/EntityComponents';
+import ImageUpload from '../components/ImageUpload';
 
 export default function Characters(): JSX.Element {
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -39,7 +40,10 @@ export default function Characters(): JSX.Element {
     if (crud.state.editingId) {
       await crud.actions.handleUpdate(crud.state.editingId, data);
     } else {
-      await crud.actions.handleCreate(data);
+      const created = await crud.actions.handleCreate(data);
+      if (created && (created as any).id) {
+        crud.actions.setEditingId((created as any).id);
+      }
     }
   };
 
@@ -57,16 +61,16 @@ export default function Characters(): JSX.Element {
     <Page title="Characters" toolbar={<button onClick={() => crud.actions.setShowCreateForm(true)} className="btn btn-primary btn-sm">Add</button>}>
       <EntityList
         query={crud.queries.list}
-        renderItem={(character: Character & { id: number }) => {
-          const isCollapsed = crud.state.collapsed[character.id] ?? true;
+        renderItem={(character: Character & { id?: number }) => {
+          const isCollapsed = crud.state.collapsed[character.id! ] ?? true;
           return (
             <CharacterCard
-              key={character.id}
+              key={character.id!}
               character={character}
               isCollapsed={isCollapsed}
-              onToggleCollapse={() => crud.actions.toggleCollapsed(character.id)}
-              onEdit={() => handleEdit(character)}
-              onDelete={() => handleDelete(character.id)}
+              onToggleCollapse={() => crud.actions.toggleCollapsed(character.id!)}
+              onEdit={() => handleEdit(character as Character & { id: number })}
+              onDelete={() => { void handleDelete(character.id!); }}
               adventureTitle={character.adventure_id ? adv.adventures.find(a => a.id === character.adventure_id)?.title : undefined}
             />
           );
@@ -83,9 +87,21 @@ export default function Characters(): JSX.Element {
           formData={crud.state.formData as CharacterForm}
           editingId={crud.state.editingId}
           onFormDataChange={crud.actions.setFormData}
-          onSubmit={() => handleSubmit(crud.state.formData as CharacterForm)}
+          onSubmit={() => { void handleSubmit(crud.state.formData as CharacterForm); }}
           onCancel={crud.actions.handleCancel}
         >
+          {/* Image upload (only when editing an existing character) */}
+          {crud.state.editingId && (
+            <div className="mt-4">
+              <div className="block text-sm font-medium text-base-content mb-2">Images</div>
+              <ImageUpload
+                entityId={crud.state.editingId}
+                entityType="characters"
+                showInForm={true}
+                onImagesChanged={(images) => crud.actions.setFormData({ ...(crud.state.formData as any), images })}
+              />
+            </div>
+          )}
           <CharacterBasicTab
             formData={crud.state.formData as CharacterForm}
             editingId={crud.state.editingId}

@@ -35,9 +35,9 @@ router.post('/', validateBody(npcSchema), asyncHandler(async (req: Request, res:
   const { adventure_id, name, role, description, tags } = req.body;
 
   const info = db.prepare(`
-    INSERT INTO characters (adventure_id, name, role, description, tags)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(adventure_id || null, name, role, description, stringifyTags(tags || []));
+    INSERT INTO characters (adventure_id, name, character_type, role, description, tags)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(adventure_id || null, name, 'npc', role, description, stringifyTags(tags || []));
 
   const row = db.prepare('SELECT * FROM characters WHERE id = ?').get(info.lastInsertRowid);
   if (row) (row as any).tags = parseTags((row as any).tags);

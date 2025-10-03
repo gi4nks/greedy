@@ -5,7 +5,8 @@ import { Character, CharacterForm } from '@greedy/shared';
 // Character-specific CRUD hook
 export function useCharacterCRUD(adventureId?: number) {
   const listQuery = useCharacters(adventureId);
-  const itemQuery = (id: number) => useCharacter(id);
+  // Item query must be a hook so rules-of-hooks allow calling other hooks inside it
+  const useItemQuery = (id: number) => useCharacter(id);
   const createMutation = useCreateCharacter();
   const updateMutation = useUpdateCharacter();
   const deleteMutation = useDeleteCharacter();
@@ -75,19 +76,13 @@ export function useCharacterCRUD(adventureId?: number) {
     images: []
   };
 
-  return {
-    ...useCRUD<Character>('character', {
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      listQuery,
-      itemQuery,
-      initialFormData,
-    }),
-    // Override the list query with proper typing
-    queries: {
-      list: listQuery as any,
-      item: itemQuery,
-    },
-  };
+  // Thin adapter: delegate to generic useCRUD and expose the same shape
+  return useCRUD<Character>('character', {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    listQuery,
+    itemQuery: useItemQuery,
+    initialFormData,
+  });
 }
