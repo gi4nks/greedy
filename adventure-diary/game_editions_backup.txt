@@ -1,0 +1,2 @@
+1|dnd5e|D&D 5th Edition|5e|Wizards of the Coast|1||CURRENT_TIMESTAMP
+2|adnd2e|Advanced D&D 2nd Edition|2e|TSR/Wizards of the Coast|1||CURRENT_TIMESTAMP

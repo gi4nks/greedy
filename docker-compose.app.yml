@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  adventure-diary:
+    build:
+      context: ./adventure-diary
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./campaign.db:/app/campaign.db
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    restart: unless-stopped
+    networks:
+      - adventure-diary-network
+
+networks:
+  adventure-diary-network:
+    driver: bridge

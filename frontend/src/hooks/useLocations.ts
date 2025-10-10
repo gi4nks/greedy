@@ -1,16 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Location } from '@greedy/shared';
 
-export function useLocations(adventureId?: number) {
+// Types for Location
+export interface Location {
+  id: number;
+  name: string;
+  description?: string;
+  notes?: string;
+  adventure_id?: number;
+  tags?: string[];
+}
+
+export function useLocations() {
   return useQuery({
-    queryKey: ['locations', adventureId],
+    queryKey: ['locations'],
     queryFn: async () => {
-      const params = adventureId ? `?adventure=${adventureId}` : '';
-      const response = await fetch(`/api/locations${params}`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      const response = await fetch('/api/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
       return response.json() as Promise<Location[]>;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -19,7 +29,9 @@ export function useLocation(id: number) {
     queryKey: ['location', id],
     queryFn: async () => {
       const response = await fetch(`/api/locations/${id}`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to fetch location');
+      }
       return response.json() as Promise<Location>;
     },
     enabled: !!id,
@@ -38,12 +50,13 @@ export function useCreateLocation() {
         },
         body: JSON.stringify(location),
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to create location');
+      }
       return response.json() as Promise<Location>;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -60,13 +73,14 @@ export function useUpdateLocation() {
         },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to update location');
+      }
       return response.json() as Promise<Location>;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: Location) => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
       void queryClient.invalidateQueries({ queryKey: ['location', data.id] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -79,12 +93,13 @@ export function useDeleteLocation() {
       const response = await fetch(`/api/locations/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to delete location');
+      }
       return id;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['locations'] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }

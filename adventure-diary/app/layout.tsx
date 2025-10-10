@@ -1,0 +1,32 @@
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+import Navigation from '@/components/Navigation'
+
+export const metadata: Metadata = {
+  title: 'Adventure Diary',
+  description: 'A comprehensive D&D campaign management system',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" data-theme="emerald" data-scroll-behavior="smooth">
+      <body className="min-h-screen bg-base-200">
+        <Navigation />
+        <main>
+          {children}
+        </main>
+      </body>
+    </html>
+  )
+}

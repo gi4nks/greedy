@@ -11,3 +11,17 @@ coverage/
 frontend/campaign.db
 backend/campaign.db
 .tmp/
+
+# Next.js
+.next/
+out/
+
+# Database files
+*.db
+*.db-*
+
+# Local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

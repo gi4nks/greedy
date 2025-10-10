@@ -1,0 +1,113 @@
+'use server';
+
+import { db } from '@/lib/db';
+import { locations, adventures } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+
+export async function getLocations(campaignId: number) {
+  // Get locations through adventures that belong to this campaign
+  const locationList = await db
+    .select()
+    .from(locations)
+    .innerJoin(adventures, eq(locations.adventureId, adventures.id))
+    .where(eq(adventures.campaignId, campaignId))
+    .orderBy(locations.name);
+
+  return locationList;
+}
+
+export async function getLocation(id: number) {
+  const [location] = await db.select().from(locations).where(eq(locations.id, id)).limit(1);
+  return location;
+}
+
+export async function createLocation(formData: FormData) {
+  const name = formData.get('name') as string;
+  const description = formData.get('description') as string;
+  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
+  const notes = formData.get('notes') as string;
+  const tagsString = formData.get('tags') as string;
+  const images = formData.get('images') as string;
+  const campaignId = formData.get('campaignId') as string;
+
+  // Parse tags
+  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+
+  try {
+    const [newLocation] = await db.insert(locations).values({
+      name,
+      description: description || null,
+      adventureId,
+      notes: notes || null,
+      tags: tags.length > 0 ? JSON.stringify(tags) : null,
+      images: images ? JSON.parse(images) : null,
+    }).returning();
+
+    revalidatePath(`/campaigns/${campaignId}/locations`);
+    return { success: true, location: newLocation };
+  } catch (error) {
+    console.error('Database error:', error);
+    return {
+      message: 'Database Error: Failed to create location.',
+    };
+  }
+}
+
+export async function updateLocation(formData: FormData) {
+  const id = Number(formData.get('id'));
+  const name = formData.get('name') as string;
+  const description = formData.get('description') as string;
+  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
+  const notes = formData.get('notes') as string;
+  const tagsString = formData.get('tags') as string;
+  const images = formData.get('images') as string;
+  const campaignId = formData.get('campaignId') as string;
+
+  // Parse tags
+  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+
+  try {
+    const [updatedLocation] = await db
+      .update(locations)
+      .set({
+        name,
+        description: description || null,
+        adventureId,
+        notes: notes || null,
+        tags: tags.length > 0 ? JSON.stringify(tags) : null,
+        images: images ? JSON.parse(images) : null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(locations.id, id))
+      .returning();
+
+    revalidatePath(`/campaigns/${campaignId}/locations`);
+    return { success: true, location: updatedLocation };
+  } catch (error) {
+    console.error('Database error:', error);
+    return {
+      message: 'Database Error: Failed to update location.',
+    };
+  }
+}
+
+export async function deleteLocation(id: number, campaignId: number) {
+  try {
+    await db.delete(locations).where(eq(locations.id, id));
+    revalidatePath(`/campaigns/${campaignId}/locations`);
+    return { success: true };
+  } catch (error) {
+    console.error('Database error:', error);
+    return {
+      message: 'Database Error: Failed to delete location.',
+    };
+  }
+}
+
+export async function deleteLocationAction(formData: FormData) {
+  'use server';
+  const id = Number(formData.get('id'));
+  const campaignId = Number(formData.get('campaignId'));
+  return await deleteLocation(id, campaignId);
+}

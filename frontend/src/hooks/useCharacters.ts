@@ -1,25 +1,58 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Character } from '@greedy/shared';
 
-export function useCharacters(adventureId?: number) {
-  return useQuery<Character[], Error>({
-    queryKey: ['characters', adventureId],
+// Types for Character
+export interface Character {
+  id: number;
+  name: string;
+  race?: string;
+  level: number;
+  role?: string;
+  description?: string;
+  tags?: string[];
+  adventure_id?: number;
+  experience?: number;
+  strength?: number;
+  dexterity?: number;
+  constitution?: number;
+  intelligence?: number;
+  wisdom?: number;
+  charisma?: number;
+  hitPoints?: number;
+  maxHitPoints?: number;
+  armorClass?: number;
+  initiative?: number;
+  speed?: number;
+  proficiencyBonus?: number;
+  spells?: Array<{
+    level: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    name: string;
+    prepared: boolean;
+  }>;
+  wiki_url?: string;
+}
+
+export function useCharacters() {
+  return useQuery({
+    queryKey: ['characters'],
     queryFn: async () => {
-      const params = adventureId ? `?adventure=${adventureId}` : '';
-      const response = await fetch(`/api/characters${params}`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      const response = await fetch('/api/characters');
+      if (!response.ok) {
+        throw new Error('Failed to fetch characters');
+      }
       return response.json() as Promise<Character[]>;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
 export function useCharacter(id: number) {
-  return useQuery<Character, Error>({
+  return useQuery({
     queryKey: ['character', id],
     queryFn: async () => {
       const response = await fetch(`/api/characters/${id}`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to fetch character');
+      }
       return response.json() as Promise<Character>;
     },
     enabled: !!id,
@@ -38,12 +71,13 @@ export function useCreateCharacter() {
         },
         body: JSON.stringify(character),
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to create character');
+      }
       return response.json() as Promise<Character>;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -52,7 +86,7 @@ export function useUpdateCharacter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Omit<Character, 'id'> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Character> }) => {
       const response = await fetch(`/api/characters/${id}`, {
         method: 'PUT',
         headers: {
@@ -61,15 +95,13 @@ export function useUpdateCharacter() {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error('Failed to update character');
       }
       return response.json() as Promise<Character>;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
       void queryClient.invalidateQueries({ queryKey: ['character', data.id] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }
@@ -82,12 +114,13 @@ export function useDeleteCharacter() {
       const response = await fetch(`/api/characters/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Failed to delete character');
+      }
       return id;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['characters'] });
-      void queryClient.invalidateQueries({ queryKey: ['adventure-counts'] });
     },
   });
 }

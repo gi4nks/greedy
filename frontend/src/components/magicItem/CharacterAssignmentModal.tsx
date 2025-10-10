@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Character } from '../../../../shared/types';
+import React, { useState, useEffect } from 'react';
+import { Character } from '../../hooks/useCharacters';
 
 interface CharacterAssignmentModalProps {
   isOpen: boolean;
@@ -7,105 +7,114 @@ interface CharacterAssignmentModalProps {
   onSave: (characterIds: number[]) => void;
   characters: Character[];
   initiallySelectedIds: number[];
-  isSaving?: boolean;
+  isSaving: boolean;
 }
 
-export const CharacterAssignmentModal: React.FC<CharacterAssignmentModalProps> = ({
+export default function CharacterAssignmentModal({
   isOpen,
   onClose,
   onSave,
   characters,
   initiallySelectedIds,
-  isSaving = false,
-}) => {
-  const [selectedCharIds, setSelectedCharIds] = useState<number[]>(initiallySelectedIds);
-  const [charSearch, setCharSearch] = useState('');
-  const [charTypeFilter, setCharTypeFilter] = useState<'all' | 'pc' | 'npc'>('all');
+  isSaving,
+}: CharacterAssignmentModalProps): JSX.Element {
+  const [selectedIds, setSelectedIds] = useState<number[]>(initiallySelectedIds);
 
-  const filteredCharacters = useMemo(() => {
-    const q = charSearch.trim().toLowerCase();
-    const validCharacters = characters.filter(c => c.id !== undefined);
-    let list = validCharacters;
-    if (charTypeFilter !== 'all') list = list.filter(c => c.character_type === charTypeFilter);
-    if (!q) return list;
-    return list.filter(c => c.name.toLowerCase().includes(q));
-  }, [characters, charSearch, charTypeFilter]);
+  // Update selected IDs when initiallySelectedIds changes
+  useEffect(() => {
+    setSelectedIds(initiallySelectedIds);
+  }, [initiallySelectedIds]);
+
+  const handleCharacterToggle = (characterId: number) => {
+    setSelectedIds(prev =>
+      prev.includes(characterId)
+        ? prev.filter(id => id !== characterId)
+        : [...prev, characterId]
+    );
+  };
 
   const handleSave = () => {
-    onSave(selectedCharIds);
+    onSave(selectedIds);
   };
 
-  const handleSelectAll = () => {
-    setSelectedCharIds(filteredCharacters.map(c => c.id!));
+  const handleCancel = () => {
+    setSelectedIds(initiallySelectedIds); // Reset to initial state
+    onClose();
   };
 
-  const handleClear = () => {
-    setSelectedCharIds([]);
-  };
-
-  if (!isOpen) return null;
+  if (!isOpen) return <></>;
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">Assign Characters</h3>
-        <div className="py-4">
-          <div className="mb-3 flex gap-2">
-            <input
-              className="input input-bordered flex-1"
-              placeholder="Search characters..."
-              value={charSearch}
-              onChange={(e) => setCharSearch(e.target.value)}
-            />
-            <select
-              className="select select-bordered"
-              value={charTypeFilter}
-              onChange={(e) => setCharTypeFilter(e.target.value as 'all' | 'pc' | 'npc')}
-            >
-              <option value="all">All</option>
-              <option value="pc">Players</option>
-              <option value="npc">NPCs</option>
-            </select>
-            <button onClick={handleSelectAll} className="btn btn-secondary btn-sm">
-              Select All
-            </button>
-            <button onClick={handleClear} className="btn btn-ghost btn-sm">
-              Clear
-            </button>
-          </div>
-          <div className="max-h-64 overflow-auto border border-base-300 rounded-box p-2 mb-4">
-            {filteredCharacters.map(c => (
-              <label key={c.id} className="flex items-center gap-2 p-2 hover:bg-base-200 rounded-box cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-primary"
-                  checked={selectedCharIds.includes(c.id!)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedCharIds(prev => [...prev, c.id!]);
-                    } else {
-                      setSelectedCharIds(prev => prev.filter(id => id !== c.id));
-                    }
-                  }}
-                />
-                <span className="flex-1">{c.name}</span>
-                <span className="text-xs px-2 py-1 rounded bg-base-200">{c.character_type || 'pc'}</span>
-              </label>
-            ))}
-            {filteredCharacters.length === 0 && (
-              <div className="text-sm text-base-content/60 p-2">No characters found</div>
-            )}
+      <div className="modal-box max-w-2xl">
+        <h3 className="font-bold text-lg mb-4">Assign Magic Item to Characters</h3>
+
+        <div className="space-y-4">
+          <p className="text-sm text-base-content/70">
+            Select the characters who should be assigned this magic item. You can select multiple characters.
+          </p>
+
+          {characters.length === 0 ? (
+            <div className="text-center py-8 text-base-content/60">
+              No characters available. Create some characters first.
+            </div>
+          ) : (
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {characters.map(character => (
+                <div
+                  key={character.id}
+                  className="flex items-center space-x-3 p-3 rounded-lg border border-base-300 hover:bg-base-100 cursor-pointer"
+                  onClick={() => handleCharacterToggle(character.id)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(character.id)}
+                    onChange={() => handleCharacterToggle(character.id)}
+                    className="checkbox checkbox-primary"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{character.name}</div>
+                    <div className="text-sm text-base-content/60">
+                      {character.race && `Race: ${character.race}`} • Level {character.level}
+                      {character.role && ` • ${character.role}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-sm text-base-content/60 mt-4">
+            Selected: {selectedIds.length} character{selectedIds.length !== 1 ? 's' : ''}
           </div>
         </div>
+
         <div className="modal-action">
-          <button onClick={onClose} className="btn btn-ghost btn-sm">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={handleCancel}
+            disabled={isSaving}
+          >
             Cancel
           </button>
-          <button onClick={handleSave} disabled={isSaving} className="btn btn-primary btn-sm">
-            {isSaving ? 'Saving...' : 'Save'}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <span className="loading loading-spinner loading-sm"></span>
+                Saving...
+              </>
+            ) : (
+              'Save Assignments'
+            )}
           </button>
         </div>
       </div>
     </div>
   );
-};
+}

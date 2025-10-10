@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Page from '../components/Page';
 import { WikiDataService, WikiArticle, WikiArticleDetails } from '../services/WikiDataService';
+import { EditionAwareImportService, GameEdition, ImportCategory } from '../services/EditionAwareImportService';
 import { useCreateCharacter } from '../hooks/useCharacters';
 import { useCreateMagicItem } from '../hooks/useMagicItems';
 import { useCreateLocation } from '../hooks/useLocations';
 import { useCreateParkingLotItem } from '../hooks/useParkingLot';
+import { useCampaigns } from '../hooks/useCampaigns';
 import {
   WikiFeedbackMessage,
   WikiSearchForm,
@@ -13,6 +15,9 @@ import {
   WikiEmptyState,
   WikiLoadingState
 } from '../components/wiki';
+import CharacterAssignmentModal from '../components/magicItem/CharacterAssignmentModal';
+import { useCharacters } from '../hooks/useCharacters';
+import { useAssignMagicItem } from '../hooks/useMagicItems';
 
 type ContentType = 'monster' | 'spell' | 'magic-item' | 'race' | 'class' | 'location' | 'note' | 'parking-lot';
 
@@ -21,16 +26,68 @@ export default function WikiImport(): JSX.Element {
   const [searchResults, setSearchResults] = useState<WikiArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+  const [gameEdition, setGameEdition] = useState<GameEdition>('dnd5e');
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
   const [fullContentArticles, setFullContentArticles] = useState<Map<number, WikiArticleDetails>>(new Map());
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
+  const [assignmentModalItem, setAssignmentModalItem] = useState<{ id: number; name: string; type: 'magic-item' | 'spell' | 'monster' } | null>(null);
+  const [assigning, setAssigning] = useState(false);
 
   // React Query mutations
   const createCharacterMutation = useCreateCharacter();
   const createMagicItemMutation = useCreateMagicItem();
   const createLocationMutation = useCreateLocation();
   const createParkingLotItemMutation = useCreateParkingLotItem();
+  const assignMutation = useAssignMagicItem();
 
+  // Wiki entity creation functions
+  const createWikiArticle = async (articleData: any) => {
+    const response = await fetch('/api/wiki-articles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(articleData)
+    });
+    if (!response.ok) throw new Error('Failed to create wiki article');
+    return response.json();
+  };
+
+  const createWikiArticleRelationship = async (articleId: number, entityType: string, entityId: number, relationshipType: string, relationshipData?: any) => {
+    const response = await fetch(`/api/wiki-articles/${articleId}/entities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entityType,
+        entityId,
+        relationshipType,
+        relationshipData
+      })
+    });
+    if (!response.ok) throw new Error('Failed to create wiki article relationship');
+    return response.json();
+  };
+  
+  // Campaign data
+  const { data: campaigns = [] } = useCampaigns();
+  const { data: characters = [] } = useCharacters();
+
+  // Detect campaign edition when campaign is selected
+  useEffect(() => {
+    if (selectedCampaignId && campaigns.length > 0) {
+      const campaign = campaigns.find(c => c.id === selectedCampaignId);
+      if (campaign) {
+        const detectedEdition = EditionAwareImportService.detectGameEdition(
+          campaign.gameEditionName || campaign.gameEditionVersion
+        );
+        setGameEdition(detectedEdition);
+      }
+    }
+  }, [selectedCampaignId, campaigns]);
+
+  // Get available categories for current edition
+  const availableCategories = EditionAwareImportService.getCategoriesForEdition(gameEdition);
+  
+  // Legacy categories for backward compatibility
   const categories = [
     { id: 'all', name: 'All Content', searchFn: null },
     { id: 'monsters', name: 'Monsters', searchFn: () => WikiDataService.searchMonsters() },
@@ -42,30 +99,29 @@ export default function WikiImport(): JSX.Element {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+    
+    if (!selectedCampaignId) {
+      setFeedbackMessage({ type: 'error', message: 'Please select a campaign first' });
+      return;
+    }
 
     setLoading(true);
     try {
       let results: WikiArticle[];
 
-      if (selectedCategory === 'all') {
-        results = await WikiDataService.searchArticles(searchQuery);
-      } else {
-        const category = categories.find(cat => cat.id === selectedCategory);
-        if (category?.searchFn) {
-          results = await category.searchFn();
-          // Filter results by search query if provided
-          if (searchQuery.trim()) {
-            results = results.filter(article =>
-              article.title.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-          }
-        } else {
-          results = [];
-        }
-      }
+      // Use EditionAwareImportService for unified search
+      results = await EditionAwareImportService.search(
+        selectedCategory,
+        searchQuery,
+        selectedCampaignId
+      );
 
       setSearchResults(results);
-    } catch {
+      setFeedbackMessage(null);
+    } catch (err) {
+      console.error('Search error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during search';
+      setFeedbackMessage({ type: 'error', message: errorMessage });
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -241,72 +297,61 @@ export default function WikiImport(): JSX.Element {
   const importMonster = async (article: WikiArticle, content: string) => {
     const parsedData = WikiDataService.parseMonsterData(content);
 
-    const monsterData = {
-      adventure_id: null,
-      name: article.title,
-      role: 'Monster',
-      description: content || 'Imported from AD&D 2nd Edition Wiki',
-      tags: ['monster', 'wiki-import'],
-      // Required Character fields with defaults
-      level: 1,
-      experience: 0,
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
-      hitPoints: 10,
-      maxHitPoints: 10,
-      armorClass: parsedData.armorClass || 10,
-      initiative: 0,
-      speed: 30,
-      proficiencyBonus: 2,
-      // Store monster combat stats in description and legacy fields
-      wiki_url: WikiDataService.getFullUrl(article.url)
+    const articleData = {
+      title: article.title,
+      contentType: 'monster',
+      wikiUrl: WikiDataService.getFullUrl(article.url),
+      rawContent: content,
+      parsedData: {
+        type: 'Monster',
+        challengeRating: '1',
+        armorClass: parsedData.armorClass || 10,
+        hitPoints: 10,
+        speed: '30 ft',
+        abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+        description: content || 'Imported from AD&D 2nd Edition Wiki'
+      },
+      importedFrom: 'wiki'
     };
 
-    // Import as character with role="Monster"
-    await createCharacterMutation.mutateAsync(monsterData);
-    setFeedbackMessage({ type: 'success', message: `Monster "${article.title}" imported successfully to Characters section!` });
+    // Create wiki article
+    const createdArticle = await createWikiArticle(articleData);
+    setFeedbackMessage({ type: 'success', message: `Monster "${article.title}" imported successfully! You can now assign it to characters.` });
+
+    // Open assignment modal for the newly created article
+    if (createdArticle && createdArticle.id) {
+      setAssignmentModalItem({ id: createdArticle.id, name: createdArticle.title, type: 'monster' });
+    }
   };
 
   const importSpell = async (article: WikiArticle, content: string) => {
     const parsedData = WikiDataService.parseSpellData(content);
 
-    const spellData = {
-      adventure_id: null,
-      name: article.title,
-      role: 'Spell',
-      description: content || 'Imported from AD&D 2nd Edition Wiki',
-      tags: ['spell', 'wiki-import'],
-      // Required Character fields with defaults
-      level: 1,
-      experience: 0,
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
-      hitPoints: 10,
-      maxHitPoints: 10,
-      armorClass: 10,
-      initiative: 0,
-      speed: 30,
-      proficiencyBonus: 2,
-      // Store spell details in spells field as JSON
-      spells: [{
-        level: (typeof parsedData.level === 'number' && parsedData.level >= 0 && parsedData.level <= 9) ? parsedData.level as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 : 1,
-        name: article.title,
-        prepared: true
-      }],
-      wiki_url: WikiDataService.getFullUrl(article.url)
+    const articleData = {
+      title: article.title,
+      contentType: 'spell',
+      wikiUrl: WikiDataService.getFullUrl(article.url),
+      rawContent: content,
+      parsedData: {
+        level: parsedData.level || 1,
+        school: 'Evocation',
+        range: parsedData.range || 'Touch',
+        duration: parsedData.duration || 'Instantaneous',
+        castingTime: '1 action',
+        components: 'V, S',
+        description: content || 'Imported from AD&D 2nd Edition Wiki'
+      },
+      importedFrom: 'wiki'
     };
 
-    // Import as character with role="Spell"
-    await createCharacterMutation.mutateAsync(spellData);
-    setFeedbackMessage({ type: 'success', message: `Spell "${article.title}" imported successfully as a character entry!` });
+    // Create wiki article
+    const createdArticle = await createWikiArticle(articleData);
+    setFeedbackMessage({ type: 'success', message: `Spell "${article.title}" imported successfully! You can now assign it to characters.` });
+
+    // Open assignment modal for the newly created article
+    if (createdArticle && createdArticle.id) {
+      setAssignmentModalItem({ id: createdArticle.id, name: createdArticle.title, type: 'spell' });
+    }
   };
 
   const importMagicItem = async (article: WikiArticle, content: string) => {
@@ -323,8 +368,13 @@ export default function WikiImport(): JSX.Element {
     };
 
     // Import as magic item using dedicated endpoint
-    await createMagicItemMutation.mutateAsync(itemData);
-    setFeedbackMessage({ type: 'success', message: `Magic Item "${article.title}" imported successfully to Magic Items section!` });
+    const createdItem = await createMagicItemMutation.mutateAsync(itemData);
+    setFeedbackMessage({ type: 'success', message: `Magic Item "${article.title}" imported successfully! You can now assign it to characters.` });
+    
+    // Open assignment modal for the newly created item
+    if (createdItem && createdItem.id) {
+      setAssignmentModalItem({ id: createdItem.id, name: createdItem.name, type: 'magic-item' });
+    }
   };
 
   const importLocation = async (article: WikiArticle, content: string) => {
@@ -353,6 +403,60 @@ export default function WikiImport(): JSX.Element {
     setFeedbackMessage({ type: 'success', message: `"${article.title}" (${contentType}) added to Parking Lot for future organization!` });
   };
 
+  const handleSaveAssignments = async (characterIds: number[]) => {
+    if (!assignmentModalItem) return;
+    setAssigning(true);
+
+    if (characterIds.length > 0) {
+      try {
+        // Create relationships for each selected character
+        const relationshipPromises = characterIds.map(characterId => {
+          let relationshipType = 'referenced';
+          let relationshipData = {};
+
+          switch (assignmentModalItem.type) {
+            case 'spell':
+              relationshipType = 'known'; // Default to known, can be changed later
+              relationshipData = { isPrepared: false, isKnown: true };
+              break;
+            case 'monster':
+              relationshipType = 'companion';
+              relationshipData = { notes: '' };
+              break;
+            case 'magic-item':
+              relationshipType = 'owned';
+              relationshipData = { isAttuned: false };
+              break;
+          }
+
+          return createWikiArticleRelationship(
+            assignmentModalItem.id,
+            'character',
+            characterId,
+            relationshipType,
+            relationshipData
+          );
+        });
+
+        await Promise.all(relationshipPromises);
+
+        const typeLabel = assignmentModalItem.type === 'magic-item' ? 'Magic item' :
+                         assignmentModalItem.type === 'monster' ? 'Monster' : 'Spell';
+        setFeedbackMessage({ type: 'success', message: `${typeLabel} "${assignmentModalItem.name}" assigned successfully!` });
+        setAssignmentModalItem(null);
+        setAssigning(false);
+      } catch (error) {
+        console.error('Failed to assign entity', error);
+        setFeedbackMessage({ type: 'error', message: `Failed to assign ${assignmentModalItem.type}. Please try again.` });
+        setAssigning(false);
+      }
+    } else {
+      setAssigning(false);
+      setAssignmentModalItem(null);
+      setFeedbackMessage({ type: 'info', message: 'No characters selected for assignment.' });
+    }
+  };
+
   return (
     <Page title="Wiki Import">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -361,6 +465,44 @@ export default function WikiImport(): JSX.Element {
           message={feedbackMessage}
           onDismiss={() => setFeedbackMessage(null)}
         />
+
+        {/* Campaign Selection */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium mb-4">Campaign Selection</h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="campaign-select" className="block text-sm font-medium mb-2">
+                Select Campaign
+              </label>
+              <select
+                id="campaign-select"
+                value={selectedCampaignId || ''}
+                onChange={(e) => setSelectedCampaignId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">Select a campaign...</option>
+                {campaigns.map(campaign => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.title} ({campaign.gameEditionName || campaign.gameEditionVersion || 'Unknown Edition'})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {gameEdition && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Detected Edition:</span> {gameEdition.toUpperCase()}
+              </div>
+            )}
+            
+            {availableCategories.length > 0 && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Available Content Types:</span>{' '}
+                {availableCategories.map(cat => cat.name).join(', ')}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Search Section */}
         <WikiSearchForm
@@ -394,6 +536,16 @@ export default function WikiImport(): JSX.Element {
         {/* Info Section */}
         <WikiInfoSection />
       </div>
+
+      {/* Assignment Modal */}
+      <CharacterAssignmentModal
+        isOpen={assignmentModalItem !== null}
+        onClose={() => setAssignmentModalItem(null)}
+        onSave={handleSaveAssignments}
+        characters={characters}
+        initiallySelectedIds={[]}
+        isSaving={assigning}
+      />
     </Page>
   );
 }

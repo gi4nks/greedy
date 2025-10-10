@@ -1,5 +1,4 @@
-export { MagicItemForm } from './MagicItemForm';
-export { MagicItemCard } from './MagicItemCard';
-export { MagicItemSearch } from './MagicItemSearch';
-export { CharacterAssignmentModal } from './CharacterAssignmentModal';
-export { MagicItemList } from './MagicItemList';
+export { default as CharacterAssignmentModal } from './CharacterAssignmentModal';
+// TODO: Add other magic item components when they are created
+// export { MagicItemForm } from './MagicItemForm';
+// export { MagicItemCard } from './MagicItemCard';

@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const source = searchParams.get('source');
+    
+    if (!source) {
+      return NextResponse.json({ error: 'Source parameter is required' }, { status: 400 });
+    }
+
+    // Construct the full 5e.tools URL
+    const url = `https://5e.tools/data${source}`;
+    
+    // Fetch data from 5e.tools
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Adventure-Diary-Bot/1.0',
+        'Accept': 'application/json',
+      },
+      // Add a timeout
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      console.error(`5e.tools API error: ${response.status} ${response.statusText}`);
+      return NextResponse.json(
+        { error: `Failed to fetch from 5e.tools: ${response.statusText}` }, 
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    
+    // Add CORS headers to allow frontend access
+    return NextResponse.json(data, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'public, s-maxage=3600' // Cache for 1 hour
+      }
+    });
+
+  } catch (error) {
+    console.error('Error proxying 5e.tools request:', error);
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: '5e.tools request timed out' }, 
+        { status: 408 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal server error while fetching 5e.tools data' }, 
+      { status: 500 }
+    );
+  }
+}

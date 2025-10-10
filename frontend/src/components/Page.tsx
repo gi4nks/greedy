@@ -1,12 +1,25 @@
 import React from 'react';
 
-export default function Page({ title, children, toolbar }: { title?: string; toolbar?: React.ReactNode; children: React.ReactNode }) {
+interface PageProps {
+  title?: string;
+  children: React.ReactNode;
+}
+
+const Page: React.FC<PageProps> = ({ title, children }) => {
   return (
-    <div className="container mx-auto px-4 py-6">
-      {title && <div className="flex items-center justify-between mb-6"><h2 className="text-2xl font-bold">{title}</h2>{toolbar}</div>}
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      {title && (
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          </div>
+        </div>
+      )}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {children}
       </div>
     </div>
   );
-}
+};
+
+export default Page;
