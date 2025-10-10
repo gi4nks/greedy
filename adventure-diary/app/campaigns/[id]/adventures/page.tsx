@@ -2,43 +2,31 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { campaigns, adventures, gameEditions } from '@/lib/db/schema';
+import { adventures, campaigns, gameEditions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, Plus, Calendar, Users, Trash2 } from 'lucide-react';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
 import { deleteAdventureAction } from '@/lib/actions/adventures';
 import { AdventuresList } from '@/components/adventures/AdventuresList';
+import { CampaignPageLayout } from '@/components/layout/CampaignPageLayout';
+import { getCampaignWithEdition } from '@/lib/utils/campaign';
+import { generateCampaignPageMetadata } from '@/lib/utils/metadata';
 
 interface AdventuresPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function getCampaign(campaignId: number) {
-  const [campaign] = await db
-    .select({
-      id: campaigns.id,
-      gameEditionId: campaigns.gameEditionId,
-      gameEditionName: gameEditions.name,
-      gameEditionVersion: gameEditions.version,
-      title: campaigns.title,
-      description: campaigns.description,
-      status: campaigns.status,
-      startDate: campaigns.startDate,
-      endDate: campaigns.endDate,
-      tags: campaigns.tags,
-      createdAt: campaigns.createdAt,
-      updatedAt: campaigns.updatedAt,
-    })
-    .from(campaigns)
-    .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+async function getAdventures(campaignId: number) {
+  const adventuresList = await db
+    .select()
+    .from(adventures)
+    .where(eq(adventures.campaignId, campaignId))
+    .orderBy(adventures.createdAt);
 
-  return campaign;
+  return adventuresList;
 }
 
 async function getAdventures(campaignId: number) {
@@ -54,7 +42,7 @@ async function getAdventures(campaignId: number) {
 export default async function AdventuresPage({ params }: AdventuresPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
-  const campaign = await getCampaign(campaignId);
+  const campaign = await getCampaignWithEdition(campaignId);
 
   if (!campaign) {
     notFound();
@@ -63,37 +51,21 @@ export default async function AdventuresPage({ params }: AdventuresPageProps) {
   const adventures = await getAdventures(campaignId);
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={campaign.title}
-        sectionItems={[
-          { label: 'Adventures' }
-        ]}
-      />
-      
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Adventures</h1>
-            <p className="text-base-content/70">
-              {campaign.title} • Manage your campaign adventures and story arcs
-            </p>
-          </div>
-          <Link href={`/campaigns/${campaignId}/adventures/create`}>
-            <Button className="gap-2" variant="primary">
-              <Plus className="w-4 h-4" />
-              Create Adventure
-            </Button>
-          </Link>
-        </div>
-      </div>
-
+    <CampaignPageLayout
+      campaign={campaign}
+      title="Adventures"
+      description="Manage your campaign adventures and story arcs"
+      sectionItems={[{ label: 'Adventures' }]}
+      createButton={{
+        href: `/campaigns/${campaignId}/adventures/create`,
+        label: 'Create Adventure',
+        icon: <Plus className="w-4 h-4" />
+      }}
+    >
       <Suspense fallback={<AdventuresListSkeleton />}>
         <AdventuresList adventures={adventures} campaignId={campaignId} />
       </Suspense>
-    </div>
+    </CampaignPageLayout>
   );
 }
 
@@ -127,10 +99,7 @@ function AdventuresListSkeleton() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: AdventuresPageProps) {
   const resolvedParams = await params;
-  const campaign = await getCampaign(parseInt(resolvedParams.id));
+  const campaign = await getCampaignWithEdition(parseInt(resolvedParams.id));
 
-  return {
-    title: campaign ? `${campaign.title} - Adventures | Adventure Diary` : 'Adventures Not Found',
-    description: 'Manage your D&D campaign adventures and story arcs',
-  };
+  return generateCampaignPageMetadata(campaign, 'Adventures', 'Manage your D&D campaign adventures and story arcs');
 }

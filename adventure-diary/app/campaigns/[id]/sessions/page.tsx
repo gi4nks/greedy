@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Plus, Clock, FileText, Users } from 'lucide-react';
 import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
 import { formatDate, formatMonthYear } from '@/lib/utils/date';
+import { getCampaignWithEdition } from '@/lib/utils/campaign';
+import { generateCampaignPageMetadata } from '@/lib/utils/metadata';
 
 interface SessionsPageProps {
   params: Promise<{ id: string }>;
@@ -33,39 +35,12 @@ interface SessionData {
 
 async function getAdventure(adventureId: number) {
   const [adventure] = await db
-    .select({
-      id: adventures.id,
-      title: adventures.title,
-    })
+    .select()
     .from(adventures)
     .where(eq(adventures.id, adventureId))
     .limit(1);
 
   return adventure;
-}
-
-async function getCampaign(campaignId: number) {
-  const [campaign] = await db
-    .select({
-      id: campaigns.id,
-      gameEditionId: campaigns.gameEditionId,
-      gameEditionName: gameEditions.name,
-      gameEditionVersion: gameEditions.version,
-      title: campaigns.title,
-      description: campaigns.description,
-      status: campaigns.status,
-      startDate: campaigns.startDate,
-      endDate: campaigns.endDate,
-      tags: campaigns.tags,
-      createdAt: campaigns.createdAt,
-      updatedAt: campaigns.updatedAt,
-    })
-    .from(campaigns)
-    .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
-
-  return campaign;
 }
 
 async function getSessions(campaignId: number, adventureId?: number) {
@@ -102,7 +77,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   const campaignId = parseInt(resolvedParams.id);
   const adventureId = resolvedSearchParams.adventure ? parseInt(resolvedSearchParams.adventure) : undefined;
   
-  const campaign = await getCampaign(campaignId);
+  const campaign = await getCampaignWithEdition(campaignId);
   const adventure = adventureId ? await getAdventure(adventureId) : null;
 
   if (!campaign) {
@@ -312,20 +287,17 @@ function SessionsListSkeleton() {
 export async function generateMetadata({ params, searchParams }: SessionsPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  const campaign = await getCampaign(parseInt(resolvedParams.id));
+  const campaign = await getCampaignWithEdition(parseInt(resolvedParams.id));
   const adventureId = resolvedSearchParams.adventure ? parseInt(resolvedSearchParams.adventure) : undefined;
   const adventure = adventureId ? await getAdventure(adventureId) : null;
 
-  const title = adventure 
-    ? `${campaign?.title || 'Campaign'} - ${adventure.title} - Sessions | Adventure Diary`
-    : campaign 
-      ? `${campaign.title} - Sessions | Adventure Diary` 
+  const title = adventure
+    ? `${campaign?.title || 'Campaign'} - ${adventure.title} - Sessions`
+    : campaign
+      ? `${campaign.title} - Sessions`
       : 'Sessions Not Found';
 
-  return {
-    title,
-    description: adventure 
-      ? `Track session logs and campaign progress for the "${adventure.title}" adventure`
-      : 'Track session logs and campaign progress',
-  };
+  return generateCampaignPageMetadata(campaign, title, adventure
+    ? `Track session logs and campaign progress for the "${adventure.title}" adventure`
+    : 'Track session logs and campaign progress');
 }
