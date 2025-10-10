@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { WikiDataService, WikiArticle, WikiArticleDetails } from '../../lib/services/wiki-data';
-import { EditionAwareImportService, GameEdition } from '../../lib/services/edition-aware-import';
+import { WikiDataService, WikiArticle, WikiArticleDetails } from '../../../lib/services/wiki-data';
+import { EditionAwareImportService, GameEdition } from '../../../lib/services/edition-aware-import';
 import { Campaign } from '@/lib/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

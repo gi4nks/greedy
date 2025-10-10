@@ -29,16 +29,6 @@ async function getAdventures(campaignId: number) {
   return adventuresList;
 }
 
-async function getAdventures(campaignId: number) {
-  const adventuresList = await db
-    .select()
-    .from(adventures)
-    .where(eq(adventures.campaignId, campaignId))
-    .orderBy(adventures.createdAt);
-
-  return adventuresList;
-}
-
 export default async function AdventuresPage({ params }: AdventuresPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);

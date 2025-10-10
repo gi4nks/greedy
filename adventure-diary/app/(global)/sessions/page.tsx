@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getSessions } from "@/lib/actions/sessions";
-import { SessionCard } from "../../components/session/SessionCard";
-import { CreateSessionForm } from "../../components/session/CreateSessionForm";
-import { Skeleton } from "../../components/ui/skeleton";
+import { SessionCard } from "../../../components/session/SessionCard";
+import { CreateSessionForm } from "../../../components/session/CreateSessionForm";
+import { Skeleton } from "../../../components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 // Force dynamic rendering to avoid database queries during build
