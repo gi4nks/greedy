@@ -2,42 +2,18 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { campaigns, locations, adventures, gameEditions } from '@/lib/db/schema';
+import { locations, adventures } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Plus } from 'lucide-react';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Plus } from 'lucide-react';
 import { LocationsList } from '@/components/locations/LocationsList';
+import { CampaignPageLayout } from '@/components/layout/CampaignPageLayout';
+import { getCampaignWithEdition } from '@/lib/utils/campaign';
+import { generateCampaignPageMetadata } from '@/lib/utils/metadata';
 
 interface LocationsPageProps {
   params: Promise<{ id: string }>;
-}
-
-async function getCampaign(campaignId: number) {
-  const [campaign] = await db
-    .select({
-      id: campaigns.id,
-      gameEditionId: campaigns.gameEditionId,
-      gameEditionName: gameEditions.name,
-      gameEditionVersion: gameEditions.version,
-      title: campaigns.title,
-      description: campaigns.description,
-      status: campaigns.status,
-      startDate: campaigns.startDate,
-      endDate: campaigns.endDate,
-      tags: campaigns.tags,
-      createdAt: campaigns.createdAt,
-      updatedAt: campaigns.updatedAt,
-    })
-    .from(campaigns)
-    .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
-
-  return campaign;
 }
 
 async function getLocations(campaignId: number) {
@@ -65,7 +41,7 @@ async function getLocations(campaignId: number) {
 export default async function LocationsPage({ params }: LocationsPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
-  const campaign = await getCampaign(campaignId);
+  const campaign = await getCampaignWithEdition(campaignId);
 
   if (!campaign) {
     notFound();
@@ -74,37 +50,21 @@ export default async function LocationsPage({ params }: LocationsPageProps) {
   const locations = await getLocations(campaignId);
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={campaign.title}
-        sectionItems={[
-          { label: 'Locations' }
-        ]}
-      />
-
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Locations</h1>
-            <p className="text-base-content/70">
-              {campaign.title} • Manage campaign locations and points of interest
-            </p>
-          </div>
-          <Link href={`/campaigns/${campaignId}/locations/create`}>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Location
-            </Button>
-          </Link>
-        </div>
-      </div>
-
+    <CampaignPageLayout
+      campaign={campaign}
+      title="Locations"
+      description="Manage campaign locations and points of interest"
+      sectionItems={[{ label: 'Locations' }]}
+      createButton={{
+        href: `/campaigns/${campaignId}/locations/create`,
+        label: 'Add Location',
+        icon: <Plus className="w-4 h-4" />
+      }}
+    >
       <Suspense fallback={<LocationsListSkeleton />}>
         <LocationsList locations={locations} campaignId={campaignId} />
       </Suspense>
-    </div>
+    </CampaignPageLayout>
   );
 }
 
@@ -138,10 +98,7 @@ function LocationsListSkeleton() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: LocationsPageProps) {
   const resolvedParams = await params;
-  const campaign = await getCampaign(parseInt(resolvedParams.id));
+  const campaign = await getCampaignWithEdition(parseInt(resolvedParams.id));
 
-  return {
-    title: campaign ? `${campaign.title} - Locations | Adventure Diary` : 'Locations Not Found',
-    description: 'Manage your D&D campaign locations and points of interest',
-  };
+  return generateCampaignPageMetadata(campaign, 'Locations', 'Manage your D&D campaign locations and points of interest');
 }

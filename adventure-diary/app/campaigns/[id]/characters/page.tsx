@@ -22,16 +22,6 @@ async function getCharacters(campaignId: number) {
   return characterList;
 }
 
-async function getCharacters(campaignId: number) {
-  const characterList = await db
-    .select()
-    .from(characters)
-    .where(eq(characters.campaignId, campaignId))
-    .orderBy(characters.name);
-
-  return characterList;
-}
-
 export default async function CharactersPage({ params }: CharactersPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
