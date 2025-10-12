@@ -21,7 +21,7 @@ npm run dev
 The application will be available at `http://localhost:3000`.
 
 ### Database
-The application uses SQLite with Drizzle ORM. The database file is automatically created and initialized at `adventure-diary/database/campaign.db`.
+The application uses SQLite with Drizzle ORM. The database file is automatically created and initialized at `greedy/database/campaign.db`.
 
 ## 🏗️ Architecture
 
@@ -36,7 +36,7 @@ This is a Next.js 15 application using:
 ## 📁 Project Structure
 
 ```
-adventure-diary/
+greedy/
 ├── app/                 # Next.js App Router
 │   ├── campaigns/      # Campaign management pages
 │   ├── search/         # Advanced search functionality
@@ -74,11 +74,11 @@ adventure-diary/
 # Start development server
 npm run dev
 
-# Build for production (from adventure-diary directory)
-cd adventure-diary && npm run build
+# Build for production (from greedy directory)
+cd greedy && npm run build
 
-# Run linting (from adventure-diary directory)
-cd adventure-diary && npm run lint
+# Run linting (from greedy directory)
+cd greedy && npm run lint
 ```
 
 ## 📝 Recent Updates

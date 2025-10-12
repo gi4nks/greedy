@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  adventure-diary:
+  greedy:
     build:
-      context: ./adventure-diary
+      context: ./greedy
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -14,8 +14,8 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
     restart: unless-stopped
     networks:
-      - adventure-diary-network
+      - greedy-network
 
 networks:
-  adventure-diary-network:
+  greedy-network:
     driver: bridge

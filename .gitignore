@@ -1,15 +1,12 @@
 node_modules/
 .env
 .DS_Store
-backend/data/
 dist/
 coverage/
 *.log
 .vscode/
 .env.*
 !.env.example
-frontend/campaign.db
-backend/campaign.db
 .tmp/
 
 # Next.js
@@ -25,3 +22,5 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+
+./data/*

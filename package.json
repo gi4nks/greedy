@@ -1,12 +1,12 @@
 {
-  "name": "adventure-diary-workspace",
+  "name": "greedy-workspace",
   "private": true,
-  "workspaces": ["adventure-diary"],
+  "workspaces": ["greedy"],
   "scripts": {
-    "dev": "cd adventure-diary && npm run dev",
-    "build": "cd adventure-diary && npm run build", 
-    "start": "cd adventure-diary && npm run start",
-    "lint": "cd adventure-diary && npm run lint"
+    "dev": "cd greedy && npm run dev",
+    "build": "cd greedy && npm run build", 
+    "start": "cd greedy && npm run start",
+    "lint": "cd greedy && npm run lint"
   },
   "devDependencies": {
     "husky": "^9.1.7"

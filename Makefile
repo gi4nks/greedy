@@ -31,22 +31,22 @@
 	@echo "  Local: make install → make dev → make stop"
 	@echo "  Docker: make docker-dev → make docker-logs → make docker-stop"all:
 	@echo "📦 Installing dependencies..."
-	cd adventure-diary && npm install
+	cd greedy && npm install
 
 # Build the application for production
 build:
 	@echo "� Building application..."
-	cd adventure-diary && npm run build
+	cd greedy && npm run build
 
 # Start development server
 dev:
 	@echo "🚀 Starting development server..."
-	cd adventure-diary && npm run dev
+	cd greedy && npm run dev
 
 # Start production server
 start:
 	@echo "🚀 Starting production server..."
-	cd adventure-diary && npm run start
+	cd greedy && npm run start
 
 # Stop any running processes
 stop:
@@ -57,13 +57,13 @@ stop:
 # Clean build files and reinstall
 clean:
 	@echo "🧹 Cleaning build files..."
-	cd adventure-diary && rm -rf .next node_modules package-lock.json
+	cd greedy && rm -rf .next node_modules package-lock.json
 	$(MAKE) install
 
 # Run tests
 test:
 	@echo "🧪 Running tests..."
-	cd adventure-diary && npm run test
+	cd greedy && npm run test
 
 # Check application status
 status:
@@ -138,19 +138,19 @@ docker-status:
 	@docker compose -f docker-compose.app.yml ps 2>/dev/null || echo "  ℹ️  No production containers running"
 	@echo ""
 	@echo "🔍 Container Details:"
-	@docker ps --filter "name=adventure-diary" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  ℹ️  No adventure-diary containers found"
+	@docker ps --filter "name=greedy" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  ℹ️  No greedy containers found"
 
 # Show Docker container logs
 docker-logs:
 	@echo "🐳 Docker Container Logs:"
 	@echo ""
 	@echo "📝 Following logs (Ctrl+C to stop)..."
-	@if docker compose -f docker-compose.dev.yml --profile dev ps -q adventure-diary >/dev/null 2>&1; then \
-		docker compose -f docker-compose.dev.yml --profile dev logs -f adventure-diary; \
-	elif docker compose -f docker-compose.app.yml ps -q adventure-diary >/dev/null 2>&1; then \
-		docker compose -f docker-compose.app.yml logs -f adventure-diary; \
+	@if docker compose -f docker-compose.dev.yml --profile dev ps -q greedy >/dev/null 2>&1; then \
+		docker compose -f docker-compose.dev.yml --profile dev logs -f greedy; \
+	elif docker compose -f docker-compose.app.yml ps -q greedy >/dev/null 2>&1; then \
+		docker compose -f docker-compose.app.yml logs -f greedy; \
 	else \
-		echo "  ℹ️  No adventure-diary containers running"; \
+		echo "  ℹ️  No greedy containers running"; \
 	fi
 
 # Clean Docker images and containers
