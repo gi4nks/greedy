@@ -7,17 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { showToast } from '@/lib/toast';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
 
     try {
       const result = await signIn('credentials', {
@@ -26,12 +25,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid password');
+        showToast.error('Authentication failed', 'Please check your password and try again');
       } else {
+        showToast.success('Welcome back!', 'You have been successfully logged in');
         router.push('/');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      showToast.error('An error occurred', 'Please try again later');
     } finally {
       setIsLoading(false);
     }
@@ -56,10 +56,6 @@ export default function LoginPage() {
                 required
               />
             </div>
-
-            {error && (
-              <div className="text-error text-sm">{error}</div>
-            )}
 
             <Button
               type="submit"

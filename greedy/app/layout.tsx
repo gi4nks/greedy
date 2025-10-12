@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { SessionProvider } from '@/components/SessionProvider'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'Greedy',
@@ -28,6 +29,7 @@ export default function RootLayout({
           <main>
             {children}
           </main>
+          <Toaster position="top-right" richColors />
         </SessionProvider>
       </body>
     </html>

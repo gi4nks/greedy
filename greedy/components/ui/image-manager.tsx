@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, X, AlertCircle, Plus, Camera } from 'lucide-react';
 import { EntityType, ImageInfo, parseImagesJson, ImageUploadResult } from '@/lib/utils/imageUtils.client';
+import { showToast } from '@/lib/toast';
 
 interface ImageManagerProps {
   entityType: EntityType;
@@ -25,7 +26,6 @@ export function ImageManager({
 }: ImageManagerProps) {
   const [images, setImages] = useState<ImageInfo[]>(() => parseImagesJson(currentImages));
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,6 @@ export function ImageManager({
     if (files.length === 0) return;
 
     setUploading(true);
-    setError(null);
 
     try {
       // Create FormData for upload
@@ -62,6 +61,7 @@ export function ImageManager({
         .map((result: ImageUploadResult) => ({
           filename: result.filename!,
           url: result.url!,
+          thumbnailUrl: result.thumbnailUrl,
           uploadedAt: new Date().toISOString()
         }));
 
@@ -70,14 +70,25 @@ export function ImageManager({
       setImages(updatedImages);
       onImagesChange(updatedImages);
 
+      // Show success toast
+      if (successfulUploads.length > 0) {
+        showToast.success(
+          `Uploaded ${successfulUploads.length} image${successfulUploads.length > 1 ? 's' : ''}`,
+          'Images have been optimized and saved successfully'
+        );
+      }
+
       // Check for errors
       const failedUploads = results.filter((result: ImageUploadResult) => !result.success);
       if (failedUploads.length > 0) {
-        setError(`${failedUploads.length} file(s) failed to upload: ${failedUploads.map((r: ImageUploadResult) => r.error).join(', ')}`);
+        showToast.error(
+          `${failedUploads.length} upload${failedUploads.length > 1 ? 's' : ''} failed`,
+          failedUploads.map((r: ImageUploadResult) => r.error).join(', ')
+        );
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setError('Failed to upload images');
+      showToast.error('Upload failed', 'Please try again');
     } finally {
       setUploading(false);
       // Reset file input
@@ -109,9 +120,11 @@ export function ImageManager({
       const updatedImages = images.filter(img => img.filename !== image.filename);
       setImages(updatedImages);
       onImagesChange(updatedImages);
+
+      showToast.success('Image deleted', 'The image has been removed successfully');
     } catch (error) {
       console.error('Delete error:', error);
-      setError('Failed to delete image');
+      showToast.error('Delete failed', 'Failed to delete the image');
     }
   };
 
@@ -169,22 +182,6 @@ export function ImageManager({
         </p>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-6 flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="h-5 w-5 text-red-600" />
-          <span className="text-sm text-red-700">{error}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setError(null)}
-            className="ml-auto h-8 w-8 p-0 hover:bg-red-100"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
       {/* Main Content */}
       <div className="space-y-6">
         {images.length > 0 ? (
@@ -222,7 +219,7 @@ export function ImageManager({
                   <CardContent className="p-0">
                     <div className="aspect-square relative">
                       <img
-                        src={image.url}
+                        src={image.thumbnailUrl || image.url}
                         alt={`${entityType} image`}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       />

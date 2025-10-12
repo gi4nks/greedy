@@ -6,12 +6,14 @@ export interface ImageUploadResult {
   success: boolean;
   filename?: string;
   url?: string;
+  thumbnailUrl?: string;
   error?: string;
 }
 
 export interface ImageInfo {
   filename: string;
   url: string;
+  thumbnailUrl?: string;
   uploadedAt: string;
 }
 
@@ -44,6 +46,7 @@ export function resultsToImageInfo(results: ImageUploadResult[]): ImageInfo[] {
     .map(result => ({
       filename: result.filename!,
       url: result.url!,
+      thumbnailUrl: result.thumbnailUrl,
       uploadedAt: new Date().toISOString()
     }));
 }
