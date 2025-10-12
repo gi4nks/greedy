@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Home, BookOpen, Menu, X, BarChart3, FileText, Sparkles } from 'lucide-react';
+import { Search, Home, BookOpen, Menu, X, BarChart3, FileText, Sparkles, LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -24,6 +25,10 @@ export default function Navigation() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/login' });
   };
 
   return (
@@ -61,6 +66,16 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Logout button */}
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost btn-sm"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Logout</span>
+            </button>
+
             {/* Mobile menu button */}
             <button
               onClick={toggleMobileMenu}
@@ -101,6 +116,18 @@ export default function Navigation() {
                   </Link>
                 );
               })}
+
+              {/* Mobile Logout */}
+              <button
+                onClick={() => {
+                  closeMobileMenu();
+                  handleLogout();
+                }}
+                className="flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors text-base-content hover:bg-base-200 w-full text-left"
+              >
+                <LogOut className="w-5 h-5" />
+                Logout
+              </button>
             </div>
           </div>
         )}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import { SessionProvider } from '@/components/SessionProvider'
 
 export const metadata: Metadata = {
   title: 'Greedy',
@@ -22,10 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="emerald" data-scroll-behavior="smooth">
       <body className="min-h-screen bg-base-200">
-        <Navigation />
-        <main>
-          {children}
-        </main>
+        <SessionProvider>
+          <Navigation />
+          <main>
+            {children}
+          </main>
+        </SessionProvider>
       </body>
     </html>
   )
