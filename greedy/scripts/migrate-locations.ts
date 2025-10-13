@@ -3,12 +3,12 @@
  * Data migration script to populate campaignId for existing locations
  */
 
-import { db } from '@/lib/db';
-import { locations, adventures } from '@/lib/db/schema';
-import { eq, isNull } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { locations, adventures } from "@/lib/db/schema";
+import { eq, isNull } from "drizzle-orm";
 
 async function migrateLocationCampaignIds() {
-  console.log('🔄 Migrating location campaign IDs...');
+  console.log("🔄 Migrating location campaign IDs...");
 
   try {
     // Get all locations that have adventureId but no campaignId
@@ -39,12 +39,18 @@ async function migrateLocationCampaignIds() {
             .set({ campaignId: adventure[0].campaignId })
             .where(eq(locations.id, location.id));
 
-          console.log(`✅ Updated location ${location.id} with campaignId ${adventure[0].campaignId}`);
+          console.log(
+            `✅ Updated location ${location.id} with campaignId ${adventure[0].campaignId}`,
+          );
         } else {
-          console.log(`⚠️  Location ${location.id} has adventure ${location.adventureId} but adventure has no campaignId`);
+          console.log(
+            `⚠️  Location ${location.id} has adventure ${location.adventureId} but adventure has no campaignId`,
+          );
         }
       } else {
-        console.log(`⚠️  Location ${location.id} has no adventureId - cannot determine campaignId`);
+        console.log(
+          `⚠️  Location ${location.id} has no adventureId - cannot determine campaignId`,
+        );
       }
     }
 
@@ -55,16 +61,17 @@ async function migrateLocationCampaignIds() {
       .where(isNull(locations.campaignId));
 
     if (remainingNullCampaignIds.length > 0) {
-      console.log(`⚠️  ${remainingNullCampaignIds.length} locations still have null campaignId:`);
-      remainingNullCampaignIds.forEach(loc => {
+      console.log(
+        `⚠️  ${remainingNullCampaignIds.length} locations still have null campaignId:`,
+      );
+      remainingNullCampaignIds.forEach((loc) => {
         console.log(`   - Location ${loc.id}: ${loc.name}`);
       });
     } else {
-      console.log('✅ All locations now have campaignId set');
+      console.log("✅ All locations now have campaignId set");
     }
-
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error("❌ Migration failed:", error);
     throw error;
   }
 }
@@ -73,11 +80,11 @@ async function migrateLocationCampaignIds() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   migrateLocationCampaignIds()
     .then(() => {
-      console.log('🎉 Migration complete!');
+      console.log("🎉 Migration complete!");
       process.exit(0);
     })
     .catch((error) => {
-      console.error('Migration failed:', error);
+      console.error("Migration failed:", error);
       process.exit(1);
     });
 }

@@ -1,9 +1,11 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { quests, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+import { db } from "@/lib/db";
+import { quests, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { ActionResult } from "@/lib/types/api";
+import type { Quest } from "@/lib/db/schema";
 
 export async function getQuests(campaignId?: number) {
   if (campaignId) {
@@ -16,79 +18,107 @@ export async function getQuests(campaignId?: number) {
       .from(quests)
       .leftJoin(adventures, eq(quests.adventureId, adventures.id))
       .where(eq(adventures.campaignId, campaignId));
-    
-    return questsWithAdventures.map(item => item.quest);
+
+    return questsWithAdventures.map((item) => item.quest);
   }
   return await db.select().from(quests);
 }
 
 export async function getQuest(id: number) {
-  const [quest] = await db.select().from(quests).where(eq(quests.id, id)).limit(1);
+  const [quest] = await db
+    .select()
+    .from(quests)
+    .where(eq(quests.id, id))
+    .limit(1);
   return quest;
 }
 
-export async function createQuest(formData: FormData) {
-  const title = formData.get('title') as string;
-  const description = formData.get('description') as string;
-  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
-  const status = formData.get('status') as string;
-  const priority = formData.get('priority') as string;
-  const type = formData.get('type') as string;
-  const dueDate = formData.get('dueDate') as string;
-  const assignedTo = formData.get('assignedTo') as string;
-  const tagsString = formData.get('tags') as string;
-  const images = formData.get('images') as string;
-  const campaignId = formData.get('campaignId') as string;
+export async function createQuest(
+  formData: FormData,
+): Promise<ActionResult<Quest>> {
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const adventureId = formData.get("adventureId")
+    ? Number(formData.get("adventureId"))
+    : null;
+  const status = formData.get("status") as string;
+  const priority = formData.get("priority") as string;
+  const type = formData.get("type") as string;
+  const dueDate = formData.get("dueDate") as string;
+  const assignedTo = formData.get("assignedTo") as string;
+  const tagsString = formData.get("tags") as string;
+  const images = formData.get("images") as string;
+  const campaignId = formData.get("campaignId") as string;
 
   // Parse tags
-  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+  const tags = tagsString
+    ? tagsString
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t)
+    : [];
 
   try {
-    const [newQuest] = await db.insert(quests).values({
-      title,
-      description: description || null,
-      adventureId,
-      status: status || 'active',
-      priority: priority || 'medium',
-      type: type || 'main',
-      dueDate: dueDate || null,
-      assignedTo: assignedTo || null,
-      tags: tags.length > 0 ? JSON.stringify(tags) : null,
-      images: images ? JSON.parse(images) : null,
-    }).returning();
+    const [newQuest] = await db
+      .insert(quests)
+      .values({
+        title,
+        description: description || null,
+        adventureId,
+        status: status || "active",
+        priority: priority || "medium",
+        type: type || "main",
+        dueDate: dueDate || null,
+        assignedTo: assignedTo || null,
+        tags: tags.length > 0 ? JSON.stringify(tags) : null,
+        images: images ? JSON.parse(images) : null,
+      })
+      .returning();
 
     // Revalidate both campaign and adventure-specific paths
     revalidatePath(`/campaigns/${campaignId}/quests`);
     if (adventureId) {
-      revalidatePath(`/campaigns/${campaignId}/adventures/${adventureId}/quests`);
+      revalidatePath(
+        `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+      );
     }
-    
+
     // The redirect will be handled by the form component based on context
-    return { success: true, quest: newQuest };
+    return { success: true, data: newQuest };
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to create quest.',
+      success: false,
+      message: "Database Error: Failed to create quest.",
     };
   }
 }
 
-export async function updateQuest(formData: FormData) {
-  const id = Number(formData.get('id'));
-  const title = formData.get('title') as string;
-  const description = formData.get('description') as string;
-  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
-  const status = formData.get('status') as string;
-  const priority = formData.get('priority') as string;
-  const type = formData.get('type') as string;
-  const dueDate = formData.get('dueDate') as string;
-  const assignedTo = formData.get('assignedTo') as string;
-  const tagsString = formData.get('tags') as string;
-  const images = formData.get('images') as string;
-  const campaignId = formData.get('campaignId') as string;
+export async function updateQuest(
+  formData: FormData,
+): Promise<ActionResult<Quest>> {
+  const id = Number(formData.get("id"));
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const adventureId = formData.get("adventureId")
+    ? Number(formData.get("adventureId"))
+    : null;
+  const status = formData.get("status") as string;
+  const priority = formData.get("priority") as string;
+  const type = formData.get("type") as string;
+  const dueDate = formData.get("dueDate") as string;
+  const assignedTo = formData.get("assignedTo") as string;
+  const tagsString = formData.get("tags") as string;
+  const images = formData.get("images") as string;
+  const campaignId = formData.get("campaignId") as string;
 
   // Parse tags
-  const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+  const tags = tagsString
+    ? tagsString
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t)
+    : [];
 
   try {
     const [updatedQuest] = await db
@@ -97,9 +127,9 @@ export async function updateQuest(formData: FormData) {
         title,
         description: description || null,
         adventureId,
-        status: status || 'active',
-        priority: priority || 'medium',
-        type: type || 'main',
+        status: status || "active",
+        priority: priority || "medium",
+        type: type || "main",
         dueDate: dueDate || null,
         assignedTo: assignedTo || null,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
@@ -112,35 +142,44 @@ export async function updateQuest(formData: FormData) {
     // Revalidate both campaign and adventure-specific paths
     revalidatePath(`/campaigns/${campaignId}/quests`);
     if (adventureId) {
-      revalidatePath(`/campaigns/${campaignId}/adventures/${adventureId}/quests`);
+      revalidatePath(
+        `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+      );
     }
-    
+
     // The redirect will be handled by the form component based on context
-    return { success: true, quest: updatedQuest };
+    return { success: true, data: updatedQuest };
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to update quest.',
+      success: false,
+      message: "Database Error: Failed to update quest.",
     };
   }
 }
 
-export async function deleteQuest(id: number, campaignId: number) {
+export async function deleteQuest(
+  id: number,
+  campaignId: number,
+): Promise<ActionResult> {
   try {
     await db.delete(quests).where(eq(quests.id, id));
     revalidatePath(`/campaigns/${campaignId}/quests`);
-    return { message: 'Quest deleted successfully.' };
+    return { success: true };
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to delete quest.',
+      success: false,
+      message: "Database Error: Failed to delete quest.",
     };
   }
 }
 
-export async function deleteQuestAction(formData: FormData) {
-  'use server';
-  const id = Number(formData.get('id'));
-  const campaignId = Number(formData.get('campaignId'));
+export async function deleteQuestAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  "use server";
+  const id = Number(formData.get("id"));
+  const campaignId = Number(formData.get("campaignId"));
   return await deleteQuest(id, campaignId);
 }

@@ -1,7 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { campaigns } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { campaigns } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
+import {
+  CreateCampaignSchema,
+  validateRequestBody,
+} from "@/lib/validation/schemas";
 
 // GET /api/campaigns - Get all campaigns
 export async function GET() {
@@ -22,45 +27,45 @@ export async function GET() {
 
     return NextResponse.json(allCampaigns);
   } catch (error) {
-    console.error('Failed to fetch campaigns:', error);
+    logger.error("Failed to fetch campaigns", error);
     return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 }
+      { error: "Failed to fetch campaigns" },
+      { status: 500 },
     );
   }
 }
 
 // POST /api/campaigns - Create a new campaign
+// DEPRECATED: Use Server Action createCampaign instead. This endpoint is kept for backward compatibility.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, status, startDate, endDate, gameEditionId } = body;
+    const validation = validateRequestBody(CreateCampaignSchema, body);
 
-    if (!title) {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return NextResponse.json(validation.error, { status: 400 });
     }
+
+    const validatedData = validation.data;
 
     const [newCampaign] = await db
       .insert(campaigns)
       .values({
-        title,
-        description: description || null,
-        status: status || 'active',
-        startDate: startDate || null,
-        endDate: endDate || null,
-        gameEditionId: gameEditionId || 1, // Default to D&D 5e
+        title: validatedData.title,
+        description: validatedData.description || null,
+        status: validatedData.status,
+        startDate: validatedData.startDate || null,
+        endDate: validatedData.endDate || null,
+        gameEditionId: validatedData.gameEditionId,
       })
       .returning();
 
     return NextResponse.json(newCampaign, { status: 201 });
   } catch (error) {
-    console.error('Failed to create campaign:', error);
+    logger.error("Failed to create campaign", error);
     return NextResponse.json(
-      { error: 'Failed to create campaign' },
-      { status: 500 }
+      { error: "Failed to create campaign" },
+      { status: 500 },
     );
   }
 }

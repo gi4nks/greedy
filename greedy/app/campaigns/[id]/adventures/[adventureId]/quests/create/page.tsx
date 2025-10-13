@@ -1,9 +1,9 @@
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { adventures, campaigns } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import QuestForm from '@/components/quest/QuestForm';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { adventures, campaigns } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import QuestForm from "@/components/quest/QuestForm";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateQuestPageProps {
   params: Promise<{ id: string; adventureId: string }>;
@@ -33,11 +33,13 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function CreateQuestPage({ params }: CreateQuestPageProps) {
+export default async function CreateQuestPage({
+  params,
+}: CreateQuestPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
   const adventureId = parseInt(resolvedParams.adventureId);
-  
+
   const campaign = await getCampaign(campaignId);
   const adventure = await getAdventure(campaignId, adventureId);
 
@@ -53,13 +55,22 @@ export default async function CreateQuestPage({ params }: CreateQuestPageProps) 
           campaignId={campaignId}
           campaignTitle={campaign.title}
           sectionItems={[
-            { label: 'Adventures', href: `/campaigns/${campaignId}/adventures` },
-            { label: adventure.title, href: `/campaigns/${campaignId}/adventures/${adventureId}` },
-            { label: 'Quests', href: `/campaigns/${campaignId}/adventures/${adventureId}/quests` },
-            { label: 'Create Quest' }
+            {
+              label: "Adventures",
+              href: `/campaigns/${campaignId}/adventures`,
+            },
+            {
+              label: adventure.title,
+              href: `/campaigns/${campaignId}/adventures/${adventureId}`,
+            },
+            {
+              label: "Quests",
+              href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+            },
+            { label: "Create Quest" },
           ]}
         />
-        
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">Create Quest</h1>
           <p className="text-base-content/70">
@@ -67,7 +78,7 @@ export default async function CreateQuestPage({ params }: CreateQuestPageProps) 
           </p>
         </div>
 
-        <QuestForm 
+        <QuestForm
           adventureId={adventureId}
           campaignId={campaignId}
           mode="create"
@@ -85,7 +96,7 @@ export async function generateMetadata({ params }: CreateQuestPageProps) {
   const adventure = await getAdventure(campaignId, adventureId);
 
   return {
-    title: adventure ? `Create Quest | ${adventure.title}` : 'Create Quest',
-    description: 'Create a new quest for your adventure',
+    title: adventure ? `Create Quest | ${adventure.title}` : "Create Quest",
+    description: "Create a new quest for your adventure",
   };
 }

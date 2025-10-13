@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { characters, magicItems, magicItemAssignments } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 type CharacterRow = {
   id: number;
@@ -30,7 +31,7 @@ type MagicItemSummary = {
 };
 
 function parseEquipment(equipment: unknown): string[] {
-  if (typeof equipment === 'string') {
+  if (typeof equipment === "string") {
     try {
       const parsed = JSON.parse(equipment);
       return Array.isArray(parsed) ? parsed : [];
@@ -76,8 +77,11 @@ export async function GET() {
         campaignId: magicItemAssignments.campaignId,
       })
       .from(magicItemAssignments)
-      .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
-      .where(eq(magicItemAssignments.entityType, 'character'));
+      .innerJoin(
+        magicItems,
+        eq(magicItemAssignments.magicItemId, magicItems.id),
+      )
+      .where(eq(magicItemAssignments.entityType, "character"));
 
     const assignmentsByCharacter = new Map<number, MagicItemSummary[]>();
     characterAssignments.forEach((assignment) => {
@@ -100,15 +104,20 @@ export async function GET() {
       });
     });
 
-    const charactersWithMagicItems = allCharacters.map((character: CharacterRow) => ({
-      ...character,
-      equipment: parseEquipment(character.equipment),
-      magicItems: assignmentsByCharacter.get(character.id) ?? [],
-    }));
+    const charactersWithMagicItems = allCharacters.map(
+      (character: CharacterRow) => ({
+        ...character,
+        equipment: parseEquipment(character.equipment),
+        magicItems: assignmentsByCharacter.get(character.id) ?? [],
+      }),
+    );
 
     return NextResponse.json(charactersWithMagicItems);
   } catch (error) {
-    console.error('Error fetching characters:', error);
-    return NextResponse.json({ error: 'Failed to fetch characters' }, { status: 500 });
+    logger.error("Error fetching characters", error);
+    return NextResponse.json(
+      { error: "Failed to fetch characters" },
+      { status: 500 },
+    );
   }
 }

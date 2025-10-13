@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { db } from '../lib/db/index.js';
-import { campaigns, gameEditions } from '../lib/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { db } from "../lib/db/index.js";
+import { campaigns, gameEditions } from "../lib/db/schema.js";
+import { eq } from "drizzle-orm";
 
 async function testCampaigns() {
   try {
-    console.log('Testing campaigns query...');
-    
+    console.log("Testing campaigns query...");
+
     // Test the exact same query as getCampaigns
     const result = await db
       .select({
@@ -27,11 +27,10 @@ async function testCampaigns() {
       .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
       .orderBy(campaigns.createdAt);
 
-    console.log('Query result:');
+    console.log("Query result:");
     console.log(JSON.stringify(result, null, 2));
-    
   } catch (error) {
-    console.error('Error testing campaigns:', error);
+    console.error("Error testing campaigns:", error);
   }
 }
 

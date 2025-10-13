@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface MagicItemsFiltersProps {
   initialFilters: {
@@ -22,12 +22,12 @@ interface MagicItemsFiltersProps {
 }
 
 const entityTypeOptions = [
-  { value: 'all', label: 'All entities' },
-  { value: 'character', label: 'Characters' },
-  { value: 'adventure', label: 'Adventures' },
-  { value: 'location', label: 'Locations' },
-  { value: 'session', label: 'Sessions' },
-  { value: 'quest', label: 'Quests' },
+  { value: "all", label: "All entities" },
+  { value: "character", label: "Characters" },
+  { value: "adventure", label: "Adventures" },
+  { value: "location", label: "Locations" },
+  { value: "session", label: "Sessions" },
+  { value: "quest", label: "Quests" },
 ];
 
 export function MagicItemsFilters({
@@ -37,40 +37,49 @@ export function MagicItemsFilters({
   campaignOptions = [],
 }: MagicItemsFiltersProps) {
   const router = useRouter();
-  const [search, setSearch] = useState(initialFilters.search ?? '');
-  const [type, setType] = useState(initialFilters.type ?? '');
-  const [rarity, setRarity] = useState(initialFilters.rarity ?? '');
-  const [entityType, setEntityType] = useState(initialFilters.entityType ?? 'all');
-  const [campaignId, setCampaignId] = useState(initialFilters.campaignId ?? '');
+  const [search, setSearch] = useState(initialFilters.search ?? "");
+  const [type, setType] = useState(initialFilters.type ?? "");
+  const [rarity, setRarity] = useState(initialFilters.rarity ?? "");
+  const [entityType, setEntityType] = useState(
+    initialFilters.entityType ?? "all",
+  );
+  const [campaignId, setCampaignId] = useState(initialFilters.campaignId ?? "");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const params = new URLSearchParams();
-    if (search.trim()) params.set('search', search.trim());
-    if (type.trim()) params.set('type', type.trim());
-    if (rarity.trim()) params.set('rarity', rarity.trim());
-    if (entityType && entityType !== 'all') params.set('entityType', entityType);
-    if (campaignId.trim()) params.set('campaignId', campaignId.trim());
+    if (search.trim()) params.set("search", search.trim());
+    if (type.trim()) params.set("type", type.trim());
+    if (rarity.trim()) params.set("rarity", rarity.trim());
+    if (entityType && entityType !== "all")
+      params.set("entityType", entityType);
+    if (campaignId.trim()) params.set("campaignId", campaignId.trim());
 
     const queryString = params.toString();
-    router.push(queryString ? `/magic-items?${queryString}` : '/magic-items');
+    router.push(queryString ? `/magic-items?${queryString}` : "/magic-items");
   };
 
   const handleReset = () => {
-    setSearch('');
-    setType('');
-    setRarity('');
-    setEntityType('all');
-    setCampaignId('');
-    router.push('/magic-items');
+    setSearch("");
+    setType("");
+    setRarity("");
+    setEntityType("all");
+    setCampaignId("");
+    router.push("/magic-items");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 rounded-lg border border-base-200 bg-base-100 p-4 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-6 rounded-lg border border-base-200 bg-base-100 p-4 shadow-sm"
+    >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-base-content/70" htmlFor="magic-item-search">
+          <label
+            className="text-sm font-medium text-base-content/70"
+            htmlFor="magic-item-search"
+          >
             Search
           </label>
           <Input
@@ -82,7 +91,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-base-content/70" htmlFor="magic-item-type">
+          <label
+            className="text-sm font-medium text-base-content/70"
+            htmlFor="magic-item-type"
+          >
             Type
           </label>
           <select
@@ -101,7 +113,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-base-content/70" htmlFor="magic-item-rarity">
+          <label
+            className="text-sm font-medium text-base-content/70"
+            htmlFor="magic-item-rarity"
+          >
             Rarity
           </label>
           <select
@@ -120,7 +135,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-base-content/70" htmlFor="magic-item-entity-type">
+          <label
+            className="text-sm font-medium text-base-content/70"
+            htmlFor="magic-item-entity-type"
+          >
             Entity type
           </label>
           <select
@@ -138,7 +156,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-base-content/70" htmlFor="magic-item-campaign">
+          <label
+            className="text-sm font-medium text-base-content/70"
+            htmlFor="magic-item-campaign"
+          >
             Campaign
           </label>
           <select
@@ -161,7 +182,12 @@ export function MagicItemsFilters({
         <Button type="submit" variant="primary" className="gap-2">
           Apply filters
         </Button>
-        <Button type="button" variant="outline" onClick={handleReset} className="gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleReset}
+          className="gap-2"
+        >
           Reset
         </Button>
       </div>

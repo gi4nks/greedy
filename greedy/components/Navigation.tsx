@@ -1,18 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Search, Home, BookOpen, Menu, X, BarChart3, FileText, Sparkles, LogOut } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Search,
+  Home,
+  BookOpen,
+  Menu,
+  X,
+  BarChart3,
+  FileText,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "./ui/button";
 
 const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Campaigns', href: '/campaigns', icon: BookOpen },
-  { name: 'Magic Items', href: '/magic-items', icon: Sparkles },
-  { name: 'Search', href: '/search', icon: Search },
-  { name: 'Wiki Import', href: '/wiki', icon: FileText },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: "Home", href: "/", icon: Home },
+  { name: "Campaigns", href: "/campaigns", icon: BookOpen },
+  { name: "Magic Items", href: "/magic-items", icon: Sparkles },
+  { name: "Search", href: "/search", icon: Search },
+  { name: "Wiki Import", href: "/wiki", icon: FileText },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
 ];
 
 export default function Navigation() {
@@ -25,10 +34,6 @@ export default function Navigation() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-  };
-
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/login' });
   };
 
   return (
@@ -44,8 +49,9 @@ export default function Navigation() {
             <div className="hidden md:flex items-center gap-6">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href ||
-                  (item.href !== '/' && pathname.startsWith(item.href));
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
 
                 return (
                   <Link
@@ -53,8 +59,8 @@ export default function Navigation() {
                     href={item.href}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-primary text-primary-content'
-                        : 'text-base-content hover:bg-base-200'
+                        ? "bg-primary text-primary-content"
+                        : "text-base-content hover:bg-base-200"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -66,20 +72,12 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Logout button */}
-            <button
-              onClick={handleLogout}
-              className="btn btn-ghost btn-sm"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">Logout</span>
-            </button>
-
             {/* Mobile menu button */}
-            <button
+            <Button
               onClick={toggleMobileMenu}
-              className="md:hidden btn btn-ghost btn-sm btn-circle"
+              variant="ghost"
+              size="sm"
+              className="md:hidden btn-circle"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? (
@@ -87,7 +85,7 @@ export default function Navigation() {
               ) : (
                 <Menu className="w-5 h-5" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -97,8 +95,9 @@ export default function Navigation() {
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href ||
-                  (item.href !== '/' && pathname.startsWith(item.href));
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
 
                 return (
                   <Link
@@ -107,8 +106,8 @@ export default function Navigation() {
                     onClick={closeMobileMenu}
                     className={`flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors ${
                       isActive
-                        ? 'bg-primary text-primary-content'
-                        : 'text-base-content hover:bg-base-200'
+                        ? "bg-primary text-primary-content"
+                        : "text-base-content hover:bg-base-200"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -116,18 +115,6 @@ export default function Navigation() {
                   </Link>
                 );
               })}
-
-              {/* Mobile Logout */}
-              <button
-                onClick={() => {
-                  closeMobileMenu();
-                  handleLogout();
-                }}
-                className="flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors text-base-content hover:bg-base-200 w-full text-left"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
             </div>
           </div>
         )}

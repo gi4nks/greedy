@@ -22,19 +22,20 @@ const markdownComponents: Components = {
       alt={props.alt || ""}
       className={cn(
         "max-w-full h-auto rounded-lg shadow-sm",
-        (props as { className?: string }).className
+        (props as { className?: string }).className,
       )}
       loading={props.loading ?? "lazy"}
     />
   ),
   a: (props) => {
-    const isExternal = typeof props.href === "string" && /^https?:\/\//.test(props.href);
+    const isExternal =
+      typeof props.href === "string" && /^https?:\/\//.test(props.href);
     return (
       <a
         {...props}
         className={cn(
           "text-primary underline decoration-primary/50 transition-colors hover:decoration-primary",
-          (props as { className?: string }).className
+          (props as { className?: string }).className,
         )}
         target={isExternal ? "_blank" : props.target}
         rel={isExternal ? "noopener noreferrer" : props.rel}
@@ -46,7 +47,7 @@ const markdownComponents: Components = {
       {...props}
       className={cn(
         "table-auto border-collapse overflow-hidden rounded-lg",
-        (props as { className?: string }).className
+        (props as { className?: string }).className,
       )}
     />
   ),
@@ -55,7 +56,7 @@ const markdownComponents: Components = {
       {...props}
       className={cn(
         "bg-base-200 px-3 py-2 text-left font-semibold",
-        (props as { className?: string }).className
+        (props as { className?: string }).className,
       )}
     />
   ),
@@ -64,7 +65,7 @@ const markdownComponents: Components = {
       {...props}
       className={cn(
         "border-t border-base-300 px-3 py-2 align-top",
-        (props as { className?: string }).className
+        (props as { className?: string }).className,
       )}
     />
   ),
@@ -79,7 +80,7 @@ const markdownComponents: Components = {
           isInline
             ? "rounded bg-base-200 px-1 py-0.5 text-[0.85em]"
             : "block overflow-x-auto rounded-lg bg-base-200/70 p-4 text-sm",
-          className
+          className,
         )}
         {...codeProps}
       >
@@ -101,28 +102,16 @@ const htmlSanitizeSchema = {
       ["data-wiki-link"],
       ["className"],
     ],
-    span: [
-      ...(defaultSchema.attributes?.span || []),
-      ["className"],
-    ],
-    div: [
-      ...(defaultSchema.attributes?.div || []),
-      ["className"],
-    ],
-    p: [
-      ...(defaultSchema.attributes?.p || []),
-      ["className"],
-    ],
+    span: [...(defaultSchema.attributes?.span || []), ["className"]],
+    div: [...(defaultSchema.attributes?.div || []), ["className"]],
+    p: [...(defaultSchema.attributes?.p || []), ["className"]],
     h1: [["className"]],
     h2: [["className"]],
     h3: [["className"]],
     h4: [["className"]],
     h5: [["className"]],
     h6: [["className"]],
-    table: [
-      ...(defaultSchema.attributes?.table || []),
-      ["className"],
-    ],
+    table: [...(defaultSchema.attributes?.table || []), ["className"]],
     thead: [["className"]],
     tbody: [["className"]],
     tr: [["className"]],
@@ -132,14 +121,8 @@ const htmlSanitizeSchema = {
     ol: [["className"]],
     li: [["className"]],
     hr: [["className"]],
-    pre: [
-      ...(defaultSchema.attributes?.pre || []),
-      ["className"],
-    ],
-    code: [
-      ...(defaultSchema.attributes?.code || []),
-      ["className"],
-    ],
+    pre: [...(defaultSchema.attributes?.pre || []), ["className"]],
+    code: [...(defaultSchema.attributes?.code || []), ["className"]],
     img: [
       ...(defaultSchema.attributes?.img || []),
       ["className"],
@@ -152,8 +135,12 @@ const htmlSanitizeSchema = {
   },
 } as const;
 
-export default function MarkdownRenderer({ content, className, allowHtml = false }: MarkdownRendererProps) {
-  if (!content || typeof content !== 'string') {
+export default function MarkdownRenderer({
+  content,
+  className,
+  allowHtml = false,
+}: MarkdownRendererProps) {
+  if (!content || typeof content !== "string") {
     return null;
   }
 

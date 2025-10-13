@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ChevronRight, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface BreadcrumbItem {
   label: string;
@@ -23,14 +23,17 @@ export default function DynamicBreadcrumb({
   items,
   campaignId,
   campaignTitle,
-  sectionItems = []
+  sectionItems = [],
 }: DynamicBreadcrumbProps) {
   // If we have campaign context, use the campaign-aware breadcrumb
   if (campaignId !== undefined) {
     return (
       <nav className="flex items-center space-x-2 text-sm text-base-content/70 mb-6">
         {/* Home */}
-        <Link href="/" className="flex items-center hover:text-base-content transition-colors">
+        <Link
+          href="/"
+          className="flex items-center hover:text-base-content transition-colors"
+        >
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
             <Home className="w-4 h-4" />
           </Button>
@@ -82,7 +85,10 @@ export default function DynamicBreadcrumb({
   return (
     <nav className="flex items-center space-x-2 text-sm text-base-content/70 mb-6">
       {/* Home */}
-      <Link href="/" className="flex items-center hover:text-base-content transition-colors">
+      <Link
+        href="/"
+        className="flex items-center hover:text-base-content transition-colors"
+      >
         <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
           <Home className="w-4 h-4" />
         </Button>

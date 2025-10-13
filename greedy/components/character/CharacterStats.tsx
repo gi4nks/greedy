@@ -1,19 +1,22 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Character, Adventure, Campaign } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Heart, Shield, Sword, Zap, Eye, Brain, Users } from 'lucide-react';
+import React from "react";
+import { Character, Adventure, Campaign } from "@/lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Heart, Shield, Sword, Zap, Eye, Brain, Users } from "lucide-react";
 
 interface CharacterStatsProps {
-  character: Character & { adventure?: Adventure | null; campaign?: Campaign | null };
+  character: Character & {
+    adventure?: Adventure | null;
+    campaign?: Campaign | null;
+  };
 }
 
 export default function CharacterStats({ character }: CharacterStatsProps) {
   const parseJsonArray = (json: unknown): string[] => {
-    if (typeof json === 'string') {
+    if (typeof json === "string") {
       try {
         return JSON.parse(json);
       } catch {
@@ -44,12 +47,20 @@ export default function CharacterStats({ character }: CharacterStatsProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {[
-            { name: 'Strength', value: character.strength, icon: Sword },
-            { name: 'Dexterity', value: character.dexterity, icon: Eye },
-            { name: 'Constitution', value: character.constitution, icon: Heart },
-            { name: 'Intelligence', value: character.intelligence, icon: Brain },
-            { name: 'Wisdom', value: character.wisdom, icon: Users },
-            { name: 'Charisma', value: character.charisma, icon: Shield },
+            { name: "Strength", value: character.strength, icon: Sword },
+            { name: "Dexterity", value: character.dexterity, icon: Eye },
+            {
+              name: "Constitution",
+              value: character.constitution,
+              icon: Heart,
+            },
+            {
+              name: "Intelligence",
+              value: character.intelligence,
+              icon: Brain,
+            },
+            { name: "Wisdom", value: character.wisdom, icon: Users },
+            { name: "Charisma", value: character.charisma, icon: Shield },
           ].map(({ name, value, icon: Icon }) => (
             <div key={name} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -92,7 +103,9 @@ export default function CharacterStats({ character }: CharacterStatsProps) {
 
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Armor Class</span>
-            <span className="text-sm font-mono">{character.armorClass || 10}</span>
+            <span className="text-sm font-mono">
+              {character.armorClass || 10}
+            </span>
           </div>
 
           <div className="flex items-center justify-between">
@@ -104,7 +117,9 @@ export default function CharacterStats({ character }: CharacterStatsProps) {
 
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Proficiency Bonus</span>
-            <span className="text-sm font-mono">+{character.proficiencyBonus || 2}</span>
+            <span className="text-sm font-mono">
+              +{character.proficiencyBonus || 2}
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -119,11 +134,15 @@ export default function CharacterStats({ character }: CharacterStatsProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-1">
-            {character.skills ? (parseJsonArray(character.skills) as string[]).map((skill: string, index: number) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {skill}
-              </Badge>
-            )) : null}
+            {character.skills
+              ? (parseJsonArray(character.skills) as string[]).map(
+                  (skill: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ),
+                )
+              : null}
           </div>
         </CardContent>
       </Card>

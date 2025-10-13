@@ -1,11 +1,20 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { characters, adventures, campaigns, gameEditions, magicItems, magicItemAssignments, wikiArticles, wikiArticleEntities } from '@/lib/db/schema';
-import { eq, sql, and } from 'drizzle-orm';
-import CharacterForm from '@/components/character/CharacterForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import {
+  characters,
+  adventures,
+  campaigns,
+  gameEditions,
+  magicItems,
+  magicItemAssignments,
+  wikiArticles,
+  wikiArticleEntities,
+} from "@/lib/db/schema";
+import { eq, sql, and } from "drizzle-orm";
+import CharacterForm from "@/components/character/CharacterForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditCharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -72,21 +81,27 @@ async function getCharacter(characterId: number) {
             'relationshipData', ${wikiArticleEntities.relationshipData}
           )
         END
-      )`.as('wikiEntities')
+      )`.as("wikiEntities"),
     })
     .from(characters)
-    .leftJoin(wikiArticleEntities, and(
-      eq(wikiArticleEntities.entityType, 'character'),
-      eq(wikiArticleEntities.entityId, characters.id)
-    ))
-    .leftJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
+    .leftJoin(
+      wikiArticleEntities,
+      and(
+        eq(wikiArticleEntities.entityType, "character"),
+        eq(wikiArticleEntities.entityId, characters.id),
+      ),
+    )
+    .leftJoin(
+      wikiArticles,
+      eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+    )
     .where(eq(characters.id, characterId))
     .groupBy(characters.id);
 
   if (charactersWithEntities.length === 0) return null;
 
   const character = charactersWithEntities[0];
-  
+
   // Parse magic items and filter out nulls
   const magicItemAssignmentsForCharacter = await db
     .select({
@@ -106,26 +121,34 @@ async function getCharacter(characterId: number) {
     .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
     .where(
       and(
-        eq(magicItemAssignments.entityType, 'character'),
-        eq(magicItemAssignments.entityId, characterId)
-      )
+        eq(magicItemAssignments.entityType, "character"),
+        eq(magicItemAssignments.entityId, characterId),
+      ),
     );
 
   // Parse wiki entities and filter out nulls
   const parsedWikiEntities = character.wikiEntities
-    ? JSON.parse(character.wikiEntities).filter((item: unknown) => item !== null)
+    ? JSON.parse(character.wikiEntities).filter(
+        (item: unknown) => item !== null,
+      )
     : [];
 
   // Separate by content type for backward compatibility
-  const parsedWikiSpells = parsedWikiEntities.filter((entity: unknown) => (entity as { contentType?: string })?.contentType === 'spell');
-  const parsedWikiMonsters = parsedWikiEntities.filter((entity: unknown) => (entity as { contentType?: string })?.contentType === 'monster');
+  const parsedWikiSpells = parsedWikiEntities.filter(
+    (entity: unknown) =>
+      (entity as { contentType?: string })?.contentType === "spell",
+  );
+  const parsedWikiMonsters = parsedWikiEntities.filter(
+    (entity: unknown) =>
+      (entity as { contentType?: string })?.contentType === "monster",
+  );
 
   const characterWithParsedEntities = {
     ...character,
     magicItems: magicItemAssignmentsForCharacter,
     wikiSpells: parsedWikiSpells,
     wikiMonsters: parsedWikiMonsters,
-    wikiEntities: parsedWikiEntities
+    wikiEntities: parsedWikiEntities,
   };
 
   // Get related data
@@ -166,13 +189,19 @@ async function getCharacter(characterId: number) {
   };
 }
 
-export default async function EditCharacterPage({ params }: EditCharacterPageProps) {
+export default async function EditCharacterPage({
+  params,
+}: EditCharacterPageProps) {
   const { id, characterId } = await params;
   const characterIdNum = parseInt(characterId);
   const campaignId = parseInt(id);
   const character = await getCharacter(characterIdNum);
 
-  if (!character || (character.campaign?.id !== campaignId && character.campaignId !== campaignId)) {
+  if (
+    !character ||
+    (character.campaign?.id !== campaignId &&
+      character.campaignId !== campaignId)
+  ) {
     notFound();
   }
 
@@ -183,9 +212,12 @@ export default async function EditCharacterPage({ params }: EditCharacterPagePro
         campaignId={campaignId}
         campaignTitle={character.campaign?.title}
         sectionItems={[
-          { label: 'Characters', href: `/campaigns/${campaignId}/characters` },
-          { label: character.name, href: `/campaigns/${campaignId}/characters/${characterId}` },
-          { label: 'Edit' }
+          { label: "Characters", href: `/campaigns/${campaignId}/characters` },
+          {
+            label: character.name,
+            href: `/campaigns/${campaignId}/characters/${characterId}`,
+          },
+          { label: "Edit" },
         ]}
       />
 
@@ -239,7 +271,8 @@ export async function generateMetadata({ params }: EditCharacterPageProps) {
   const character = await getCharacter(parseInt(characterId));
 
   return {
-    title: character ? `Edit ${character.name}` : 'Edit Character',
-    description: character?.description || `Edit ${character?.name}'s character sheet`,
+    title: character ? `Edit ${character.name}` : "Edit Character",
+    description:
+      character?.description || `Edit ${character?.name}'s character sheet`,
   };
 }

@@ -1,19 +1,34 @@
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { db } from '@/lib/db';
-import { campaigns, quests, adventures, gameEditions, wikiArticleEntities, wikiArticles } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, AlertTriangle, Flag, Star, Edit, ArrowLeft } from 'lucide-react';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
-import { WikiEntity } from '@/lib/types/wiki';
-import { EntityImageCarousel } from '@/components/ui/image-carousel';
-import { parseImagesJson } from '@/lib/utils/imageUtils.client';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import { formatDate } from '@/lib/utils/date';
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { db } from "@/lib/db";
+import {
+  campaigns,
+  quests,
+  adventures,
+  gameEditions,
+  wikiArticleEntities,
+  wikiArticles,
+} from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Flag,
+  Star,
+  Edit,
+  ArrowLeft,
+} from "lucide-react";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { EntityImageCarousel } from "@/components/ui/image-carousel";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { formatDate } from "@/lib/utils/date";
 
 interface QuestPageProps {
   params: Promise<{ id: string; questId: string }>;
@@ -71,20 +86,23 @@ async function getQuest(questId: number) {
       relationshipData: wikiArticleEntities.relationshipData,
     })
     .from(wikiArticleEntities)
-    .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
+    .innerJoin(
+      wikiArticles,
+      eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+    )
     .where(
       and(
-        eq(wikiArticleEntities.entityType, 'quest'),
-        eq(wikiArticleEntities.entityId, questId)
-      )
+        eq(wikiArticleEntities.entityType, "quest"),
+        eq(wikiArticleEntities.entityId, questId),
+      ),
     );
 
   // Map rawContent to description for frontend compatibility
-  const wikiEntities: WikiEntity[] = wikiEntitiesData.map(entity => ({
+  const wikiEntities: WikiEntity[] = wikiEntitiesData.map((entity) => ({
     id: entity.id,
     title: entity.title,
     contentType: entity.contentType,
-    description: entity.rawContent || '', // Map rawContent to description
+    description: entity.rawContent || "", // Map rawContent to description
     parsedData: entity.parsedData,
     wikiUrl: entity.wikiUrl || undefined,
     relationshipType: entity.relationshipType || undefined,
@@ -99,11 +117,11 @@ async function getQuest(questId: number) {
 
 function getStatusIcon(status: string) {
   switch (status) {
-    case 'completed':
+    case "completed":
       return <CheckCircle className="w-5 h-5 text-green-500" />;
-    case 'active':
+    case "active":
       return <Clock className="w-5 h-5 text-blue-500" />;
-    case 'failed':
+    case "failed":
       return <AlertTriangle className="w-5 h-5 text-red-500" />;
     default:
       return <Clock className="w-5 h-5 text-base-content/50" />;
@@ -112,11 +130,11 @@ function getStatusIcon(status: string) {
 
 function getPriorityIcon(priority: string) {
   switch (priority) {
-    case 'high':
+    case "high":
       return <Flag className="w-5 h-5 text-red-500" />;
-    case 'medium':
+    case "medium":
       return <Flag className="w-5 h-5 text-yellow-500" />;
-    case 'low':
+    case "low":
       return <Flag className="w-5 h-5 text-green-500" />;
     default:
       return <Flag className="w-5 h-5 text-base-content/50" />;
@@ -125,9 +143,9 @@ function getPriorityIcon(priority: string) {
 
 function getTypeIcon(type: string) {
   switch (type) {
-    case 'main':
+    case "main":
       return <Star className="w-5 h-5 text-yellow-500" />;
-    case 'side':
+    case "side":
       return <Clock className="w-5 h-5 text-blue-500" />;
     default:
       return <Clock className="w-5 h-5 text-base-content/50" />;
@@ -153,10 +171,13 @@ export default async function QuestPage({ params }: QuestPageProps) {
       <div className="mb-6">
         <DynamicBreadcrumb
           items={[
-            { label: 'Campaigns', href: '/campaigns' },
+            { label: "Campaigns", href: "/campaigns" },
             { label: campaign.title, href: `/campaigns/${campaignId}` },
-            { label: 'Quests', href: `/campaigns/${campaignId}/quests` },
-            { label: quest.title, href: `/campaigns/${campaignId}/quests/${questId}` },
+            { label: "Quests", href: `/campaigns/${campaignId}/quests` },
+            {
+              label: quest.title,
+              href: `/campaigns/${campaignId}/quests/${questId}`,
+            },
           ]}
         />
       </div>
@@ -164,11 +185,11 @@ export default async function QuestPage({ params }: QuestPageProps) {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {getStatusIcon(quest.status || 'active')}
+            {getStatusIcon(quest.status || "active")}
             <div>
               <h1 className="text-3xl font-bold">{quest.title}</h1>
               <p className="text-base-content/70">
-                {campaign.title} • {quest.type || 'main'} quest
+                {campaign.title} • {quest.type || "main"} quest
               </p>
             </div>
           </div>
@@ -199,21 +220,26 @@ export default async function QuestPage({ params }: QuestPageProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <Badge variant={quest.status === 'completed' ? 'default' : 'secondary'}>
-                  {quest.status || 'active'}
+                <Badge
+                  variant={
+                    quest.status === "completed" ? "default" : "secondary"
+                  }
+                >
+                  {quest.status || "active"}
                 </Badge>
                 <Badge variant="outline">
-                  {quest.priority || 'medium'} priority
+                  {quest.priority || "medium"} priority
                 </Badge>
-                <Badge variant="outline">
-                  {quest.type || 'main'} quest
-                </Badge>
+                <Badge variant="outline">{quest.type || "main"} quest</Badge>
               </div>
 
               {quest.description && (
                 <div className="space-y-2">
                   <h3 className="font-semibold">Description</h3>
-                  <MarkdownRenderer content={quest.description} className="prose-sm" />
+                  <MarkdownRenderer
+                    content={quest.description}
+                    className="prose-sm"
+                  />
                 </div>
               )}
             </CardContent>
@@ -255,24 +281,30 @@ export default async function QuestPage({ params }: QuestPageProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Status</span>
                 <div className="flex items-center gap-2">
-                  {getStatusIcon(quest.status || 'active')}
-                  <span className="text-sm capitalize">{quest.status || 'active'}</span>
+                  {getStatusIcon(quest.status || "active")}
+                  <span className="text-sm capitalize">
+                    {quest.status || "active"}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Priority</span>
                 <div className="flex items-center gap-2">
-                  {getPriorityIcon(quest.priority || 'medium')}
-                  <span className="text-sm capitalize">{quest.priority || 'medium'}</span>
+                  {getPriorityIcon(quest.priority || "medium")}
+                  <span className="text-sm capitalize">
+                    {quest.priority || "medium"}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Type</span>
                 <div className="flex items-center gap-2">
-                  {getTypeIcon(quest.type || 'main')}
-                  <span className="text-sm capitalize">{quest.type || 'main'}</span>
+                  {getTypeIcon(quest.type || "main")}
+                  <span className="text-sm capitalize">
+                    {quest.type || "main"}
+                  </span>
                 </div>
               </div>
 
@@ -287,8 +319,13 @@ export default async function QuestPage({ params }: QuestPageProps) {
                 <div className="pt-2 border-t">
                   <span className="text-sm font-medium">Adventure</span>
                   <div className="mt-1">
-                    <Link href={`/campaigns/${campaignId}/adventures/${adventure.id}`}>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-base-200">
+                    <Link
+                      href={`/campaigns/${campaignId}/adventures/${adventure.id}`}
+                    >
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-base-200"
+                      >
                         {adventure.title}
                       </Badge>
                     </Link>

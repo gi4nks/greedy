@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { quests, wikiArticleEntities, wikiArticles } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { quests, wikiArticleEntities, wikiArticles } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 // GET /api/quests/[id] - Get quest with all assigned wiki entities
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const resolvedParams = await params;
@@ -19,7 +20,7 @@ export async function GET(
       .where(eq(quests.id, questId));
 
     if (!quest) {
-      return NextResponse.json({ error: 'Quest not found' }, { status: 404 });
+      return NextResponse.json({ error: "Quest not found" }, { status: 404 });
     }
 
     // Get assigned wiki entities
@@ -35,15 +36,23 @@ export async function GET(
         relationshipData: wikiArticleEntities.relationshipData,
       })
       .from(wikiArticleEntities)
-      .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
-      .where(sql`${wikiArticleEntities.entityType} = 'quest' AND ${wikiArticleEntities.entityId} = ${questId}`);
+      .innerJoin(
+        wikiArticles,
+        eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+      )
+      .where(
+        sql`${wikiArticleEntities.entityType} = 'quest' AND ${wikiArticleEntities.entityId} = ${questId}`,
+      );
 
     return NextResponse.json({
       ...quest,
       wikiEntities: wikiEntitiesResult,
     });
   } catch (error) {
-    console.error('Error fetching quest with wiki entities:', error);
-    return NextResponse.json({ error: 'Failed to fetch quest data' }, { status: 500 });
+    logger.error("Error fetching quest with wiki entities", error);
+    return NextResponse.json(
+      { error: "Failed to fetch quest data" },
+      { status: 500 },
+    );
   }
 }

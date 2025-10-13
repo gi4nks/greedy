@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { X, Filter } from 'lucide-react';
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { X, Filter } from "lucide-react";
 
 interface RelationshipFiltersProps {
   npcs: Array<{
@@ -30,7 +36,7 @@ interface RelationshipFiltersProps {
 export default function RelationshipFilters({
   npcs,
   playerCharacters,
-  currentFilters
+  currentFilters,
 }: RelationshipFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,7 +45,7 @@ export default function RelationshipFilters({
   const updateFilters = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
 
-    if (value && value !== 'all' && value !== 'none') {
+    if (value && value !== "all" && value !== "none") {
       params.set(key, value);
     } else {
       params.delete(key);
@@ -49,7 +55,7 @@ export default function RelationshipFilters({
   };
 
   const clearFilters = () => {
-    router.push('/relationships');
+    router.push("/relationships");
   };
 
   const hasFilters = Object.values(currentFilters).some(Boolean);
@@ -64,7 +70,7 @@ export default function RelationshipFilters({
           className="w-full"
         >
           <Filter className="w-4 h-4 mr-2" />
-          {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+          {showMobileFilters ? "Hide Filters" : "Show Filters"}
           {hasFilters && (
             <span className="ml-2 bg-primary text-primary-content rounded-full px-2 py-1 text-xs">
               {Object.values(currentFilters).filter(Boolean).length}
@@ -74,7 +80,7 @@ export default function RelationshipFilters({
       </div>
 
       {/* Filters Card */}
-      <Card className={`${showMobileFilters ? 'block' : 'hidden'} lg:block`}>
+      <Card className={`${showMobileFilters ? "block" : "hidden"} lg:block`}>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Filters
@@ -95,15 +101,15 @@ export default function RelationshipFilters({
             <label className="text-sm font-medium mb-2 block">NPC</label>
             <Select
               name="npcId"
-              value={currentFilters.npcId || ''}
-              onValueChange={(value) => updateFilters('npcId', value)}
+              value={currentFilters.npcId || ""}
+              onValueChange={(value) => updateFilters("npcId", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All NPCs" />
               </SelectTrigger>
               <SelectContent>
-                  <SelectItem value="all">All NPCs</SelectItem>
-                  {npcs.map((npc) => (
+                <SelectItem value="all">All NPCs</SelectItem>
+                {npcs.map((npc) => (
                   <SelectItem key={npc.id} value={npc.id.toString()}>
                     {npc.name}
                     {npc.race && ` (${npc.race})`}
@@ -114,11 +120,13 @@ export default function RelationshipFilters({
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Player Character</label>
+            <label className="text-sm font-medium mb-2 block">
+              Player Character
+            </label>
             <Select
               name="characterId"
-              value={currentFilters.characterId || ''}
-              onValueChange={(value) => updateFilters('characterId', value)}
+              value={currentFilters.characterId || ""}
+              onValueChange={(value) => updateFilters("characterId", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Characters" />
@@ -128,7 +136,9 @@ export default function RelationshipFilters({
                 {playerCharacters.map((pc) => (
                   <SelectItem key={pc.id} value={pc.id.toString()}>
                     {pc.name}
-                    {Array.isArray(pc.classes) && pc.classes.length > 0 && ` (${pc.classes.join(', ')})`}
+                    {Array.isArray(pc.classes) &&
+                      pc.classes.length > 0 &&
+                      ` (${pc.classes.join(", ")})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -136,11 +146,13 @@ export default function RelationshipFilters({
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Relationship Type</label>
+            <label className="text-sm font-medium mb-2 block">
+              Relationship Type
+            </label>
             <Select
               name="type"
-              value={currentFilters.type || ''}
-              onValueChange={(value) => updateFilters('type', value)}
+              value={currentFilters.type || ""}
+              onValueChange={(value) => updateFilters("type", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Types" />

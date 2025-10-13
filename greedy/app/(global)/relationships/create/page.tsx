@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
-import { db } from '@/lib/db';
-import { characters } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import RelationshipForm from '@/components/relationships/RelationshipForm';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { characters } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import RelationshipForm from "@/components/relationships/RelationshipForm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Force dynamic rendering to avoid database queries during build
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 async function getNpcs() {
   const npcs = await db
@@ -18,7 +18,7 @@ async function getNpcs() {
       level: characters.level,
     })
     .from(characters)
-    .where(eq(characters.characterType, 'npc'))
+    .where(eq(characters.characterType, "npc"))
     .orderBy(characters.name);
 
   return npcs;
@@ -34,7 +34,7 @@ async function getPlayerCharacters() {
       level: characters.level,
     })
     .from(characters)
-    .where(eq(characters.characterType, 'pc'))
+    .where(eq(characters.characterType, "pc"))
     .orderBy(characters.name);
 
   return pcs;
@@ -85,7 +85,8 @@ function RelationshipFormSkeleton() {
 // Generate metadata for SEO
 export async function generateMetadata() {
   return {
-    title: 'Create Relationship | Adventure Diary',
-    description: 'Create a new relationship between an NPC and player character',
+    title: "Create Relationship | Adventure Diary",
+    description:
+      "Create a new relationship between an NPC and player character",
   };
 }

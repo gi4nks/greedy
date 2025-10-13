@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   SUPPORTED_MAGIC_ITEM_ENTITY_TYPES,
   type AssignableEntityOption,
   type MagicItemAssignableEntity,
-} from '@/lib/magicItems/shared';
-import { cn } from '@/lib/utils';
-import { EyeOff, Plus, Save } from 'lucide-react';
+} from "@/lib/magicItems/shared";
+import { cn } from "@/lib/utils";
+import { EyeOff, Plus, Save } from "lucide-react";
 
 interface MagicItemAssignmentComposerProps {
   itemId: number;
@@ -24,10 +30,10 @@ interface MagicItemAssignmentComposerProps {
 }
 
 const ENTITY_LABELS: Record<MagicItemAssignableEntity, string> = {
-  character: 'Character',
-  location: 'Location',
-  adventure: 'Adventure',
-  session: 'Session',
+  character: "Character",
+  location: "Location",
+  adventure: "Adventure",
+  session: "Session",
 };
 
 interface FetchState {
@@ -42,20 +48,29 @@ const INITIAL_FETCH_STATE: FetchState = {
   results: [],
 };
 
-export function MagicItemAssignmentComposer({ itemId, existingAssignments, campaignOptions }: MagicItemAssignmentComposerProps) {
+export function MagicItemAssignmentComposer({
+  itemId,
+  existingAssignments,
+  campaignOptions,
+}: MagicItemAssignmentComposerProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [entityType, setEntityType] = useState<MagicItemAssignableEntity>('character');
-  const [campaignId, setCampaignId] = useState<string>('');
-  const [search, setSearch] = useState('');
+  const [entityType, setEntityType] =
+    useState<MagicItemAssignableEntity>("character");
+  const [campaignId, setCampaignId] = useState<string>("");
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<AssignableEntityOption[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [assignError, setAssignError] = useState<string | null>(null);
   const [isSubmitting, startTransition] = useTransition();
 
   const existingAssignmentKeys = useMemo(() => {
-    return new Set(existingAssignments.map((assignment) => `${assignment.entityType}:${assignment.entityId}`));
+    return new Set(
+      existingAssignments.map(
+        (assignment) => `${assignment.entityType}:${assignment.entityId}`,
+      ),
+    );
   }, [existingAssignments]);
 
   useEffect(() => {
@@ -83,21 +98,24 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
 
       try {
         const params = new URLSearchParams();
-        params.set('entityType', entityType);
+        params.set("entityType", entityType);
         if (debouncedSearch) {
-          params.set('search', debouncedSearch);
+          params.set("search", debouncedSearch);
         }
         if (campaignId) {
-          params.set('campaignId', campaignId);
+          params.set("campaignId", campaignId);
         }
-        params.set('limit', '20');
+        params.set("limit", "20");
 
-        const response = await fetch(`/api/magic-items/assignable?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/magic-items/assignable?${params.toString()}`,
+          {
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to load entities');
+          throw new Error("Failed to load entities");
         }
 
         const data = (await response.json()) as AssignableEntityOption[];
@@ -111,7 +129,11 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
           if (existingAssignmentKeys.has(key)) {
             return false;
           }
-          return !selected.some((selectedOption) => selectedOption.id === option.id && selectedOption.entityType === option.entityType);
+          return !selected.some(
+            (selectedOption) =>
+              selectedOption.id === option.id &&
+              selectedOption.entityType === option.entityType,
+          );
         });
 
         setFetchState({ isLoading: false, error: null, results: filtered });
@@ -120,12 +142,16 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
           return;
         }
 
-        if ((error as Error).name === 'AbortError') {
+        if ((error as Error).name === "AbortError") {
           return;
         }
 
-        console.error('Failed to fetch assignable entities', error);
-        setFetchState({ isLoading: false, error: 'Unable to load entities. Please try again.', results: [] });
+        console.error("Failed to fetch assignable entities", error);
+        setFetchState({
+          isLoading: false,
+          error: "Unable to load entities. Please try again.",
+          results: [],
+        });
       }
     }
 
@@ -135,7 +161,14 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
       isActive = false;
       controller.abort();
     };
-  }, [entityType, debouncedSearch, campaignId, isOpen, existingAssignmentKeys, selected]);
+  }, [
+    entityType,
+    debouncedSearch,
+    campaignId,
+    isOpen,
+    existingAssignmentKeys,
+    selected,
+  ]);
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -145,8 +178,8 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
   const resetForm = () => {
     setSelected([]);
     setAssignError(null);
-    setSearch('');
-    setDebouncedSearch('');
+    setSearch("");
+    setDebouncedSearch("");
   };
 
   const handleClose = () => {
@@ -155,22 +188,32 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
   };
 
   const handleEntityTypeChange = (value: string) => {
-    if (!SUPPORTED_MAGIC_ITEM_ENTITY_TYPES.includes(value as MagicItemAssignableEntity)) {
+    if (
+      !SUPPORTED_MAGIC_ITEM_ENTITY_TYPES.includes(
+        value as MagicItemAssignableEntity,
+      )
+    ) {
       return;
     }
 
     setEntityType(value as MagicItemAssignableEntity);
     setSelected([]);
-    setSearch('');
-    setDebouncedSearch('');
-    setCampaignId('');
+    setSearch("");
+    setDebouncedSearch("");
+    setCampaignId("");
   };
 
   const handleToggleSelection = (option: AssignableEntityOption) => {
     setSelected((prev) => {
-      const exists = prev.some((item) => item.id === option.id && item.entityType === option.entityType);
+      const exists = prev.some(
+        (item) =>
+          item.id === option.id && item.entityType === option.entityType,
+      );
       if (exists) {
-        return prev.filter((item) => !(item.id === option.id && item.entityType === option.entityType));
+        return prev.filter(
+          (item) =>
+            !(item.id === option.id && item.entityType === option.entityType),
+        );
       }
       return [...prev, option];
     });
@@ -178,67 +221,75 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
 
   const handleAssign = () => {
     if (!selected.length) {
-      setAssignError('Select at least one entity to assign this item.');
+      setAssignError("Select at least one entity to assign this item.");
       return;
     }
 
     startTransition(async () => {
       try {
         const response = await fetch(`/api/magic-items/${itemId}/assign`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             entityType,
-            entityIds: selected.map((item) => item.id)
+            entityIds: selected.map((item) => item.id),
           }),
         });
 
         if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(payload?.error ?? 'Failed to assign magic item.');
+          const payload = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(payload?.error ?? "Failed to assign magic item.");
         }
 
         handleClose();
         router.refresh();
       } catch (error) {
-        console.error('Failed to assign magic item', error);
-        setAssignError((error as Error).message || 'Failed to assign magic item.');
+        console.error("Failed to assign magic item", error);
+        setAssignError(
+          (error as Error).message || "Failed to assign magic item.",
+        );
       }
     });
   };
 
   const renderResult = (option: AssignableEntityOption) => {
-    const isSelected = selected.some((item) => item.id === option.id && item.entityType === option.entityType);
+    const isSelected = selected.some(
+      (item) => item.id === option.id && item.entityType === option.entityType,
+    );
     const description = option.description;
 
     return (
       <div
         key={`${option.entityType}-${option.id}`}
         className={cn(
-          'flex items-center justify-between gap-4 rounded-md border border-base-200 bg-base-100 p-3 text-sm transition',
-          isSelected && 'border-primary/70 bg-primary/5'
+          "flex items-center justify-between gap-4 rounded-md border border-base-200 bg-base-100 p-3 text-sm transition",
+          isSelected && "border-primary/70 bg-primary/5",
         )}
       >
         <div className="flex min-w-0 flex-col">
-          <span className="font-medium">
-            {option.name}
-          </span>
+          <span className="font-medium">{option.name}</span>
           <div className="flex flex-wrap gap-2 text-xs text-base-content/60">
-            <span className="capitalize">{ENTITY_LABELS[option.entityType]}</span>
-            {option.campaignTitle && <span>Campaign: {option.campaignTitle}</span>}
+            <span className="capitalize">
+              {ENTITY_LABELS[option.entityType]}
+            </span>
+            {option.campaignTitle && (
+              <span>Campaign: {option.campaignTitle}</span>
+            )}
             {description && <span className="truncate">{description}</span>}
           </div>
         </div>
         <Button
           type="button"
           size="sm"
-          variant={isSelected ? 'secondary' : 'outline'}
+          variant={isSelected ? "secondary" : "outline"}
           className="whitespace-nowrap"
           onClick={() => handleToggleSelection(option)}
         >
-          {isSelected ? 'Remove' : 'Select'}
+          {isSelected ? "Remove" : "Select"}
         </Button>
       </div>
     );
@@ -246,7 +297,12 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
 
   return (
     <>
-      <Button type="button" variant="primary" className="gap-2" onClick={handleOpen}>
+      <Button
+        type="button"
+        variant="primary"
+        className="gap-2"
+        onClick={handleOpen}
+      >
         <Plus className="w-4 h-4" />
         Assign
       </Button>
@@ -261,7 +317,12 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
                   Select one or more entities to receive this magic item.
                 </p>
               </div>
-              <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+              >
                 Close
               </Button>
             </div>
@@ -269,13 +330,21 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="assignment-entity-type">Entity type</Label>
-                <Select value={entityType} name="assignment-entity-type" onValueChange={handleEntityTypeChange}>
+                <Select
+                  value={entityType}
+                  name="assignment-entity-type"
+                  onValueChange={handleEntityTypeChange}
+                >
                   <SelectTrigger id="assignment-entity-type">
                     <SelectValue placeholder="Select entity type" />
                   </SelectTrigger>
                   <SelectContent>
                     {SUPPORTED_MAGIC_ITEM_ENTITY_TYPES.map((type) => (
-                      <SelectItem key={type} value={type} className="capitalize">
+                      <SelectItem
+                        key={type}
+                        value={type}
+                        className="capitalize"
+                      >
                         {ENTITY_LABELS[type]}
                       </SelectItem>
                     ))}
@@ -284,8 +353,14 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assignment-campaign-filter">Campaign filter</Label>
-                <Select value={campaignId} name="assignment-campaign-filter" onValueChange={setCampaignId}>
+                <Label htmlFor="assignment-campaign-filter">
+                  Campaign filter
+                </Label>
+                <Select
+                  value={campaignId}
+                  name="assignment-campaign-filter"
+                  onValueChange={setCampaignId}
+                >
                   <SelectTrigger id="assignment-campaign-filter">
                     <SelectValue placeholder="All campaigns" />
                   </SelectTrigger>
@@ -313,8 +388,12 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/60">Available entities</h3>
-                {fetchState.isLoading && <span className="text-xs text-base-content/60">Loading…</span>}
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+                  Available entities
+                </h3>
+                {fetchState.isLoading && (
+                  <span className="text-xs text-base-content/60">Loading…</span>
+                )}
               </div>
 
               {fetchState.error && (
@@ -323,9 +402,12 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
                 </div>
               )}
 
-              {!fetchState.isLoading && !fetchState.error && fetchState.results.length === 0 ? (
+              {!fetchState.isLoading &&
+              !fetchState.error &&
+              fetchState.results.length === 0 ? (
                 <div className="rounded-md border border-dashed border-base-300 p-4 text-sm text-base-content/60">
-                  No entities found. Adjust your filters or create the entity first.
+                  No entities found. Adjust your filters or create the entity
+                  first.
                 </div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -352,8 +434,12 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
                       <div className="flex min-w-0 flex-col">
                         <span className="font-medium">{option.name}</span>
                         <div className="flex flex-wrap gap-2 text-xs text-base-content/60">
-                          <span className="capitalize">{ENTITY_LABELS[option.entityType]}</span>
-                          {option.campaignTitle && <span>Campaign: {option.campaignTitle}</span>}
+                          <span className="capitalize">
+                            {ENTITY_LABELS[option.entityType]}
+                          </span>
+                          {option.campaignTitle && (
+                            <span>Campaign: {option.campaignTitle}</span>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -377,7 +463,6 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
             )}
 
             <div className="modal-action flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-              
               <Button
                 type="button"
                 variant="primary"
@@ -386,9 +471,15 @@ export function MagicItemAssignmentComposer({ itemId, existingAssignments, campa
                 disabled={isSubmitting || selected.length === 0}
               >
                 <Save className="w-4 h-4" />
-                {isSubmitting ? 'Assigning…' : 'Assign'}
+                {isSubmitting ? "Assigning…" : "Assign"}
               </Button>
-              <Button type="button" variant="neutral" className="gap-2" onClick={handleClose} disabled={isSubmitting}>
+              <Button
+                type="button"
+                variant="neutral"
+                className="gap-2"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
                 <EyeOff className="w-4 h-4" />
                 Cancel
               </Button>

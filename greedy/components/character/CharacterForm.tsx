@@ -1,26 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Character, Adventure, Campaign } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Save, Edit, Trash2, ChevronDown, ChevronUp, EyeOff } from 'lucide-react';
-import { createCharacter, updateCharacter } from '@/lib/actions/characters';
-import { ImageManager } from '@/components/ui/image-manager';
-import { ImageInfo, parseImagesJson } from '@/lib/utils/imageUtils.client';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Character, Adventure, Campaign } from "@/lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Plus,
+  X,
+  Save,
+  Edit,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  EyeOff,
+} from "lucide-react";
+import { createCharacter, updateCharacter } from "@/lib/actions/characters";
+import { ImageManager } from "@/components/ui/image-manager";
+import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { toast } from "sonner";
 
 interface CharacterFormProps {
-  character?: Character & { 
-    adventure?: Adventure | null; 
+  character?: Character & {
+    adventure?: Adventure | null;
     campaign?: Campaign | null;
     wikiSpells?: Array<{
       id: number;
@@ -66,7 +82,7 @@ interface CharacterFormProps {
   };
   campaignId: number;
   adventureId?: number;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
 }
 
 interface FormData {
@@ -74,7 +90,7 @@ interface FormData {
   race: string;
   experience: number;
   description: string;
-  characterType: 'player' | 'npc';
+  characterType: "player" | "npc";
   campaignId?: number;
   adventureId?: number;
   alignment: string;
@@ -117,7 +133,12 @@ interface FormData {
   images: ImageInfo[];
 }
 
-export default function CharacterForm({ character, campaignId, adventureId, mode }: CharacterFormProps) {
+export default function CharacterForm({
+  character,
+  campaignId,
+  adventureId,
+  mode,
+}: CharacterFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -125,9 +146,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
   // Item modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [itemFormData, setItemFormData] = useState<{ title: string; description: string }>({
-    title: '',
-    description: ''
+  const [itemFormData, setItemFormData] = useState<{
+    title: string;
+    description: string;
+  }>({
+    title: "",
+    description: "",
   });
 
   // Expanded items state
@@ -148,9 +172,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
   // Initialize form data
   const [formData, setFormData] = useState<FormData>(() => {
-    if (mode === 'edit' && character) {
+    if (mode === "edit" && character) {
       const parseJsonArray = (json: unknown): string[] => {
-        if (typeof json === 'string') {
+        if (typeof json === "string") {
           try {
             return JSON.parse(json);
           } catch {
@@ -160,8 +184,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
         return Array.isArray(json) ? json : [];
       };
 
-      const parseJsonObjectArray = (json: unknown): Array<{ name: string; type: string; description: string }> => {
-        if (typeof json === 'string') {
+      const parseJsonObjectArray = (
+        json: unknown,
+      ): Array<{ name: string; type: string; description: string }> => {
+        if (typeof json === "string") {
           try {
             const parsed = JSON.parse(json);
             return Array.isArray(parsed) ? parsed : [];
@@ -173,12 +199,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
       };
 
       return {
-        name: character.name || '',
-        race: character.race || '',
-        alignment: character.alignment || 'True Neutral',
+        name: character.name || "",
+        race: character.race || "",
+        alignment: character.alignment || "True Neutral",
         experience: character.experience || 0,
-        description: character.description || '',
-        characterType: (character.characterType === 'pc' ? 'player' : character.characterType as 'player' | 'npc') || 'player',
+        description: character.description || "",
+        characterType:
+          (character.characterType === "pc"
+            ? "player"
+            : (character.characterType as "player" | "npc")) || "player",
         campaignId: campaignId,
         adventureId: character.adventureId || adventureId,
 
@@ -194,11 +223,11 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
         armorClass: character.armorClass || 10,
         proficiencyBonus: character.proficiencyBonus || 2,
 
-        personalityTraits: character.personalityTraits || '',
-        ideals: character.ideals || '',
-        bonds: character.bonds || '',
-        flaws: character.flaws || '',
-        backstory: character.backstory || '',
+        personalityTraits: character.personalityTraits || "",
+        ideals: character.ideals || "",
+        bonds: character.bonds || "",
+        flaws: character.flaws || "",
+        backstory: character.backstory || "",
 
         equipment: parseJsonArray(character.equipment),
         weapons: parseJsonArray(character.weapons),
@@ -210,9 +239,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
         npcRelationships: parseJsonObjectArray(character.npcRelationships),
         classes: (() => {
           try {
-            const parsed = typeof character.classes === 'string' 
-              ? JSON.parse(character.classes) 
-              : character.classes;
+            const parsed =
+              typeof character.classes === "string"
+                ? JSON.parse(character.classes)
+                : character.classes;
             return Array.isArray(parsed) ? parsed : [];
           } catch {
             return [];
@@ -221,7 +251,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
         items: [],
 
-        spellcastingAbility: character.spellcastingAbility || '',
+        spellcastingAbility: character.spellcastingAbility || "",
         spellSaveDc: character.spellSaveDc || 0,
         spellAttackBonus: character.spellAttackBonus || 0,
         images: parseImagesJson(character.images),
@@ -229,12 +259,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
     }
 
     return {
-      name: '',
-      race: '',
-      alignment: 'True Neutral',
+      name: "",
+      race: "",
+      alignment: "True Neutral",
       experience: 0,
-      description: '',
-      characterType: 'player' as 'player' | 'npc',
+      description: "",
+      characterType: "player" as "player" | "npc",
       campaignId,
       adventureId,
 
@@ -250,11 +280,11 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
       armorClass: 10,
       proficiencyBonus: 2,
 
-      personalityTraits: '',
-      ideals: '',
-      bonds: '',
-      flaws: '',
-      backstory: '',
+      personalityTraits: "",
+      ideals: "",
+      bonds: "",
+      flaws: "",
+      backstory: "",
 
       equipment: [],
       weapons: [],
@@ -268,7 +298,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
       items: [],
 
-      spellcastingAbility: '',
+      spellcastingAbility: "",
       spellSaveDc: 0,
       spellAttackBonus: 0,
       images: [],
@@ -276,72 +306,103 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
   });
 
   // Wiki entities state - initialize from character prop
-  const [wikiSpells, setWikiSpells] = useState<Array<{
-    id: number;
-    name: string;
-    level: number;
-    school: string;
-    description: string;
-    isPrepared?: boolean;
-    isKnown?: boolean;
-  }>>(character?.wikiEntities?.filter(entity => entity.contentType === 'spell').map(spell => ({
-    id: spell.id,
-    name: spell.title,
-    level: (spell.parsedData as { level?: number })?.level || 0,
-    school: (spell.parsedData as { school?: string })?.school || 'common',
-    description: spell.description || '',  // Use description field (mapped from rawContent)
-    isPrepared: Boolean((spell.relationshipData as { isPrepared?: boolean })?.isPrepared),
-    isKnown: Boolean((spell.relationshipData as { isKnown?: boolean })?.isKnown)
-  })) || []);
+  const [wikiSpells, setWikiSpells] = useState<
+    Array<{
+      id: number;
+      name: string;
+      level: number;
+      school: string;
+      description: string;
+      isPrepared?: boolean;
+      isKnown?: boolean;
+    }>
+  >(
+    character?.wikiEntities
+      ?.filter((entity) => entity.contentType === "spell")
+      .map((spell) => ({
+        id: spell.id,
+        name: spell.title,
+        level: (spell.parsedData as { level?: number })?.level || 0,
+        school: (spell.parsedData as { school?: string })?.school || "common",
+        description: spell.description || "", // Use description field (mapped from rawContent)
+        isPrepared: Boolean(
+          (spell.relationshipData as { isPrepared?: boolean })?.isPrepared,
+        ),
+        isKnown: Boolean(
+          (spell.relationshipData as { isKnown?: boolean })?.isKnown,
+        ),
+      })) || [],
+  );
 
-  const [wikiMonsters, setWikiMonsters] = useState<Array<{
-    id: number;
-    name: string;
-    type: string;
-    challengeRating: string;
-    description: string;
-    relationshipType?: string;
-  }>>(character?.wikiEntities?.filter(entity => entity.contentType === 'monster').map(monster => ({
-    id: monster.id,
-    name: monster.title,
-    type: (monster.parsedData as { type?: string })?.type || 'monster',
-    challengeRating: (monster.parsedData as { challengeRating?: string })?.challengeRating || '',
-    description: monster.description || '',  // Use description field (mapped from rawContent)
-    relationshipType: monster.relationshipType
-  })) || []);
+  const [wikiMonsters, setWikiMonsters] = useState<
+    Array<{
+      id: number;
+      name: string;
+      type: string;
+      challengeRating: string;
+      description: string;
+      relationshipType?: string;
+    }>
+  >(
+    character?.wikiEntities
+      ?.filter((entity) => entity.contentType === "monster")
+      .map((monster) => ({
+        id: monster.id,
+        name: monster.title,
+        type: (monster.parsedData as { type?: string })?.type || "monster",
+        challengeRating:
+          (monster.parsedData as { challengeRating?: string })
+            ?.challengeRating || "",
+        description: monster.description || "", // Use description field (mapped from rawContent)
+        relationshipType: monster.relationshipType,
+      })) || [],
+  );
 
-  const [magicItems, setMagicItems] = useState<Array<{
-    id: number;
-    name: string;
-    rarity: string;
-    type: string;
-    description: string;
-  }>>(character?.wikiEntities?.filter(entity => entity.contentType === 'magic-item').map(item => ({
-    id: item.id,
-    name: item.title,
-    rarity: (item.parsedData as { rarity?: string })?.rarity || '',
-    type: (item.parsedData as { type?: string })?.type || '',
-    description: item.description || ''  // Use description field (mapped from rawContent)
-  })) || []);
+  const [magicItems, setMagicItems] = useState<
+    Array<{
+      id: number;
+      name: string;
+      rarity: string;
+      type: string;
+      description: string;
+    }>
+  >(
+    character?.wikiEntities
+      ?.filter((entity) => entity.contentType === "magic-item")
+      .map((item) => ({
+        id: item.id,
+        name: item.title,
+        rarity: (item.parsedData as { rarity?: string })?.rarity || "",
+        type: (item.parsedData as { type?: string })?.type || "",
+        description: item.description || "", // Use description field (mapped from rawContent)
+      })) || [],
+  );
 
-  const [otherWikiItems, setOtherWikiItems] = useState<Array<{
-    id: number;
-    name: string;
-    contentType: string;
-    description: string;
-  }>>(character?.wikiEntities?.filter(entity => 
-    !['spell', 'monster', 'magic-item'].includes(entity.contentType)
-  ).map(item => ({
-    id: item.id,
-    name: item.title,
-    contentType: item.contentType,
-    description: item.description || ''  // Use description field (mapped from rawContent)
-  })) || []);
+  const [otherWikiItems, setOtherWikiItems] = useState<
+    Array<{
+      id: number;
+      name: string;
+      contentType: string;
+      description: string;
+    }>
+  >(
+    character?.wikiEntities
+      ?.filter(
+        (entity) =>
+          !["spell", "monster", "magic-item"].includes(entity.contentType),
+      )
+      .map((item) => ({
+        id: item.id,
+        name: item.title,
+        contentType: item.contentType,
+        description: item.description || "", // Use description field (mapped from rawContent)
+      })) || [],
+  );
 
   const handleImagesChange = (images: ImageInfo[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images
+      images,
     }));
   };
 
@@ -354,11 +415,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
       const submitFormData = new FormData();
 
       // Map characterType from 'player'/'npc' to 'pc'/'npc'
-      const mappedCharacterType = formData.characterType === 'player' ? 'pc' : formData.characterType;
+      const mappedCharacterType =
+        formData.characterType === "player" ? "pc" : formData.characterType;
 
       // Add all form data to FormData object
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === 'characterType') {
+        if (key === "characterType") {
           submitFormData.append(key, mappedCharacterType);
         } else if (Array.isArray(value)) {
           submitFormData.append(key, JSON.stringify(value));
@@ -367,57 +429,107 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
         }
       });
 
-      if (mode === 'create') {
+      if (mode === "create") {
         const result = await createCharacter(submitFormData);
-        if (result?.errors) {
-          const errorMessages: Record<string, string> = {};
-          Object.entries(result.errors).forEach(([key, messages]) => {
-            if (Array.isArray(messages)) {
-              errorMessages[key] = messages[0] || 'Invalid value';
-            }
-          });
-          setErrors(errorMessages);
+        if (result?.success === false) {
+          if (result.errors) {
+            const errorMessages: Record<string, string> = {};
+            Object.entries(result.errors).forEach(([key, messages]) => {
+              if (Array.isArray(messages)) {
+                errorMessages[key] = messages[0] || "Invalid value";
+              }
+            });
+            setErrors(errorMessages);
+            toast.error(
+              "Failed to create character. Please check the form for errors.",
+            );
+          } else {
+            toast.error(result.message || "Failed to create character.");
+          }
           return;
         }
-        // Don't push here since the action handles redirect
-      } else if (mode === 'edit' && character) {
+        // Success - the action handles redirect, so we don't need to do anything
+        toast.success("Character created successfully!");
+      } else if (mode === "edit" && character) {
         const result = await updateCharacter(character.id, submitFormData);
-        if (result?.errors) {
-          const errorMessages: Record<string, string> = {};
-          Object.entries(result.errors).forEach(([key, messages]) => {
-            if (Array.isArray(messages)) {
-              errorMessages[key] = messages[0] || 'Invalid value';
-            }
-          });
-          setErrors(errorMessages);
+        if (result?.success === false) {
+          if (result.errors) {
+            const errorMessages: Record<string, string> = {};
+            Object.entries(result.errors).forEach(([key, messages]) => {
+              if (Array.isArray(messages)) {
+                errorMessages[key] = messages[0] || "Invalid value";
+              }
+            });
+            setErrors(errorMessages);
+            toast.error(
+              "Failed to update character. Please check the form for errors.",
+            );
+          } else {
+            toast.error(result.message || "Failed to update character.");
+          }
           return;
         }
+        toast.success("Character updated successfully!");
         router.push(`/campaigns/${campaignId}/characters`);
       }
     } catch (error) {
-      console.error('Error saving character:', error);
-      setErrors({ submit: 'Failed to save character. Please try again.' });
+      console.error("Error saving character:", error);
+      setErrors({ submit: "Failed to save character. Please try again." });
+      toast.error("Failed to save character. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateFormData = (field: keyof FormData, value: string | number | string[] | Array<{ name: string; type: string; description: string }> | Array<{ name: string; level: number }> | Array<{ title: string; description: string }>) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateFormData = (
+    field: keyof FormData,
+    value:
+      | string
+      | number
+      | string[]
+      | Array<{ name: string; type: string; description: string }>
+      | Array<{ name: string; level: number }>
+      | Array<{ title: string; description: string }>,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addToArray = (field: 'equipment' | 'weapons' | 'skills' | 'savingThrows' | 'spells' | 'tags', value: string) => {
+  const addToArray = (
+    field:
+      | "equipment"
+      | "weapons"
+      | "skills"
+      | "savingThrows"
+      | "spells"
+      | "tags",
+    value: string,
+  ) => {
     if (value.trim() && !formData[field].includes(value.trim())) {
       updateFormData(field, [...formData[field], value.trim()]);
     }
   };
 
-  const removeFromArray = (field: 'equipment' | 'weapons' | 'skills' | 'savingThrows' | 'spells' | 'tags', index: number) => {
-    updateFormData(field, formData[field].filter((_, i) => i !== index));
+  const removeFromArray = (
+    field:
+      | "equipment"
+      | "weapons"
+      | "skills"
+      | "savingThrows"
+      | "spells"
+      | "tags",
+    index: number,
+  ) => {
+    updateFormData(
+      field,
+      formData[field].filter((_, i) => i !== index),
+    );
   };
 
   const removeItem = (index: number) => {
-    updateFormData('items', formData.items.filter((_, i) => i !== index));
+    updateFormData(
+      "items",
+      formData.items.filter((_, i) => i !== index),
+    );
   };
 
   const openItemModal = (index?: number) => {
@@ -426,7 +538,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
       setItemFormData(formData.items[index]);
     } else {
       setEditingItemIndex(null);
-      setItemFormData({ title: '', description: '' });
+      setItemFormData({ title: "", description: "" });
     }
     setIsItemModalOpen(true);
   };
@@ -434,53 +546,67 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
   const closeItemModal = () => {
     setIsItemModalOpen(false);
     setEditingItemIndex(null);
-    setItemFormData({ title: '', description: '' });
+    setItemFormData({ title: "", description: "" });
   };
 
   const saveItem = () => {
     if (editingItemIndex !== null) {
       // Edit existing item
       const updated = formData.items.map((item, i) =>
-        i === editingItemIndex ? itemFormData : item
+        i === editingItemIndex ? itemFormData : item,
       );
-      updateFormData('items', updated);
+      updateFormData("items", updated);
     } else {
       // Add new item
-      updateFormData('items', [...formData.items, itemFormData]);
+      updateFormData("items", [...formData.items, itemFormData]);
     }
     closeItemModal();
   };
 
   const addRelationship = () => {
-    updateFormData('npcRelationships', [...formData.npcRelationships, { name: '', type: '', description: '' }]);
+    updateFormData("npcRelationships", [
+      ...formData.npcRelationships,
+      { name: "", type: "", description: "" },
+    ]);
   };
 
-  const updateRelationship = (index: number, field: 'name' | 'type' | 'description', value: string) => {
+  const updateRelationship = (
+    index: number,
+    field: "name" | "type" | "description",
+    value: string,
+  ) => {
     const updated = formData.npcRelationships.map((rel, i) =>
-      i === index ? { ...rel, [field]: value } : rel
+      i === index ? { ...rel, [field]: value } : rel,
     );
-    updateFormData('npcRelationships', updated);
+    updateFormData("npcRelationships", updated);
   };
 
   const removeRelationship = (index: number) => {
-    updateFormData('npcRelationships', formData.npcRelationships.filter((_, i) => i !== index));
+    updateFormData(
+      "npcRelationships",
+      formData.npcRelationships.filter((_, i) => i !== index),
+    );
   };
 
   const removeWikiItem = async (wikiArticleId: number, contentType: string) => {
     const itemKey = `${contentType}-${wikiArticleId}`;
-    
+
     // Prevent multiple simultaneous removals of the same item
     if (removingItems.has(itemKey)) {
       return;
     }
 
-    setRemovingItems(prev => new Set(prev).add(itemKey));
+    setRemovingItems((prev) => new Set(prev).add(itemKey));
 
-    console.log('removeWikiItem called:', { wikiArticleId, contentType, characterId: character?.id });
+    console.log("removeWikiItem called:", {
+      wikiArticleId,
+      contentType,
+      characterId: character?.id,
+    });
 
     if (!character?.id) {
-      console.error('Character ID is undefined');
-      setRemovingItems(prev => {
+      console.error("Character ID is undefined");
+      setRemovingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(itemKey);
         return newSet;
@@ -489,27 +615,30 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
     }
 
     try {
-      const response = await fetch(`/api/wiki-articles/${wikiArticleId}/entities`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/wiki-articles/${wikiArticleId}/entities`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entityType: "character",
+            entityId: character.id,
+          }),
         },
-        body: JSON.stringify({
-          entityType: 'character',
-          entityId: character.id,
-        }),
-      });
+      );
 
-      console.log('API response status:', response.status);
-      console.log('API response ok:', response.ok);
+      console.log("API response status:", response.status);
+      console.log("API response ok:", response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error response:', errorText);
-        
+        console.error("API error response:", errorText);
+
         // Treat 404 as success (item already removed)
         if (response.status === 404) {
-          console.log('Item already removed (404), treating as success');
+          console.log("Item already removed (404), treating as success");
         } else {
           throw new Error(`Failed to remove wiki item: ${errorText}`);
         }
@@ -517,25 +646,33 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
       const result = response.ok ? await response.json() : null;
       if (result) {
-        console.log('API success result:', result);
+        console.log("API success result:", result);
       }
 
       // Update local state based on content type
-      if (contentType === 'spell') {
-        setWikiSpells(prev => prev.filter(spell => spell.id !== wikiArticleId));
-      } else if (contentType === 'monster') {
-        setWikiMonsters(prev => prev.filter(monster => monster.id !== wikiArticleId));
-      } else if (contentType === 'magic-item') {
-        setMagicItems(prev => prev.filter(item => item.id !== wikiArticleId));
+      if (contentType === "spell") {
+        setWikiSpells((prev) =>
+          prev.filter((spell) => spell.id !== wikiArticleId),
+        );
+      } else if (contentType === "monster") {
+        setWikiMonsters((prev) =>
+          prev.filter((monster) => monster.id !== wikiArticleId),
+        );
+      } else if (contentType === "magic-item") {
+        setMagicItems((prev) =>
+          prev.filter((item) => item.id !== wikiArticleId),
+        );
       } else {
         // Handle other content types
-        setOtherWikiItems(prev => prev.filter(item => item.id !== wikiArticleId));
+        setOtherWikiItems((prev) =>
+          prev.filter((item) => item.id !== wikiArticleId),
+        );
       }
     } catch (error) {
-      console.error('Error removing wiki item:', error);
-      // Could add toast notification here
+      console.error("Error removing wiki item:", error);
+      toast.error("Failed to remove wiki item. Please try again.");
     } finally {
-      setRemovingItems(prev => {
+      setRemovingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(itemKey);
         return newSet;
@@ -547,7 +684,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">
-          {mode === 'create' ? 'Create New Character' : 'Edit Character'}
+          {mode === "create" ? "Create New Character" : "Edit Character"}
         </h1>
       </div>
 
@@ -576,13 +713,24 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('name', e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData("name", e.target.value)
+                      }
                       required
                     />
                   </div>
                   <div>
                     <Label htmlFor="characterType">Type</Label>
-                    <Select defaultValue={formData.characterType} name="characterType" onValueChange={(value) => updateFormData('characterType', value as 'player' | 'npc')}>
+                    <Select
+                      defaultValue={formData.characterType}
+                      name="characterType"
+                      onValueChange={(value) =>
+                        updateFormData(
+                          "characterType",
+                          value as "player" | "npc",
+                        )
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -600,25 +748,47 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     <Input
                       id="race"
                       value={formData.race}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('race', e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData("race", e.target.value)
+                      }
                     />
                   </div>
                   <div>
                     <Label htmlFor="alignment">Alignment</Label>
-                    <Select value={formData.alignment} name="alignment" onValueChange={(value) => updateFormData('alignment', value)}>
+                    <Select
+                      value={formData.alignment}
+                      name="alignment"
+                      onValueChange={(value) =>
+                        updateFormData("alignment", value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Lawful Good">Lawful Good</SelectItem>
-                        <SelectItem value="Neutral Good">Neutral Good</SelectItem>
-                        <SelectItem value="Chaotic Good">Chaotic Good</SelectItem>
-                        <SelectItem value="Lawful Neutral">Lawful Neutral</SelectItem>
-                        <SelectItem value="True Neutral">True Neutral</SelectItem>
-                        <SelectItem value="Chaotic Neutral">Chaotic Neutral</SelectItem>
+                        <SelectItem value="Neutral Good">
+                          Neutral Good
+                        </SelectItem>
+                        <SelectItem value="Chaotic Good">
+                          Chaotic Good
+                        </SelectItem>
+                        <SelectItem value="Lawful Neutral">
+                          Lawful Neutral
+                        </SelectItem>
+                        <SelectItem value="True Neutral">
+                          True Neutral
+                        </SelectItem>
+                        <SelectItem value="Chaotic Neutral">
+                          Chaotic Neutral
+                        </SelectItem>
                         <SelectItem value="Lawful Evil">Lawful Evil</SelectItem>
-                        <SelectItem value="Neutral Evil">Neutral Evil</SelectItem>
-                        <SelectItem value="Chaotic Evil">Chaotic Evil</SelectItem>
+                        <SelectItem value="Neutral Evil">
+                          Neutral Evil
+                        </SelectItem>
+                        <SelectItem value="Chaotic Evil">
+                          Chaotic Evil
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -632,10 +802,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                         <Input
                           placeholder="Class name"
                           value={classInfo.name}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>,
+                          ) => {
                             const updated = [...formData.classes];
-                            updated[index] = { ...updated[index], name: e.target.value };
-                            updateFormData('classes', updated);
+                            updated[index] = {
+                              ...updated[index],
+                              name: e.target.value,
+                            };
+                            updateFormData("classes", updated);
                           }}
                           className="flex-1"
                         />
@@ -645,10 +820,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                           max="20"
                           placeholder="Level"
                           value={classInfo.level}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>,
+                          ) => {
                             const updated = [...formData.classes];
-                            updated[index] = { ...updated[index], level: parseInt(e.target.value) || 1 };
-                            updateFormData('classes', updated);
+                            updated[index] = {
+                              ...updated[index],
+                              level: parseInt(e.target.value) || 1,
+                            };
+                            updateFormData("classes", updated);
                           }}
                           className="w-24"
                         />
@@ -657,8 +837,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const updated = formData.classes.filter((_, i) => i !== index);
-                            updateFormData('classes', updated);
+                            const updated = formData.classes.filter(
+                              (_, i) => i !== index,
+                            );
+                            updateFormData("classes", updated);
                           }}
                         >
                           <X className="w-4 h-4" />
@@ -670,7 +852,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        updateFormData('classes', [...formData.classes, { name: '', level: 1 }]);
+                        updateFormData("classes", [
+                          ...formData.classes,
+                          { name: "", level: 1 },
+                        ]);
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -686,7 +871,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     type="number"
                     min="0"
                     value={formData.experience}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('experience', parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      updateFormData(
+                        "experience",
+                        parseInt(e.target.value) || 0,
+                      )
+                    }
                   />
                 </div>
 
@@ -695,7 +885,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('description', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("description", e.target.value)
+                    }
                     rows={3}
                   />
                 </div>
@@ -711,12 +903,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    { key: 'strength', label: 'Strength' },
-                    { key: 'dexterity', label: 'Dexterity' },
-                    { key: 'constitution', label: 'Constitution' },
-                    { key: 'intelligence', label: 'Intelligence' },
-                    { key: 'wisdom', label: 'Wisdom' },
-                    { key: 'charisma', label: 'Charisma' },
+                    { key: "strength", label: "Strength" },
+                    { key: "dexterity", label: "Dexterity" },
+                    { key: "constitution", label: "Constitution" },
+                    { key: "intelligence", label: "Intelligence" },
+                    { key: "wisdom", label: "Wisdom" },
+                    { key: "charisma", label: "Charisma" },
                   ].map(({ key, label }) => (
                     <div key={key}>
                       <Label htmlFor={key}>{label}</Label>
@@ -725,8 +917,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                         type="number"
                         min="1"
                         max="30"
-                        value={(formData[key as keyof FormData] as number) || 10}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData(key as keyof FormData, parseInt(e.target.value) || 10)}
+                        value={
+                          (formData[key as keyof FormData] as number) || 10
+                        }
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateFormData(
+                            key as keyof FormData,
+                            parseInt(e.target.value) || 10,
+                          )
+                        }
                       />
                     </div>
                   ))}
@@ -749,7 +948,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       type="number"
                       min="0"
                       value={formData.hitPoints}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('hitPoints', parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData(
+                          "hitPoints",
+                          parseInt(e.target.value) || 0,
+                        )
+                      }
                     />
                   </div>
                   <div>
@@ -759,7 +963,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       type="number"
                       min="0"
                       value={formData.maxHitPoints}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('maxHitPoints', parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData(
+                          "maxHitPoints",
+                          parseInt(e.target.value) || 0,
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -772,7 +981,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       type="number"
                       min="0"
                       value={formData.armorClass}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('armorClass', parseInt(e.target.value) || 10)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData(
+                          "armorClass",
+                          parseInt(e.target.value) || 10,
+                        )
+                      }
                     />
                   </div>
                   <div>
@@ -782,7 +996,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       type="number"
                       min="0"
                       value={formData.proficiencyBonus}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFormData('proficiencyBonus', parseInt(e.target.value) || 2)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        updateFormData(
+                          "proficiencyBonus",
+                          parseInt(e.target.value) || 2,
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -800,10 +1019,13 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     <Input
                       placeholder="Add skill..."
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.preventDefault();
-                          addToArray('skills', (e.target as HTMLInputElement).value);
-                          (e.target as HTMLInputElement).value = '';
+                          addToArray(
+                            "skills",
+                            (e.target as HTMLInputElement).value,
+                          );
+                          (e.target as HTMLInputElement).value = "";
                         }
                       }}
                     />
@@ -812,9 +1034,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       variant="outline"
                       size="sm"
                       onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        addToArray('skills', input.value);
-                        input.value = '';
+                        const input = e.currentTarget
+                          .previousElementSibling as HTMLInputElement;
+                        addToArray("skills", input.value);
+                        input.value = "";
                       }}
                     >
                       <Plus className="w-4 h-4" />
@@ -822,11 +1045,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {formData.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
                         {skill}
                         <X
                           className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeFromArray('skills', index)}
+                          onClick={() => removeFromArray("skills", index)}
                         />
                       </Badge>
                     ))}
@@ -847,7 +1074,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="personalityTraits"
                     value={formData.personalityTraits}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('personalityTraits', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("personalityTraits", e.target.value)
+                    }
                     rows={3}
                   />
                 </div>
@@ -857,7 +1086,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="ideals"
                     value={formData.ideals}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('ideals', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("ideals", e.target.value)
+                    }
                     rows={3}
                   />
                 </div>
@@ -867,7 +1098,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="bonds"
                     value={formData.bonds}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('bonds', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("bonds", e.target.value)
+                    }
                     rows={3}
                   />
                 </div>
@@ -877,7 +1110,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="flaws"
                     value={formData.flaws}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('flaws', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("flaws", e.target.value)
+                    }
                     rows={3}
                   />
                 </div>
@@ -887,7 +1122,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   <Textarea
                     id="backstory"
                     value={formData.backstory}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('backstory', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      updateFormData("backstory", e.target.value)
+                    }
                     rows={5}
                   />
                 </div>
@@ -916,18 +1153,24 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       <Input
                         placeholder="Name"
                         value={relationship.name}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRelationship(index, 'name', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateRelationship(index, "name", e.target.value)
+                        }
                       />
                       <Input
                         placeholder="Type (e.g., friend, enemy, ally)"
                         value={relationship.type}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRelationship(index, 'type', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateRelationship(index, "type", e.target.value)
+                        }
                       />
                     </div>
                     <Textarea
                       placeholder="Description"
                       value={relationship.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateRelationship(index, 'description', e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        updateRelationship(index, "description", e.target.value)
+                      }
                       rows={2}
                     />
                   </div>
@@ -954,7 +1197,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                 {formData.items.map((item, index) => (
                   <div key={index} className="border rounded p-4 space-y-2">
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium">{item.title || `Item ${index + 1}`}</h4>
+                      <h4 className="font-medium">
+                        {item.title || `Item ${index + 1}`}
+                      </h4>
                       <div className="flex gap-2">
                         <Button
                           type="button"
@@ -992,7 +1237,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-purple-600">💎 Magic Items from Wiki</CardTitle>
+                <CardTitle className="text-purple-600">
+                  💎 Magic Items from Wiki
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {magicItems.length > 0 ? (
@@ -1001,13 +1248,18 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       const itemId = `magic-${item.id}`;
                       const isExpanded = expandedItems.has(itemId);
                       return (
-                        <div key={item.id} className="border border-purple-200 bg-purple-50 rounded-lg">
+                        <div
+                          key={item.id}
+                          className="border border-purple-200 bg-purple-50 rounded-lg"
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div
                               className="flex items-center gap-2 p-3 cursor-pointer hover:bg-purple-100 transition-colors flex-1"
                               onClick={() => toggleExpanded(itemId)}
                             >
-                              <h4 className="font-semibold text-purple-800">{item.name}</h4>
+                              <h4 className="font-semibold text-purple-800">
+                                {item.name}
+                              </h4>
                               <div className="flex items-center gap-2">
                                 <span className="text-sm bg-purple-100 text-purple-700 px-2 py-1 rounded">
                                   {item.rarity}
@@ -1024,8 +1276,12 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                               variant="neutral"
                               className="gap-2 mr-3 mt-3"
                               size="sm"
-                              onClick={() => removeWikiItem(item.id, 'magic-item')}
-                              disabled={removingItems.has(`magic-item-${item.id}`)}
+                              onClick={() =>
+                                removeWikiItem(item.id, "magic-item")
+                              }
+                              disabled={removingItems.has(
+                                `magic-item-${item.id}`,
+                              )}
                             >
                               <Trash2 className="w-4 h-4" />
                               Delete
@@ -1038,7 +1294,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                           </div>
                           {isExpanded && item.description && (
                             <div className="px-3 pb-3">
-                              <MarkdownRenderer content={item.description} className="prose-sm" />
+                              <MarkdownRenderer
+                                content={item.description}
+                                className="prose-sm"
+                              />
                             </div>
                           )}
                         </div>
@@ -1046,7 +1305,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     })}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No magic items assigned from wiki imports</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No magic items assigned from wiki imports
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -1073,10 +1334,13 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     <Input
                       placeholder="Add spell..."
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.preventDefault();
-                          addToArray('spells', (e.target as HTMLInputElement).value);
-                          (e.target as HTMLInputElement).value = '';
+                          addToArray(
+                            "spells",
+                            (e.target as HTMLInputElement).value,
+                          );
+                          (e.target as HTMLInputElement).value = "";
                         }
                       }}
                     />
@@ -1085,9 +1349,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       variant="outline"
                       size="sm"
                       onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        addToArray('spells', input.value);
-                        input.value = '';
+                        const input = e.currentTarget
+                          .previousElementSibling as HTMLInputElement;
+                        addToArray("spells", input.value);
+                        input.value = "";
                       }}
                     >
                       <Plus className="w-4 h-4" />
@@ -1095,11 +1360,15 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {formData.spells.map((spell, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
                         {spell}
                         <X
                           className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeFromArray('spells', index)}
+                          onClick={() => removeFromArray("spells", index)}
                         />
                       </Badge>
                     ))}
@@ -1110,7 +1379,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-blue-600">📚 Spells from Wiki</CardTitle>
+                <CardTitle className="text-blue-600">
+                  📚 Spells from Wiki
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {wikiSpells.length > 0 ? (
@@ -1119,13 +1390,18 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                       const itemId = `spell-${spell.id}`;
                       const isExpanded = expandedItems.has(itemId);
                       return (
-                        <div key={spell.id} className="border border-blue-200 bg-blue-50 rounded-lg">
+                        <div
+                          key={spell.id}
+                          className="border border-blue-200 bg-blue-50 rounded-lg"
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div
                               className="flex items-center gap-2 p-3 cursor-pointer hover:bg-blue-100 transition-colors flex-1"
                               onClick={() => toggleExpanded(itemId)}
                             >
-                              <h4 className="font-semibold text-blue-800">{spell.name}</h4>
+                              <h4 className="font-semibold text-blue-800">
+                                {spell.name}
+                              </h4>
                               <div className="flex items-center gap-2">
                                 <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
                                   Level {spell.level}
@@ -1142,7 +1418,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                               variant="neutral"
                               className="gap-2 mr-3 mt-3"
                               size="sm"
-                              onClick={() => removeWikiItem(spell.id, 'spell')}
+                              onClick={() => removeWikiItem(spell.id, "spell")}
                               disabled={removingItems.has(`spell-${spell.id}`)}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1156,7 +1432,10 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                           </div>
                           {isExpanded && spell.description && (
                             <div className="px-3 pb-3">
-                              <MarkdownRenderer content={spell.description} className="prose-sm" />
+                              <MarkdownRenderer
+                                content={spell.description}
+                                className="prose-sm"
+                              />
                             </div>
                           )}
                         </div>
@@ -1164,7 +1443,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                     })}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No spells assigned from wiki imports</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No spells assigned from wiki imports
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -1174,46 +1455,52 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
             {(() => {
               // Combine all wiki entities from local state for the WikiEntitiesDisplay
               const allWikiEntities = [
-                ...wikiSpells.map(spell => ({
+                ...wikiSpells.map((spell) => ({
                   id: spell.id,
                   title: spell.name,
-                  contentType: 'spell' as const,
+                  contentType: "spell" as const,
                   wikiUrl: undefined,
                   description: spell.description,
                   parsedData: { level: spell.level, school: spell.school },
-                  relationshipType: 'prepared' as const,
-                  relationshipData: { isPrepared: spell.isPrepared, isKnown: spell.isKnown }
+                  relationshipType: "prepared" as const,
+                  relationshipData: {
+                    isPrepared: spell.isPrepared,
+                    isKnown: spell.isKnown,
+                  },
                 })),
-                ...wikiMonsters.map(monster => ({
+                ...wikiMonsters.map((monster) => ({
                   id: monster.id,
                   title: monster.name,
-                  contentType: 'monster' as const,
+                  contentType: "monster" as const,
                   wikiUrl: undefined,
                   description: monster.description,
-                  parsedData: { type: monster.type, challengeRating: monster.challengeRating },
+                  parsedData: {
+                    type: monster.type,
+                    challengeRating: monster.challengeRating,
+                  },
                   relationshipType: monster.relationshipType,
-                  relationshipData: {}
+                  relationshipData: {},
                 })),
-                ...magicItems.map(item => ({
+                ...magicItems.map((item) => ({
                   id: item.id,
                   title: item.name,
-                  contentType: 'magic-item' as const,
+                  contentType: "magic-item" as const,
                   wikiUrl: undefined,
                   description: item.description,
                   parsedData: { rarity: item.rarity, type: item.type },
-                  relationshipType: 'owned' as const,
-                  relationshipData: {}
+                  relationshipType: "owned" as const,
+                  relationshipData: {},
                 })),
-                ...otherWikiItems.map(item => ({
+                ...otherWikiItems.map((item) => ({
                   id: item.id,
                   title: item.name,
-                  contentType: item.contentType as 'other',
+                  contentType: item.contentType as "other",
                   wikiUrl: undefined,
                   description: item.description,
                   parsedData: {},
                   relationshipType: undefined,
-                  relationshipData: {}
-                }))
+                  relationshipData: {},
+                })),
               ];
 
               return allWikiEntities.length > 0 ? (
@@ -1229,7 +1516,9 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
               ) : (
                 <div className="text-center text-gray-500 py-8">
                   <p>No wiki entities assigned to this character.</p>
-                  <p>Use the Wiki Import page to add entities to this character.</p>
+                  <p>
+                    Use the Wiki Import page to add entities to this character.
+                  </p>
                 </div>
               );
             })()}
@@ -1243,7 +1532,11 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
         <div className="flex justify-end gap-4">
           <Button type="submit" disabled={isSubmitting} variant="primary">
             <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
+            {isSubmitting
+              ? "Saving..."
+              : mode === "create"
+                ? "Create"
+                : "Update"}
           </Button>
           <Button
             type="button"
@@ -1260,17 +1553,17 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
 
       {/* Item Modal */}
       {isItemModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={closeItemModal}
         >
-          <div 
+          <div
             className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                {editingItemIndex !== null ? 'Edit Item' : 'Add New Item'}
+                {editingItemIndex !== null ? "Edit Item" : "Add New Item"}
               </h3>
               <Button
                 type="button"
@@ -1281,30 +1574,40 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="itemTitle">Title</Label>
                 <Input
                   id="itemTitle"
                   value={itemFormData.title}
-                  onChange={(e) => setItemFormData(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) =>
+                    setItemFormData((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
                   placeholder="Enter item title"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="itemDescription">Description</Label>
                 <Textarea
                   id="itemDescription"
                   value={itemFormData.description}
-                  onChange={(e) => setItemFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setItemFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Enter item description"
                   rows={4}
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 type="button"
@@ -1320,7 +1623,7 @@ export default function CharacterForm({ character, campaignId, adventureId, mode
                 onClick={saveItem}
                 disabled={!itemFormData.title.trim()}
               >
-                {editingItemIndex !== null ? 'Update Item' : 'Add Item'}
+                {editingItemIndex !== null ? "Update Item" : "Add Item"}
               </Button>
             </div>
           </div>

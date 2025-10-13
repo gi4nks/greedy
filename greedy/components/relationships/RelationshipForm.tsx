@@ -1,14 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Save, EyeOff } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Save, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 interface Relationship {
   id: number;
@@ -39,7 +46,7 @@ interface RelationshipFormProps {
     classes: unknown;
     level: number | null;
   }>;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   relationship?: Relationship;
 }
 
@@ -60,37 +67,36 @@ export default function RelationshipForm({
   npcs,
   playerCharacters,
   mode,
-  relationship
+  relationship,
 }: RelationshipFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<FormData>(() => {
-    if (mode === 'edit' && relationship) {
+    if (mode === "edit" && relationship) {
       return {
-        npcId: relationship.npcId?.toString() || '',
-        characterId: relationship.characterId?.toString() || '',
-        relationshipType: relationship.relationshipType || 'neutral',
+        npcId: relationship.npcId?.toString() || "",
+        characterId: relationship.characterId?.toString() || "",
+        relationshipType: relationship.relationshipType || "neutral",
         strength: relationship.strength || 50,
         trust: relationship.trust || 50,
         fear: relationship.fear || 0,
         respect: relationship.respect || 50,
-        description: relationship.notes || '',
+        description: relationship.notes || "",
         isMutual: relationship.isMutual ?? true,
         discoveredByPlayers: relationship.discoveredByPlayers ?? false,
       };
     }
 
     return {
-      npcId: '',
-      characterId: '',
-      relationshipType: 'neutral',
+      npcId: "",
+      characterId: "",
+      relationshipType: "neutral",
       strength: 50,
       trust: 50,
       fear: 0,
       respect: 50,
-      description: '',
+      description: "",
       isMutual: true,
       discoveredByPlayers: false,
     };
@@ -99,12 +105,11 @@ export default function RelationshipForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrors({});
 
     try {
       const payload = {
         target_id: parseInt(formData.characterId),
-        target_type: 'character',
+        target_type: "character",
         relationship_type: formData.relationshipType,
         strength: formData.strength,
         trust: formData.trust,
@@ -115,48 +120,57 @@ export default function RelationshipForm({
         discovered_by_players: formData.discoveredByPlayers,
       };
 
-      const url = mode === 'create'
-        ? `/api/relationships/npcs/${formData.npcId}/relationships`
-        : `/api/relationships/${relationship?.id}`;
+      const url =
+        mode === "create"
+          ? `/api/relationships/npcs/${formData.npcId}/relationships`
+          : `/api/relationships/${relationship?.id}`;
 
-      const method = mode === 'create' ? 'POST' : 'PUT';
+      const method = mode === "create" ? "POST" : "PUT";
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save relationship');
+        throw new Error(errorData.error || "Failed to save relationship");
       }
 
-      router.push('/relationships');
+      toast.success(
+        `Relationship ${mode === "create" ? "created" : "updated"} successfully!`,
+      );
+      router.push("/relationships");
     } catch (error) {
-      console.error('Error saving relationship:', error);
-      setErrors({
-        submit: error instanceof Error ? error.message : 'Failed to save relationship. Please try again.'
-      });
+      console.error("Error saving relationship:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save relationship. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateFormData = (field: keyof FormData, value: string | number | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateFormData = (
+    field: keyof FormData,
+    value: string | number | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const relationshipTypes = [
-    { value: 'ally', label: 'Ally' },
-    { value: 'enemy', label: 'Enemy' },
-    { value: 'neutral', label: 'Neutral' },
-    { value: 'romantic', label: 'Romantic' },
-    { value: 'family', label: 'Family' },
-    { value: 'friend', label: 'Friend' },
-    { value: 'rival', label: 'Rival' },
+    { value: "ally", label: "Ally" },
+    { value: "enemy", label: "Enemy" },
+    { value: "neutral", label: "Neutral" },
+    { value: "romantic", label: "Romantic" },
+    { value: "family", label: "Family" },
+    { value: "friend", label: "Friend" },
+    { value: "rival", label: "Rival" },
   ];
 
   return (
@@ -172,7 +186,7 @@ export default function RelationshipForm({
               <Select
                 name="npcId"
                 value={formData.npcId}
-                onValueChange={(value) => updateFormData('npcId', value)}
+                onValueChange={(value) => updateFormData("npcId", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select NPC" />
@@ -182,7 +196,9 @@ export default function RelationshipForm({
                     <SelectItem key={npc.id} value={npc.id.toString()}>
                       {npc.name}
                       {npc.race && ` (${npc.race})`}
-                      {Array.isArray(npc.classes) && npc.classes.length > 0 && ` - ${npc.classes.join(', ')}`}
+                      {Array.isArray(npc.classes) &&
+                        npc.classes.length > 0 &&
+                        ` - ${npc.classes.join(", ")}`}
                       {npc.level && ` Lvl ${npc.level}`}
                     </SelectItem>
                   ))}
@@ -195,7 +211,7 @@ export default function RelationshipForm({
               <Select
                 name="characterId"
                 value={formData.characterId}
-                onValueChange={(value) => updateFormData('characterId', value)}
+                onValueChange={(value) => updateFormData("characterId", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Character" />
@@ -204,7 +220,9 @@ export default function RelationshipForm({
                   {playerCharacters.map((pc) => (
                     <SelectItem key={pc.id} value={pc.id.toString()}>
                       {pc.name}
-                      {Array.isArray(pc.classes) && pc.classes.length > 0 && ` (${pc.classes.join(', ')})`}
+                      {Array.isArray(pc.classes) &&
+                        pc.classes.length > 0 &&
+                        ` (${pc.classes.join(", ")})`}
                       {pc.level && ` Lvl ${pc.level}`}
                     </SelectItem>
                   ))}
@@ -218,7 +236,9 @@ export default function RelationshipForm({
             <Select
               name="relationshipType"
               value={formData.relationshipType}
-              onValueChange={(value) => updateFormData('relationshipType', value)}
+              onValueChange={(value) =>
+                updateFormData("relationshipType", value)
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -238,7 +258,9 @@ export default function RelationshipForm({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateFormData('description', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                updateFormData("description", e.target.value)
+              }
               rows={3}
               placeholder="Describe the nature of this relationship..."
             />
@@ -258,7 +280,9 @@ export default function RelationshipForm({
             </div>
             <Slider
               value={[formData.strength]}
-              onValueChange={(value: number[]) => updateFormData('strength', value[0])}
+              onValueChange={(value: number[]) =>
+                updateFormData("strength", value[0])
+              }
               max={100}
               min={-100}
               step={5}
@@ -278,7 +302,9 @@ export default function RelationshipForm({
             </div>
             <Slider
               value={[formData.trust]}
-              onValueChange={(value: number[]) => updateFormData('trust', value[0])}
+              onValueChange={(value: number[]) =>
+                updateFormData("trust", value[0])
+              }
               max={100}
               min={0}
               step={5}
@@ -293,7 +319,9 @@ export default function RelationshipForm({
             </div>
             <Slider
               value={[formData.fear]}
-              onValueChange={(value: number[]) => updateFormData('fear', value[0])}
+              onValueChange={(value: number[]) =>
+                updateFormData("fear", value[0])
+              }
               max={100}
               min={0}
               step={5}
@@ -308,7 +336,9 @@ export default function RelationshipForm({
             </div>
             <Slider
               value={[formData.respect]}
-              onValueChange={(value: number[]) => updateFormData('respect', value[0])}
+              onValueChange={(value: number[]) =>
+                updateFormData("respect", value[0])
+              }
               max={100}
               min={0}
               step={5}
@@ -328,10 +358,12 @@ export default function RelationshipForm({
               type="checkbox"
               id="isMutual"
               checked={formData.isMutual}
-              onChange={(e) => updateFormData('isMutual', e.target.checked)}
+              onChange={(e) => updateFormData("isMutual", e.target.checked)}
               className="checkbox"
             />
-            <Label htmlFor="isMutual">Mutual relationship (both characters feel the same way)</Label>
+            <Label htmlFor="isMutual">
+              Mutual relationship (both characters feel the same way)
+            </Label>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -339,19 +371,17 @@ export default function RelationshipForm({
               type="checkbox"
               id="discoveredByPlayers"
               checked={formData.discoveredByPlayers}
-              onChange={(e) => updateFormData('discoveredByPlayers', e.target.checked)}
+              onChange={(e) =>
+                updateFormData("discoveredByPlayers", e.target.checked)
+              }
               className="checkbox"
             />
-            <Label htmlFor="discoveredByPlayers">Discovered by players (visible in character sheets)</Label>
+            <Label htmlFor="discoveredByPlayers">
+              Discovered by players (visible in character sheets)
+            </Label>
           </div>
         </CardContent>
       </Card>
-
-      {errors.submit && (
-        <div className="text-red-500 text-center p-4 bg-red-50 rounded">
-          {errors.submit}
-        </div>
-      )}
 
       <div className="flex justify-end gap-4">
         <Button
@@ -366,7 +396,7 @@ export default function RelationshipForm({
         </Button>
         <Button type="submit" disabled={isSubmitting}>
           <Save className="w-4 h-4 mr-2" />
-          {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
+          {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Update"}
         </Button>
       </div>
     </form>

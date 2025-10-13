@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { characters, magicItems, magicItemAssignments } from '@/lib/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
 
 type CampaignCharacterRow = {
   id: number;
@@ -27,16 +27,16 @@ type MagicItemSummary = {
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const campaignId = parseInt(id);
-    
+
     if (isNaN(campaignId)) {
       return NextResponse.json(
-        { error: 'Invalid campaign ID' },
-        { status: 400 }
+        { error: "Invalid campaign ID" },
+        { status: 400 },
       );
     }
 
@@ -71,12 +71,15 @@ export async function GET(
             campaignId: magicItemAssignments.campaignId,
           })
           .from(magicItemAssignments)
-          .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
+          .innerJoin(
+            magicItems,
+            eq(magicItemAssignments.magicItemId, magicItems.id),
+          )
           .where(
             and(
-              eq(magicItemAssignments.entityType, 'character'),
-              inArray(magicItemAssignments.entityId, characterIds)
-            )
+              eq(magicItemAssignments.entityType, "character"),
+              inArray(magicItemAssignments.entityId, characterIds),
+            ),
           )
       : [];
 
@@ -100,17 +103,19 @@ export async function GET(
       });
     });
 
-    const charactersWithMagicItems = campaignCharacters.map((character: CampaignCharacterRow) => ({
-      ...character,
-      magicItems: assignmentsByCharacter.get(character.id) ?? [],
-    }));
+    const charactersWithMagicItems = campaignCharacters.map(
+      (character: CampaignCharacterRow) => ({
+        ...character,
+        magicItems: assignmentsByCharacter.get(character.id) ?? [],
+      }),
+    );
 
     return NextResponse.json(charactersWithMagicItems);
   } catch (error) {
-    console.error('Failed to fetch campaign characters:', error);
+    console.error("Failed to fetch campaign characters:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch characters' },
-      { status: 500 }
+      { error: "Failed to fetch characters" },
+      { status: 500 },
     );
   }
 }

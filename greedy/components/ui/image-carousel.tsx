@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
-import { ImageInfo } from '@/lib/utils/imageUtils.client';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { ImageInfo } from "@/lib/utils/imageUtils.client";
 
 interface EntityImageCarouselProps {
   images: ImageInfo[];
@@ -14,8 +14,8 @@ interface EntityImageCarouselProps {
 
 export function EntityImageCarousel({
   images,
-  entityType = 'entity',
-  className = ''
+  entityType = "entity",
+  className = "",
 }: EntityImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -27,13 +27,13 @@ export function EntityImageCarousel({
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
     );
   }, [images.length]);
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
   }, [images.length]);
 
@@ -66,18 +66,18 @@ export function EntityImageCarousel({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
+      if (event.key === "ArrowLeft") {
         goToPrevious();
-      } else if (event.key === 'ArrowRight') {
+      } else if (event.key === "ArrowRight") {
         goToNext();
       }
     };
 
     const carouselElement = carouselRef.current;
     if (carouselElement) {
-      carouselElement.addEventListener('keydown', handleKeyDown);
+      carouselElement.addEventListener("keydown", handleKeyDown);
       return () => {
-        carouselElement.removeEventListener('keydown', handleKeyDown);
+        carouselElement.removeEventListener("keydown", handleKeyDown);
       };
     }
   }, [goToNext, goToPrevious]);
@@ -96,7 +96,11 @@ export function EntityImageCarousel({
   const currentImage = images[currentIndex];
 
   return (
-    <Card className={`w-full overflow-hidden ${className}`} ref={carouselRef} tabIndex={0}>
+    <Card
+      className={`w-full overflow-hidden ${className}`}
+      ref={carouselRef}
+      tabIndex={0}
+    >
       <CardContent className="p-0 relative">
         {/* Main Image */}
         <div
@@ -152,8 +156,8 @@ export function EntityImageCarousel({
                 onClick={() => goToSlide(index)}
                 className={`relative w-16 h-16 rounded overflow-hidden border-2 transition-all ${
                   index === currentIndex
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-base-300 hover:border-base-content/50'
+                    ? "border-primary ring-2 ring-primary/20"
+                    : "border-base-300 hover:border-base-content/50"
                 }`}
                 aria-label={`Go to image ${index + 1}`}
               >

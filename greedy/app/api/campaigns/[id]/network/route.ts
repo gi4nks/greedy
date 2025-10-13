@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import {
   campaigns,
   adventures,
@@ -10,20 +10,20 @@ import {
   npcs,
   magicItems,
   magicItemAssignments,
-} from '@/lib/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+} from "@/lib/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
 
 type GraphNode = {
   id: string;
   type:
-    | 'campaign'
-    | 'adventure'
-    | 'session'
-    | 'quest'
-    | 'character'
-    | 'location'
-    | 'npc'
-    | 'magicItem';
+    | "campaign"
+    | "adventure"
+    | "session"
+    | "quest"
+    | "character"
+    | "location"
+    | "npc"
+    | "magicItem";
   name: string;
   href?: string | null;
   data?: Record<string, unknown>;
@@ -39,7 +39,7 @@ type GraphEdge = {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -47,8 +47,8 @@ export async function GET(
 
     if (!Number.isInteger(campaignId)) {
       return NextResponse.json(
-        { error: 'Invalid campaign ID' },
-        { status: 400 }
+        { error: "Invalid campaign ID" },
+        { status: 400 },
       );
     }
 
@@ -64,8 +64,8 @@ export async function GET(
 
     if (!campaign) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
-        { status: 404 }
+        { error: "Campaign not found" },
+        { status: 404 },
       );
     }
 
@@ -81,7 +81,7 @@ export async function GET(
       }
     };
 
-    const addEdge = (edge: Omit<GraphEdge, 'id'>) => {
+    const addEdge = (edge: Omit<GraphEdge, "id">) => {
       const edgeId = `${edge.source}->${edge.target}:${edge.relation}`;
       if (!edgeIds.has(edgeId)) {
         edgeIds.add(edgeId);
@@ -92,7 +92,7 @@ export async function GET(
     const campaignNodeId = `campaign-${campaign.id}`;
     addNode({
       id: campaignNodeId,
-      type: 'campaign',
+      type: "campaign",
       name: campaign.title,
       href: `/campaigns/${campaign.id}`,
       data: {
@@ -115,7 +115,7 @@ export async function GET(
       const nodeId = `adventure-${adventure.id}`;
       addNode({
         id: nodeId,
-        type: 'adventure',
+        type: "adventure",
         name: adventure.title,
         href: `/campaigns/${campaign.id}/adventures/${adventure.id}`,
         data: { status: adventure.status },
@@ -124,7 +124,7 @@ export async function GET(
       addEdge({
         source: campaignNodeId,
         target: nodeId,
-        relation: 'includes',
+        relation: "includes",
       });
     });
 
@@ -144,7 +144,7 @@ export async function GET(
       const nodeId = `session-${session.id}`;
       addNode({
         id: nodeId,
-        type: 'session',
+        type: "session",
         name: session.title,
         href: `/campaigns/${campaign.id}/sessions/${session.id}`,
         data: { date: session.date },
@@ -154,7 +154,7 @@ export async function GET(
         addEdge({
           source: `adventure-${session.adventureId}`,
           target: nodeId,
-          relation: 'hosts',
+          relation: "hosts",
         });
       }
     });
@@ -175,7 +175,7 @@ export async function GET(
       const nodeId = `quest-${quest.id}`;
       addNode({
         id: nodeId,
-        type: 'quest',
+        type: "quest",
         name: quest.title,
         href: quest.adventureId
           ? `/campaigns/${campaign.id}/adventures/${quest.adventureId}/quests/${quest.id}`
@@ -187,7 +187,7 @@ export async function GET(
         addEdge({
           source: `adventure-${quest.adventureId}`,
           target: nodeId,
-          relation: 'contains',
+          relation: "contains",
         });
       }
     });
@@ -208,7 +208,7 @@ export async function GET(
       const nodeId = `character-${character.id}`;
       addNode({
         id: nodeId,
-        type: 'character',
+        type: "character",
         name: character.name,
         href: `/campaigns/${campaign.id}/characters/${character.id}`,
         data: { characterType: character.characterType },
@@ -217,14 +217,14 @@ export async function GET(
       addEdge({
         source: campaignNodeId,
         target: nodeId,
-        relation: 'features',
+        relation: "features",
       });
 
       if (character.adventureId) {
         addEdge({
           source: nodeId,
           target: `adventure-${character.adventureId}`,
-          relation: 'participates_in',
+          relation: "participates_in",
         });
       }
     });
@@ -242,7 +242,7 @@ export async function GET(
       const nodeId = `location-${location.id}`;
       addNode({
         id: nodeId,
-        type: 'location',
+        type: "location",
         name: location.name,
         href: `/campaigns/${campaign.id}/locations/${location.id}`,
       });
@@ -251,13 +251,13 @@ export async function GET(
         addEdge({
           source: `adventure-${location.adventureId}`,
           target: nodeId,
-          relation: 'takes_place_in',
+          relation: "takes_place_in",
         });
       } else {
         addEdge({
           source: campaignNodeId,
           target: nodeId,
-          relation: 'contains',
+          relation: "contains",
         });
       }
     });
@@ -277,7 +277,7 @@ export async function GET(
       const nodeId = `npc-${npc.id}`;
       addNode({
         id: nodeId,
-        type: 'npc',
+        type: "npc",
         name: npc.name,
         href: npc.adventureId
           ? `/campaigns/${campaign.id}/adventures/${npc.adventureId}`
@@ -288,7 +288,7 @@ export async function GET(
         addEdge({
           source: `adventure-${npc.adventureId}`,
           target: nodeId,
-          relation: 'introduces',
+          relation: "introduces",
         });
       }
     });
@@ -301,12 +301,15 @@ export async function GET(
             magicItemName: magicItems.name,
           })
           .from(magicItemAssignments)
-          .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
+          .innerJoin(
+            magicItems,
+            eq(magicItemAssignments.magicItemId, magicItems.id),
+          )
           .where(
             and(
-              eq(magicItemAssignments.entityType, 'character'),
-              inArray(magicItemAssignments.entityId, characterIds)
-            )
+              eq(magicItemAssignments.entityType, "character"),
+              inArray(magicItemAssignments.entityId, characterIds),
+            ),
           )
       : [];
 
@@ -314,7 +317,7 @@ export async function GET(
       const nodeId = `magicItem-${assignment.magicItemId}`;
       addNode({
         id: nodeId,
-        type: 'magicItem',
+        type: "magicItem",
         name: assignment.magicItemName,
         href: `/magic-items/${assignment.magicItemId}`,
       });
@@ -322,16 +325,16 @@ export async function GET(
       addEdge({
         source: `character-${assignment.characterId}`,
         target: nodeId,
-        relation: 'owns',
+        relation: "owns",
       });
     });
 
     return NextResponse.json({ nodes, edges });
   } catch (error) {
-    console.error('Failed to build campaign network:', error);
+    console.error("Failed to build campaign network:", error);
     return NextResponse.json(
-      { error: 'Failed to build campaign network' },
-      { status: 500 }
+      { error: "Failed to build campaign network" },
+      { status: 500 },
     );
   }
 }

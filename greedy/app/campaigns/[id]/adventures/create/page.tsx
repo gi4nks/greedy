@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import AdventureForm from '@/components/adventure/AdventureForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import AdventureForm from "@/components/adventure/AdventureForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateAdventurePageProps {
   params: Promise<{ id: string }>;
@@ -37,7 +37,9 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function CreateAdventurePage({ params }: CreateAdventurePageProps) {
+export default async function CreateAdventurePage({
+  params,
+}: CreateAdventurePageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
   const campaign = await getCampaign(campaignId);
@@ -51,14 +53,11 @@ export default async function CreateAdventurePage({ params }: CreateAdventurePag
       <DynamicBreadcrumb
         campaignId={campaignId}
         sectionItems={[
-          { label: 'Adventures', href: `/campaigns/${campaignId}/adventures` },
-          { label: 'Create' }
+          { label: "Adventures", href: `/campaigns/${campaignId}/adventures` },
+          { label: "Create" },
         ]}
       />
-      <AdventureForm
-        campaignId={campaignId}
-        mode="create"
-      />
+      <AdventureForm campaignId={campaignId} mode="create" />
     </Suspense>
   );
 }
@@ -104,7 +103,9 @@ export async function generateMetadata({ params }: CreateAdventurePageProps) {
   const campaign = await getCampaign(parseInt(resolvedParams.id));
 
   return {
-    title: campaign ? `Create Adventure | ${campaign.title}` : 'Create Adventure',
-    description: 'Create a new adventure for your D&D campaign',
+    title: campaign
+      ? `Create Adventure | ${campaign.title}`
+      : "Create Adventure",
+    description: "Create a new adventure for your D&D campaign",
   };
 }

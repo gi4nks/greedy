@@ -1,16 +1,14 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { characters, adventures, campaigns, gameEditions, magicItems, magicItemAssignments } from '@/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
-import CharacterDetail from '@/components/character/CharacterDetail';
-import CharacterStats from '@/components/character/CharacterStats';
-import CharacterActions from '@/components/character/CharacterActions';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
-import { EntityImageCarousel } from '@/components/ui/image-carousel';
-import { parseImagesJson } from '@/lib/utils/imageUtils.client';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { getCharacterWithAllEntities } from "@/lib/db/queries";
+import CharacterDetail from "@/components/character/CharacterDetail";
+import CharacterStats from "@/components/character/CharacterStats";
+import CharacterActions from "@/components/character/CharacterActions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { EntityImageCarousel } from "@/components/ui/image-carousel";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 
 interface CharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -18,155 +16,39 @@ interface CharacterPageProps {
 
 async function getCharacterWithEntities(characterId: number) {
   // Use the API to get character with all assigned entities
-  const response = await fetch(`http://localhost:3000/api/characters/${characterId}`, {
-    cache: 'no-store' // Ensure fresh data
-  });
-  
+  const response = await fetch(
+    `http://localhost:3000/api/characters/${characterId}`,
+    {
+      cache: "no-store", // Ensure fresh data
+    },
+  );
+
   if (!response.ok) {
     return null;
   }
-  
+
   return response.json();
 }
 
 async function getCharacter(characterId: number) {
-  // Get base character data
-  const charactersWithMagicItems = await db
-    .select({
-      id: characters.id,
-      campaignId: characters.campaignId,
-      adventureId: characters.adventureId,
-      characterType: characters.characterType,
-      name: characters.name,
-      race: characters.race,
-      level: characters.level,
-      background: characters.background,
-      alignment: characters.alignment,
-      experience: characters.experience,
-      strength: characters.strength,
-      dexterity: characters.dexterity,
-      constitution: characters.constitution,
-      intelligence: characters.intelligence,
-      wisdom: characters.wisdom,
-      charisma: characters.charisma,
-      hitPoints: characters.hitPoints,
-      maxHitPoints: characters.maxHitPoints,
-      armorClass: characters.armorClass,
-      initiative: characters.initiative,
-      speed: characters.speed,
-      proficiencyBonus: characters.proficiencyBonus,
-      savingThrows: characters.savingThrows,
-      skills: characters.skills,
-      equipment: characters.equipment,
-      weapons: characters.weapons,
-      spells: characters.spells,
-      spellcastingAbility: characters.spellcastingAbility,
-      spellSaveDc: characters.spellSaveDc,
-      spellAttackBonus: characters.spellAttackBonus,
-      personalityTraits: characters.personalityTraits,
-      ideals: characters.ideals,
-      bonds: characters.bonds,
-      flaws: characters.flaws,
-      backstory: characters.backstory,
-      role: characters.role,
-      npcRelationships: characters.npcRelationships,
-      classes: characters.classes,
-      description: characters.description,
-      tags: characters.tags,
-      images: characters.images,
-      createdAt: characters.createdAt,
-      updatedAt: characters.updatedAt,
-    })
-    .from(characters)
-    .where(eq(characters.id, characterId))
-    .groupBy(characters.id);
-
-  if (charactersWithMagicItems.length === 0) return null;
-
-  const character = charactersWithMagicItems[0];
-  
-  // Parse magic items and filter out nulls
-  const assignedMagicItems = await db
-    .select({
-      assignmentId: magicItemAssignments.id,
-      id: magicItems.id,
-      name: magicItems.name,
-      rarity: magicItems.rarity,
-      type: magicItems.type,
-      description: magicItems.description,
-      source: magicItemAssignments.source,
-      notes: magicItemAssignments.notes,
-      assignedAt: magicItemAssignments.assignedAt,
-      campaignId: magicItemAssignments.campaignId,
-    })
-    .from(magicItemAssignments)
-    .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
-    .where(
-      and(
-        eq(magicItemAssignments.entityType, 'character'),
-        eq(magicItemAssignments.entityId, characterId)
-      )
-    );
-
-  const characterWithParsedMagicItems = {
-    ...character,
-    magicItems: assignedMagicItems
-  };
-
-  // Get related data
-  const [adventure] = characterWithParsedMagicItems.adventureId
-    ? await db
-        .select()
-        .from(adventures)
-        .where(eq(adventures.id, characterWithParsedMagicItems.adventureId))
-        .limit(1)
-    : [null];
-
-  // Get campaign data - prefer character's campaignId, fallback to adventure's campaignId
-  const campaignIdToUse = characterWithParsedMagicItems.campaignId || adventure?.campaignId;
-  const [campaign] = campaignIdToUse
-    ? await db
-        .select({
-          id: campaigns.id,
-          gameEditionId: campaigns.gameEditionId,
-          gameEditionName: gameEditions.name,
-          gameEditionVersion: gameEditions.version,
-          title: campaigns.title,
-          description: campaigns.description,
-          status: campaigns.status,
-          startDate: campaigns.startDate,
-          endDate: campaigns.endDate,
-          tags: campaigns.tags,
-          createdAt: campaigns.createdAt,
-          updatedAt: campaigns.updatedAt,
-        })
-        .from(campaigns)
-        .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-        .where(eq(campaigns.id, campaignIdToUse))
-        .limit(1)
-    : [null];
-
-  return {
-    ...characterWithParsedMagicItems,
-    adventure,
-    campaign,
-  };
+  return await getCharacterWithAllEntities(characterId);
 }
 
 export default async function CharacterPage({ params }: CharacterPageProps) {
   const { id, characterId } = await params;
   const characterIdNum = parseInt(characterId);
   const campaignId = parseInt(id);
-  
+
   // Get character with all entities
   let characterWithEntities = null;
   try {
     characterWithEntities = await getCharacterWithEntities(characterIdNum);
   } catch (error) {
-    console.error('Failed to fetch character entities:', error);
+    console.error("Failed to fetch character entities:", error);
   }
-  
-  const character = characterWithEntities || await getCharacter(characterIdNum);
+
+  const character =
+    characterWithEntities || (await getCharacter(characterIdNum));
 
   if (!character) {
     notFound();
@@ -179,8 +61,8 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
         campaignId={campaignId}
         campaignTitle={character.campaign?.title}
         sectionItems={[
-          { label: 'Characters', href: `/campaigns/${campaignId}/characters` },
-          { label: character.name }
+          { label: "Characters", href: `/campaigns/${campaignId}/characters` },
+          { label: character.name },
         ]}
       />
 
@@ -195,9 +77,11 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
               </p>
               {character.characterType && (
                 <Badge variant="outline" className="capitalize">
-                  {character.characterType === 'pc' ? 'Player Character' :
-                   character.characterType === 'npc' ? 'NPC' :
-                   character.characterType}
+                  {character.characterType === "pc"
+                    ? "Player Character"
+                    : character.characterType === "npc"
+                      ? "NPC"
+                      : character.characterType}
                 </Badge>
               )}
             </div>
@@ -270,7 +154,10 @@ export async function generateMetadata({ params }: CharacterPageProps) {
   const character = await getCharacter(parseInt(characterId));
 
   return {
-    title: character ? `${character.name} | Adventure Diary` : 'Character Not Found',
-    description: character?.description || `View ${character?.name}'s character sheet`,
+    title: character
+      ? `${character.name} | Adventure Diary`
+      : "Character Not Found",
+    description:
+      character?.description || `View ${character?.name}'s character sheet`,
   };
 }

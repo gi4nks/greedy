@@ -1,16 +1,25 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { BookOpen, EyeOff, Save } from 'lucide-react'
-import Link from 'next/link'
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Label } from "../../../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import { BookOpen, EyeOff, Save, Loader2 } from "lucide-react";
+import Link from "next/link";
+import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { createCampaign } from "../../../lib/actions/campaigns";
+import { useActionState } from "react";
+import { toast } from "sonner";
 
 interface GameEdition {
   id: number;
@@ -20,85 +29,50 @@ interface GameEdition {
   publisher: string;
 }
 
+import { ActionResult } from "../../../lib/types/api";
+
 export default function NewCampaignPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [gameEditions, setGameEditions] = useState<GameEdition[]>([])
-  const [formData, setFormData] = useState<{
-    title: string;
-    description: string;
-    status: string;
-    startDate: string;
-    endDate: string;
-    gameEditionId: number;
-  }>({
-    title: '',
-    description: '',
-    status: 'active',
-    startDate: '',
-    endDate: '',
-    gameEditionId: 1, // Default to D&D 5e
-  })
+  const router = useRouter();
+  const [gameEditions, setGameEditions] = useState<GameEdition[]>([]);
+  const [state, formAction, isPending] = useActionState(
+    createCampaign,
+    undefined as ActionResult<{ id: number }> | undefined,
+  );
 
   // Fetch available game editions
   useEffect(() => {
     const fetchGameEditions = async () => {
       try {
-        const response = await fetch('/api/game-editions')
+        const response = await fetch("/api/game-editions");
         if (response.ok) {
-          const editions = await response.json()
-          setGameEditions(editions)
+          const editions = await response.json();
+          setGameEditions(editions);
         }
       } catch (error) {
-        console.error('Failed to fetch game editions:', error)
+        console.error("Failed to fetch game editions:", error);
       }
+    };
+
+    fetchGameEditions();
+  }, []);
+
+  // Handle form submission success/error
+  useEffect(() => {
+    if (state?.success === false && state?.message) {
+      toast.error(state.message);
+    } else if (state?.success === true) {
+      toast.success("Campaign created successfully!");
+      router.push("/campaigns");
     }
-
-    fetchGameEditions()
-  }, [])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        const campaign = await response.json()
-        router.push(`/campaigns/${campaign.id}`)
-      } else {
-        const error = await response.json()
-        console.error('Failed to create campaign:', error)
-        // Handle error display here
-      }
-    } catch (error) {
-      console.error('Failed to create campaign:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChange = (field: string, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
+  }, [state, router]);
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         items={[
-          { label: 'Campaigns', href: '/' },
-          { label: 'Create Campaign' }
+          { label: "Campaigns", href: "/" },
+          { label: "Create Campaign" },
         ]}
       />
 
@@ -116,27 +90,22 @@ export default function NewCampaignPage() {
         <CardHeader>
           <CardTitle>Campaign Details</CardTitle>
         </CardHeader>
-        
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form action={formAction} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Campaign Title *</Label>
               <Input
                 id="title"
+                name="title"
                 placeholder="Enter campaign title..."
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="gameEdition">Game Edition *</Label>
-              <Select 
-                name="gameEditionId"
-                value={formData.gameEditionId.toString()} 
-                onValueChange={(value) => handleChange('gameEditionId', parseInt(value))}
-              >
+              <Select name="gameEditionId" defaultValue="1">
                 <SelectTrigger>
                   <SelectValue placeholder="Select game edition..." />
                 </SelectTrigger>
@@ -157,9 +126,8 @@ export default function NewCampaignPage() {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
+                name="description"
                 placeholder="Describe your campaign setting, themes, and goals..."
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
                 rows={4}
               />
             </div>
@@ -167,7 +135,7 @@ export default function NewCampaignPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select name="status" value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+                <Select name="status" defaultValue="active">
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -182,35 +150,25 @@ export default function NewCampaignPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => handleChange('startDate', e.target.value)}
-                />
+                <Input id="startDate" name="startDate" type="date" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => handleChange('endDate', e.target.value)}
-                />
+                <Input id="endDate" name="endDate" type="date" />
               </div>
             </div>
 
             <div className="flex gap-3 pt-6">
-              <Button
-                type="submit"
-                disabled={loading || !formData.title.trim()}
-                className="flex-1"
-              >
-                <Save className="w-4 h-4" />
-                {loading ? 'Creating...' : 'Create'}
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {isPending ? "Creating..." : "Create"}
               </Button>
-              
+
               <Link href="/campaigns">
                 <Button type="button" variant="outline" className="gap-2">
                   <EyeOff className="w-4 h-4" />
@@ -222,5 +180,5 @@ export default function NewCampaignPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

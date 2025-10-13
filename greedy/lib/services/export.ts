@@ -1,12 +1,20 @@
-import { db } from '@/lib/db';
-import { campaigns, adventures, sessions, characters, locations, quests, magicItems } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import puppeteer from 'puppeteer';
-import { marked } from 'marked';
+import { db } from "@/lib/db";
+import {
+  campaigns,
+  adventures,
+  sessions,
+  characters,
+  locations,
+  quests,
+  magicItems,
+} from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import puppeteer from "puppeteer";
+import { marked } from "marked";
 
 export interface ExportOptions {
   campaignId: number;
-  format: 'markdown' | 'pdf' | 'html' | 'json';
+  format: "markdown" | "pdf" | "html" | "json";
   sections: {
     sessions?: boolean;
     characters?: boolean;
@@ -31,24 +39,28 @@ interface CampaignExportData {
 }
 
 export class ExportService {
-  static async exportCampaign(options: ExportOptions): Promise<Buffer | string> {
+  static async exportCampaign(
+    options: ExportOptions,
+  ): Promise<Buffer | string> {
     const campaign = await this.getCampaignData(options);
 
     switch (options.format) {
-      case 'markdown':
+      case "markdown":
         return this.exportToMarkdown(campaign, options);
-      case 'pdf':
+      case "pdf":
         return this.exportToPDF(campaign, options);
-      case 'html':
+      case "html":
         return this.exportToHTML(campaign, options);
-      case 'json':
+      case "json":
         return JSON.stringify(campaign, null, 2);
       default:
         throw new Error(`Unsupported export format: ${options.format}`);
     }
   }
 
-  private static async getCampaignData(options: ExportOptions): Promise<CampaignExportData> {
+  private static async getCampaignData(
+    options: ExportOptions,
+  ): Promise<CampaignExportData> {
     // Get campaign
     const [campaign] = await db
       .select()
@@ -57,7 +69,7 @@ export class ExportService {
       .limit(1);
 
     if (!campaign) {
-      throw new Error('Campaign not found');
+      throw new Error("Campaign not found");
     }
 
     const data: CampaignExportData = { campaign, adventures: [] };
@@ -97,10 +109,12 @@ export class ExportService {
           .from(characters)
           .where(eq(characters.adventureId, adventure.id));
 
-        characterData.push(...adventureCharacters.map(char => ({
-          ...char,
-          adventure: adventure.title,
-        })));
+        characterData.push(
+          ...adventureCharacters.map((char) => ({
+            ...char,
+            adventure: adventure.title,
+          })),
+        );
       }
       data.characters = characterData;
     }
@@ -113,10 +127,12 @@ export class ExportService {
           .from(locations)
           .where(eq(locations.adventureId, adventure.id));
 
-        locationData.push(...adventureLocations.map(loc => ({
-          ...loc,
-          adventure: adventure.title,
-        })));
+        locationData.push(
+          ...adventureLocations.map((loc) => ({
+            ...loc,
+            adventure: adventure.title,
+          })),
+        );
       }
       data.locations = locationData;
     }
@@ -129,10 +145,12 @@ export class ExportService {
           .from(quests)
           .where(eq(quests.adventureId, adventure.id));
 
-        questData.push(...adventureQuests.map(quest => ({
-          ...quest,
-          adventure: adventure.title,
-        })));
+        questData.push(
+          ...adventureQuests.map((quest) => ({
+            ...quest,
+            adventure: adventure.title,
+          })),
+        );
       }
       data.quests = questData;
     }
@@ -144,21 +162,24 @@ export class ExportService {
     return data;
   }
 
-  private static async exportToMarkdown(data: CampaignExportData, options: ExportOptions): Promise<string> {
+  private static async exportToMarkdown(
+    data: CampaignExportData,
+    options: ExportOptions,
+  ): Promise<string> {
     let markdown = `# ${data.campaign.title}\n\n`;
 
     if (data.campaign.description) {
       markdown += `${data.campaign.description}\n\n`;
     }
 
-    markdown += `**Status:** ${data.campaign.status || 'Active'}\n`;
+    markdown += `**Status:** ${data.campaign.status || "Active"}\n`;
     if (data.campaign.startDate) {
       markdown += `**Started:** ${new Date(data.campaign.startDate).toLocaleDateString()}\n`;
     }
     if (data.campaign.endDate) {
       markdown += `**Ended:** ${new Date(data.campaign.endDate).toLocaleDateString()}\n`;
     }
-    markdown += '\n---\n\n';
+    markdown += "\n---\n\n";
 
     // Adventures
     if (data.adventures && data.adventures.length > 0) {
@@ -174,13 +195,17 @@ export class ExportService {
         if (adventure.endDate) {
           markdown += `**Ended:** ${new Date(adventure.endDate).toLocaleDateString()}\n`;
         }
-        markdown += '\n';
+        markdown += "\n";
       }
-      markdown += '---\n\n';
+      markdown += "---\n\n";
     }
 
     // Sessions
-    if (options.sections.sessions && data.sessions && data.sessions.length > 0) {
+    if (
+      options.sections.sessions &&
+      data.sessions &&
+      data.sessions.length > 0
+    ) {
       markdown += `## Sessions\n\n`;
       for (const session of data.sessions) {
         markdown += `### ${session.title}\n`;
@@ -191,16 +216,20 @@ export class ExportService {
           markdown += `${session.text}\n\n`;
         }
       }
-      markdown += '---\n\n';
+      markdown += "---\n\n";
     }
 
     // Characters
-    if (options.sections.characters && data.characters && data.characters.length > 0) {
+    if (
+      options.sections.characters &&
+      data.characters &&
+      data.characters.length > 0
+    ) {
       markdown += `## Characters\n\n`;
       for (const character of data.characters) {
         markdown += `### ${character.name}\n`;
         markdown += `**Adventure:** ${character.adventure}\n`;
-        markdown += `**Type:** ${character.characterType === 'pc' ? 'Player Character' : 'NPC'}\n`;
+        markdown += `**Type:** ${character.characterType === "pc" ? "Player Character" : "NPC"}\n`;
 
         if (character.race) markdown += `**Race:** ${character.race}\n`;
 
@@ -208,13 +237,17 @@ export class ExportService {
           markdown += `\n${character.description}\n`;
         }
 
-        markdown += '\n';
+        markdown += "\n";
       }
-      markdown += '---\n\n';
+      markdown += "---\n\n";
     }
 
     // Locations
-    if (options.sections.locations && data.locations && data.locations.length > 0) {
+    if (
+      options.sections.locations &&
+      data.locations &&
+      data.locations.length > 0
+    ) {
       markdown += `## Locations\n\n`;
       for (const location of data.locations) {
         markdown += `### ${location.name}\n`;
@@ -224,7 +257,7 @@ export class ExportService {
           markdown += `${location.description}\n\n`;
         }
       }
-      markdown += '---\n\n';
+      markdown += "---\n\n";
     }
 
     // Quests
@@ -249,13 +282,17 @@ export class ExportService {
           markdown += `**Due:** ${new Date(quest.dueDate).toLocaleDateString()}\n`;
         }
 
-        markdown += '\n';
+        markdown += "\n";
       }
-      markdown += '---\n\n';
+      markdown += "---\n\n";
     }
 
     // Magic Items
-    if (options.sections.magicItems && data.magicItems && data.magicItems.length > 0) {
+    if (
+      options.sections.magicItems &&
+      data.magicItems &&
+      data.magicItems.length > 0
+    ) {
       markdown += `## Magic Items\n\n`;
       for (const item of data.magicItems) {
         markdown += `### ${item.name}\n`;
@@ -267,7 +304,7 @@ export class ExportService {
         }
 
         if (item.properties) {
-          markdown += `**Properties:** ${Array.isArray(item.properties) ? item.properties.join(', ') : item.properties}\n\n`;
+          markdown += `**Properties:** ${Array.isArray(item.properties) ? item.properties.join(", ") : item.properties}\n\n`;
         }
       }
     }
@@ -277,22 +314,25 @@ export class ExportService {
     return markdown;
   }
 
-  private static async exportToPDF(data: CampaignExportData, options: ExportOptions): Promise<Buffer> {
+  private static async exportToPDF(
+    data: CampaignExportData,
+    options: ExportOptions,
+  ): Promise<Buffer> {
     const html = await this.exportToHTML(data, options);
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: "networkidle0" });
 
       const pdf = await page.pdf({
-        format: 'A4',
+        format: "A4",
         printBackground: true,
-        margin: { top: '20mm', bottom: '20mm', left: '20mm', right: '20mm' },
+        margin: { top: "20mm", bottom: "20mm", left: "20mm", right: "20mm" },
         displayHeaderFooter: true,
         headerTemplate: `
           <div style="font-size: 10px; text-align: center; width: 100%;">
@@ -312,7 +352,10 @@ export class ExportService {
     }
   }
 
-  private static async exportToHTML(data: CampaignExportData, options: ExportOptions): Promise<string> {
+  private static async exportToHTML(
+    data: CampaignExportData,
+    options: ExportOptions,
+  ): Promise<string> {
     const markdown = await this.exportToMarkdown(data, options);
 
     const html = `

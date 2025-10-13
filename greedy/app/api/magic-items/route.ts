@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import {
   getMagicItemsWithAssignments,
   createMagicItem,
   type MagicItemFilters,
   type UpsertMagicItemInput,
-} from '@/lib/actions/magicItems';
+} from "@/lib/actions/magicItems";
+import { logger } from "@/lib/utils/logger";
+import {
+  CreateMagicItemSchema,
+  validateRequestBody,
+} from "@/lib/validation/schemas";
 
 // GET /api/magic-items - Get all magic items with their assignments
 export async function GET(request: NextRequest) {
@@ -12,34 +17,45 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const filters: MagicItemFilters = {
-      search: searchParams.get('search') ?? undefined,
-      type: searchParams.get('type') ?? undefined,
-      rarity: searchParams.get('rarity') ?? undefined,
-      entityType: (searchParams.get('entityType') ?? undefined) as MagicItemFilters['entityType'],
-      campaignId: searchParams.get('campaignId') ? Number(searchParams.get('campaignId')) : undefined,
+      search: searchParams.get("search") ?? undefined,
+      type: searchParams.get("type") ?? undefined,
+      rarity: searchParams.get("rarity") ?? undefined,
+      entityType: (searchParams.get("entityType") ??
+        undefined) as MagicItemFilters["entityType"],
+      campaignId: searchParams.get("campaignId")
+        ? Number(searchParams.get("campaignId"))
+        : undefined,
     };
 
     const items = await getMagicItemsWithAssignments(filters);
     return NextResponse.json(items);
   } catch (error) {
-    console.error('Error fetching magic items:', error);
-    return NextResponse.json({ error: 'Failed to fetch magic items' }, { status: 500 });
+    logger.error("Error fetching magic items", error);
+    return NextResponse.json(
+      { error: "Failed to fetch magic items" },
+      { status: 500 },
+    );
   }
 }
 
 // POST /api/magic-items - Create a new magic item
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as UpsertMagicItemInput;
+    const body = await request.json();
+    const validation = validateRequestBody(CreateMagicItemSchema, body);
 
-    if (!body.name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json(validation.error, { status: 400 });
     }
 
-    const newItem = await createMagicItem(body);
+    const validatedData = validation.data;
+    const newItem = await createMagicItem(validatedData);
     return NextResponse.json(newItem, { status: 201 });
   } catch (error) {
-    console.error('Error creating magic item:', error);
-    return NextResponse.json({ error: 'Failed to create magic item' }, { status: 500 });
+    logger.error("Error creating magic item", error);
+    return NextResponse.json(
+      { error: "Failed to create magic item" },
+      { status: 500 },
+    );
   }
 }

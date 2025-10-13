@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import CampaignForm from '@/components/campaign/CampaignForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import CampaignForm from "@/components/campaign/CampaignForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditCampaignPageProps {
   params: Promise<{ id: string }>;
@@ -37,10 +37,12 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function EditCampaignPage({ params }: EditCampaignPageProps) {
+export default async function EditCampaignPage({
+  params,
+}: EditCampaignPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const campaign = await getCampaign(campaignId);
 
   if (!campaign) {
@@ -52,15 +54,13 @@ export default async function EditCampaignPage({ params }: EditCampaignPageProps
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         items={[
-          { label: 'Campaigns', href: '/campaigns' },
+          { label: "Campaigns", href: "/campaigns" },
           { label: campaign.title, href: `/campaigns/${campaignId}` },
-          { label: 'Edit' }
+          { label: "Edit" },
         ]}
       />
 
-      <CampaignForm
-        campaign={campaign}
-      />
+      <CampaignForm campaign={campaign} />
     </Suspense>
   );
 }
@@ -100,7 +100,8 @@ export async function generateMetadata({ params }: EditCampaignPageProps) {
   const campaign = await getCampaign(parseInt(resolvedParams.id));
 
   return {
-    title: campaign ? `Edit ${campaign.title}` : 'Edit Campaign',
-    description: campaign?.description || `Edit ${campaign?.title} campaign details`,
+    title: campaign ? `Edit ${campaign.title}` : "Edit Campaign",
+    description:
+      campaign?.description || `Edit ${campaign?.title} campaign details`,
   };
 }

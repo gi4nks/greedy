@@ -1,33 +1,36 @@
 "use client";
 
-import Link from 'next/link';
-import { useTransition } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Users, Edit, Trash2, View } from 'lucide-react';
-import { deleteCharacterAction } from '@/lib/actions/characters';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import type { Character } from '@/lib/db/schema';
+import Link from "next/link";
+import { useTransition } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Users, Edit, Trash2, View } from "lucide-react";
+import { deleteCharacterAction } from "@/lib/actions/characters";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import type { Character } from "@/lib/db/schema";
 
 interface CharactersListProps {
   characters: Character[];
   campaignId: number;
 }
 
-export function CharactersList({ characters, campaignId }: CharactersListProps) {
+export function CharactersList({
+  characters,
+  campaignId,
+}: CharactersListProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = (characterId: number) => {
-    if (confirm('Are you sure you want to delete this character?')) {
+    if (confirm("Are you sure you want to delete this character?")) {
       startTransition(async () => {
         try {
           const formData = new FormData();
-          formData.append('id', characterId.toString());
+          formData.append("id", characterId.toString());
           await deleteCharacterAction(formData);
         } catch (error) {
-          console.error('Failed to delete character:', error);
-          alert('Failed to delete character');
+          console.error("Failed to delete character:", error);
+          alert("Failed to delete character");
         }
       });
     }
@@ -57,23 +60,29 @@ export function CharactersList({ characters, campaignId }: CharactersListProps) 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {characters.map((character) => {
         // Parse classes data for multiclass display
-        let classesInfo = '';
+        let classesInfo = "";
         try {
-          const classes = typeof character.classes === 'string'
-            ? JSON.parse(character.classes)
-            : character.classes;
+          const classes =
+            typeof character.classes === "string"
+              ? JSON.parse(character.classes)
+              : character.classes;
 
           if (Array.isArray(classes) && classes.length > 0) {
             classesInfo = classes
-              .map((c: { name: string; level: number }) => `${c.name} ${c.level}`)
-              .join(' / ');
+              .map(
+                (c: { name: string; level: number }) => `${c.name} ${c.level}`,
+              )
+              .join(" / ");
           }
         } catch {
-          classesInfo = '';
+          classesInfo = "";
         }
 
         return (
-          <Card key={character.id} className="hover:shadow-lg transition-shadow">
+          <Card
+            key={character.id}
+            className="hover:shadow-lg transition-shadow h-full flex flex-col"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3 flex-1">
@@ -88,9 +97,11 @@ export function CharactersList({ characters, campaignId }: CharactersListProps) 
                     </p>
                     {character.characterType && (
                       <Badge variant="outline" className="text-xs mt-1">
-                        {character.characterType === 'pc' ? 'Player Character' :
-                         character.characterType === 'npc' ? 'NPC' :
-                         character.characterType}
+                        {character.characterType === "pc"
+                          ? "Player Character"
+                          : character.characterType === "npc"
+                            ? "NPC"
+                            : character.characterType}
                       </Badge>
                     )}
                   </div>
@@ -98,24 +109,30 @@ export function CharactersList({ characters, campaignId }: CharactersListProps) 
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0">
-              {character.description && (
-                <div className="text-sm text-base-content/70 mb-3 max-h-24 overflow-hidden">
-                  <MarkdownRenderer
-                    content={character.description}
-                    className="prose-sm text-base-content/70"
-                  />
-                </div>
-              )}
+            <CardContent className="flex-1 flex flex-col pt-0">
+              <div className="space-y-4 flex-1">
+                {character.description && (
+                  <div className="text-sm text-base-content/70 max-h-24 overflow-hidden">
+                    <MarkdownRenderer
+                      content={character.description}
+                      className="prose-sm text-base-content/70"
+                    />
+                  </div>
+                )}
+              </div>
 
-              <div className="flex justify-end gap-2 mt-auto">
-                <Link href={`/campaigns/${campaignId}/characters/${character.id}`}>
+              <div className="flex justify-end gap-2 pt-4 mt-auto">
+                <Link
+                  href={`/campaigns/${campaignId}/characters/${character.id}`}
+                >
                   <Button variant="warning" className="gap-2" size="sm">
                     <View className="w-4 h-4" />
                     View
                   </Button>
                 </Link>
-                <Link href={`/campaigns/${campaignId}/characters/${character.id}/edit`}>
+                <Link
+                  href={`/campaigns/${campaignId}/characters/${character.id}/edit`}
+                >
                   <Button variant="secondary" className="gap-2">
                     <Edit className="w-4 h-4" />
                     Edit

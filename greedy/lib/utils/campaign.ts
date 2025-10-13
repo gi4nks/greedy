@@ -1,6 +1,6 @@
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function getCampaignWithEdition(campaignId: number) {
   const [campaign] = await db
@@ -26,4 +26,6 @@ export async function getCampaignWithEdition(campaignId: number) {
   return campaign;
 }
 
-export type CampaignWithEdition = Awaited<ReturnType<typeof getCampaignWithEdition>>;
+export type CampaignWithEdition = Awaited<
+  ReturnType<typeof getCampaignWithEdition>
+>;

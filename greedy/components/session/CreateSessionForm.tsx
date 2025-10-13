@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EyeOff } from "lucide-react";
 import { createSession } from "@/lib/actions/sessions";
+import { ActionResult } from "@/lib/types/api";
+import type { Session } from "@/lib/db/schema";
+import { toast } from "sonner";
 
 export function CreateSessionForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,12 +14,9 @@ export function CreateSessionForm() {
 
   return (
     <>
-      <button
-        className="btn btn-primary"
-        onClick={() => setIsOpen(true)}
-      >
+      <Button variant="primary" onClick={() => setIsOpen(true)}>
         New Session
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="modal modal-open">
@@ -27,10 +27,17 @@ export function CreateSessionForm() {
               action={async (formData: FormData) => {
                 setIsSubmitting(true);
                 try {
-                  await createSession(formData);
-                  setIsOpen(false);
+                  const result: ActionResult<Session> = await createSession(formData);
+
+                  if (result?.success === false) {
+                    toast.error(result.message || "Failed to create session.");
+                  } else {
+                    toast.success("Session created successfully!");
+                    setIsOpen(false);
+                  }
                 } catch (error) {
                   console.error("Failed to create session:", error);
+                  toast.error("Failed to create session. Please try again.");
                 } finally {
                   setIsSubmitting(false);
                 }
@@ -108,13 +115,9 @@ export function CreateSessionForm() {
                   <EyeOff className="w-4 h-4" />
                   Cancel
                 </Button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isSubmitting}
-                >
+                <Button type="submit" variant="primary" disabled={isSubmitting}>
                   {isSubmitting ? "Creating..." : "Create Session"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

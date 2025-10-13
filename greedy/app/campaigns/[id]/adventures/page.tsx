@@ -1,15 +1,15 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
-import { AdventuresList } from '@/components/adventures/AdventuresList';
-import { CampaignPageLayout } from '@/components/layout/CampaignPageLayout';
-import { getCampaignWithEdition } from '@/lib/utils/campaign';
-import { generateCampaignPageMetadata } from '@/lib/utils/metadata';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus } from "lucide-react";
+import { AdventuresList } from "@/components/adventures/AdventuresList";
+import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
+import { getCampaignWithEdition } from "@/lib/utils/campaign";
+import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
 
 interface AdventuresPageProps {
   params: Promise<{ id: string }>;
@@ -41,11 +41,11 @@ export default async function AdventuresPage({ params }: AdventuresPageProps) {
       campaign={campaign}
       title="Adventures"
       description="Manage your campaign adventures and story arcs"
-      sectionItems={[{ label: 'Adventures' }]}
+      sectionItems={[{ label: "Adventures" }]}
       createButton={{
         href: `/campaigns/${campaignId}/adventures/create`,
-        label: 'Create',
-        icon: <Plus className="w-4 h-4" />
+        label: "Create",
+        icon: <Plus className="w-4 h-4" />,
       }}
     >
       <Suspense fallback={<AdventuresListSkeleton />}>
@@ -87,5 +87,9 @@ export async function generateMetadata({ params }: AdventuresPageProps) {
   const resolvedParams = await params;
   const campaign = await getCampaignWithEdition(parseInt(resolvedParams.id));
 
-  return generateCampaignPageMetadata(campaign, 'Adventures', 'Manage your D&D campaign adventures and story arcs');
+  return generateCampaignPageMetadata(
+    campaign,
+    "Adventures",
+    "Manage your D&D campaign adventures and story arcs",
+  );
 }

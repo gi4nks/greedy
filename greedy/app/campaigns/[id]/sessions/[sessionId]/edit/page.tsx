@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { sessions, campaigns, gameEditions, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import SessionForm from '@/components/session/SessionForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { sessions, campaigns, gameEditions, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import SessionForm from "@/components/session/SessionForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditSessionPageProps {
   params: Promise<{ id: string; sessionId: string }>;
@@ -57,11 +57,13 @@ async function getAdventures(campaignId: number) {
     .orderBy(adventures.startDate);
 }
 
-export default async function EditSessionPage({ params }: EditSessionPageProps) {
+export default async function EditSessionPage({
+  params,
+}: EditSessionPageProps) {
   const resolvedParams = await params;
   const sessionId = parseInt(resolvedParams.sessionId);
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const session = await getSession(sessionId);
   const campaign = await getCampaign(campaignId);
 
@@ -76,9 +78,12 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
       <DynamicBreadcrumb
         campaignId={campaignId}
         sectionItems={[
-          { label: 'Sessions', href: `/campaigns/${campaignId}/sessions` },
-          { label: session.title, href: `/campaigns/${campaignId}/sessions/${sessionId}` },
-          { label: 'Edit' }
+          { label: "Sessions", href: `/campaigns/${campaignId}/sessions` },
+          {
+            label: session.title,
+            href: `/campaigns/${campaignId}/sessions/${sessionId}`,
+          },
+          { label: "Edit" },
         ]}
       />
       <SessionForm
@@ -132,7 +137,9 @@ export async function generateMetadata({ params }: EditSessionPageProps) {
   const session = await getSession(parseInt(resolvedParams.sessionId));
 
   return {
-    title: session ? `Edit ${session.title}` : 'Edit Session',
-    description: session ? `Edit session details for ${session.title}` : 'Edit session details',
+    title: session ? `Edit ${session.title}` : "Edit Session",
+    description: session
+      ? `Edit session details for ${session.title}`
+      : "Edit session details",
   };
 }

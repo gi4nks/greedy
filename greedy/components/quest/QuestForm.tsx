@@ -1,21 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, X, EyeOff } from 'lucide-react';
-import Link from 'next/link';
-import { createQuest, updateQuest } from '@/lib/actions/quests';
-import { ImageManager } from '@/components/ui/image-manager';
-import { ImageInfo, parseImagesJson } from '@/lib/utils/imageUtils.client';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
-import { WikiEntity } from '@/lib/types/wiki';
+import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Save, X, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { createQuest, updateQuest } from "@/lib/actions/quests";
+import { ImageManager } from "@/components/ui/image-manager";
+import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { toast } from "sonner";
 
 interface QuestFormProps {
   quest?: {
@@ -39,10 +47,10 @@ interface QuestFormProps {
     status?: string | null;
   }>;
   adventureId?: number; // For adventure-scoped creation
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
 }
 
-interface FormData {
+interface FormState {
   title: string;
   description: string;
   adventureId: string;
@@ -56,34 +64,84 @@ interface FormData {
 }
 
 const statusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'paused', label: 'Paused' },
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
+  { value: "failed", label: "Failed" },
+  { value: "paused", label: "Paused" },
 ];
 
 const priorityOptions = [
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
 ];
 
 const typeOptions = [
-  { value: 'main', label: 'Main Quest' },
-  { value: 'side', label: 'Side Quest' },
-  { value: 'personal', label: 'Personal Quest' },
+  { value: "main", label: "Main Quest" },
+  { value: "side", label: "Side Quest" },
+  { value: "personal", label: "Personal Quest" },
 ];
 
-export default function QuestForm({ quest, campaignId, adventures, adventureId: fixedAdventureId, mode }: QuestFormProps) {
+export default function QuestForm({
+  quest,
+  campaignId,
+  adventures,
+  adventureId: fixedAdventureId,
+  mode,
+}: QuestFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newTag, setNewTag] = useState('');
-  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(quest?.wikiEntities || []);
+
+  const createOrUpdateQuest = async (
+    prevState: { success: boolean; error?: string } | undefined,
+    formData: FormData,
+  ) => {
+    try {
+      let result;
+      if (mode === "edit" && quest) {
+        result = await updateQuest(formData);
+      } else {
+        result = await createQuest(formData);
+      }
+
+      if (result?.success || !result?.message) {
+        toast.success(
+          `Quest ${mode === "edit" ? "updated" : "created"} successfully!`,
+        );
+        // Redirect based on context
+        if (fixedAdventureId) {
+          router.push(
+            `/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`,
+          );
+        } else {
+          router.push(`/campaigns/${campaignId}/quests`);
+        }
+        return { success: true };
+      } else {
+        toast.error("Failed to save quest. Please try again.");
+        return { success: false, error: result.message };
+      }
+    } catch (error) {
+      console.error("Error saving quest:", error);
+      toast.error("Failed to save quest. Please try again.");
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  };
+
+  const [state, formAction, isPending] = useActionState(createOrUpdateQuest, {
+    success: false,
+  });
+  const [newTag, setNewTag] = useState("");
+  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(
+    quest?.wikiEntities || [],
+  );
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
   // Parse tags from quest data
   const parseTags = (tags: unknown): string[] => {
-    if (typeof tags === 'string') {
+    if (typeof tags === "string") {
       try {
         const parsed = JSON.parse(tags);
         return Array.isArray(parsed) ? parsed : [];
@@ -95,96 +153,106 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
   };
 
   // Initialize form data
-  const [formData, setFormData] = useState<FormData>(() => {
-    if (mode === 'edit' && quest) {
+  const [formData, setFormData] = useState<FormState>(() => {
+    if (mode === "edit" && quest) {
       return {
         title: quest.title,
-        description: quest.description || '',
-        adventureId: quest.adventureId?.toString() || fixedAdventureId?.toString() || '',
-        status: quest.status || 'active',
-        priority: quest.priority || 'medium',
-        type: quest.type || 'main',
-        dueDate: quest.dueDate || '',
-        assignedTo: quest.assignedTo || '',
+        description: quest.description || "",
+        adventureId:
+          quest.adventureId?.toString() || fixedAdventureId?.toString() || "",
+        status: quest.status || "active",
+        priority: quest.priority || "medium",
+        type: quest.type || "main",
+        dueDate: quest.dueDate || "",
+        assignedTo: quest.assignedTo || "",
         tags: parseTags(quest.tags),
         images: parseImagesJson(quest.images),
       };
     }
     return {
-      title: '',
-      description: '',
-      adventureId: fixedAdventureId?.toString() || '',
-      status: 'active',
-      priority: 'medium',
-      type: 'main',
-      dueDate: '',
-      assignedTo: '',
+      title: "",
+      description: "",
+      adventureId: fixedAdventureId?.toString() || "",
+      status: "active",
+      priority: "medium",
+      type: "main",
+      dueDate: "",
+      assignedTo: "",
       tags: [],
       images: [],
     };
   });
 
-  const handleInputChange = (field: keyof Omit<FormData, 'tags' | 'images'>, value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: keyof FormState,
+    value: string | ImageInfo[],
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleImagesChange = (images: ImageInfo[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images
+      images,
     }));
   };
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...prev.tags, newTag.trim()],
       }));
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
-  const removeWikiItem = async (wikiArticleId: number, _contentType: string) => {
+  const removeWikiItem = async (
+    wikiArticleId: number,
+    _contentType: string,
+  ) => {
     const itemKey = `wiki-${wikiArticleId}`;
-    
+
     // Prevent duplicate removal operations
     if (removingItems.has(itemKey)) {
       return;
     }
 
     // Add to removing set to show loading state
-    setRemovingItems(prev => new Set(prev).add(itemKey));
+    setRemovingItems((prev) => new Set(prev).add(itemKey));
 
     try {
-      const response = await fetch(`/api/wiki-articles/${wikiArticleId}/entities`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/wiki-articles/${wikiArticleId}/entities`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entityType: "quest",
+            entityId: quest?.id,
+          }),
         },
-        body: JSON.stringify({
-          entityType: 'quest',
-          entityId: quest?.id,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error response:', errorText);
-        
+        console.error("API error response:", errorText);
+
         // Treat 404 as success (item already removed)
         if (response.status === 404) {
-          console.log('Item already removed (404), treating as success');
+          console.log("Item already removed (404), treating as success");
         } else {
           throw new Error(`Failed to remove wiki item: ${errorText}`);
         }
@@ -192,18 +260,20 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
 
       const result = response.ok ? await response.json() : null;
       if (result) {
-        console.log('API success result:', result);
+        console.log("API success result:", result);
       }
 
       // Update local state - remove the entity from wikiEntities
-      setWikiEntities(prev => prev.filter(entity => entity.id !== wikiArticleId));
-      console.log('Wiki item removed successfully');
+      setWikiEntities((prev) =>
+        prev.filter((entity) => entity.id !== wikiArticleId),
+      );
+      console.log("Wiki item removed successfully");
     } catch (error) {
-      console.error('Error removing wiki item:', error);
-      // Could add toast notification here
+      console.error("Error removing wiki item:", error);
+      toast.error("Failed to remove wiki item. Please try again.");
     } finally {
       // Remove from removing set
-      setRemovingItems(prev => {
+      setRemovingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(itemKey);
         return newSet;
@@ -211,75 +281,34 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const formDataObj = new FormData();
-      formDataObj.append('title', formData.title);
-      formDataObj.append('description', formData.description);
-      if (formData.adventureId) {
-        formDataObj.append('adventureId', formData.adventureId);
-      }
-      formDataObj.append('status', formData.status);
-      formDataObj.append('priority', formData.priority);
-      formDataObj.append('type', formData.type);
-      formDataObj.append('dueDate', formData.dueDate);
-      formDataObj.append('assignedTo', formData.assignedTo);
-      formDataObj.append('tags', formData.tags.join(','));
-      formDataObj.append('images', JSON.stringify(formData.images));
-      formDataObj.append('campaignId', campaignId.toString());
-
-      let result;
-      if (mode === 'edit' && quest) {
-        formDataObj.append('id', quest.id.toString());
-        result = await updateQuest(formDataObj);
-      } else {
-        result = await createQuest(formDataObj);
-      }
-
-      // Check if the action was successful, then redirect
-      if (result?.success || !result?.message) {
-        // Redirect based on context
-        if (fixedAdventureId) {
-          router.push(`/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`);
-        } else {
-          router.push(`/campaigns/${campaignId}/quests`);
-        }
-      } else {
-        // Handle error case
-        console.error('Action failed:', result.message);
-      }
-    } catch (error) {
-      console.error('Error saving quest:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
-        <Link 
-          href={fixedAdventureId ? `/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests` : `/campaigns/${campaignId}/quests`}
+        <Link
+          href={
+            fixedAdventureId
+              ? `/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`
+              : `/campaigns/${campaignId}/quests`
+          }
           className="inline-flex items-center gap-2 text-base-content/70 hover:text-base-content mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Quests
         </Link>
-        
+
         <div>
           <h1 className="text-3xl font-bold">
-            {mode === 'edit' ? 'Edit Quest' : 'Create New Quest'}
+            {mode === "edit" ? "Edit Quest" : "Create New Quest"}
           </h1>
           <p className="text-base-content/70">
-            {mode === 'edit' ? 'Update quest details' : 'Add a new quest to your campaign'}
+            {mode === "edit"
+              ? "Update quest details"
+              : "Add a new quest to your campaign"}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={formAction} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -290,7 +319,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="Enter quest title"
                 required
               />
@@ -301,7 +330,9 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Describe the quest objectives, background, and any important details..."
                 rows={4}
               />
@@ -314,7 +345,9 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                 <Select
                   name="adventureId"
                   value={formData.adventureId}
-                  onValueChange={(value) => handleInputChange('adventureId', value)}
+                  onValueChange={(value) =>
+                    handleInputChange("adventureId", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an adventure (optional)" />
@@ -322,7 +355,10 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                   <SelectContent>
                     <SelectItem value="none">No specific adventure</SelectItem>
                     {adventures?.map((adventure) => (
-                      <SelectItem key={adventure.id} value={adventure.id.toString()}>
+                      <SelectItem
+                        key={adventure.id}
+                        value={adventure.id.toString()}
+                      >
                         {adventure.title}
                       </SelectItem>
                     ))}
@@ -344,7 +380,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                 <Select
                   name="status"
                   value={formData.status}
-                  onValueChange={(value) => handleInputChange('status', value)}
+                  onValueChange={(value) => handleInputChange("status", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -364,7 +400,9 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                 <Select
                   name="priority"
                   value={formData.priority}
-                  onValueChange={(value) => handleInputChange('priority', value)}
+                  onValueChange={(value) =>
+                    handleInputChange("priority", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
@@ -384,7 +422,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                 <Select
                   name="type"
                   value={formData.type}
-                  onValueChange={(value) => handleInputChange('type', value)}
+                  onValueChange={(value) => handleInputChange("type", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -407,7 +445,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                   id="dueDate"
                   type="date"
                   value={formData.dueDate}
-                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                  onChange={(e) => handleInputChange("dueDate", e.target.value)}
                 />
               </div>
 
@@ -416,7 +454,9 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                 <Input
                   id="assignedTo"
                   value={formData.assignedTo}
-                  onChange={(e) => handleInputChange('assignedTo', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("assignedTo", e.target.value)
+                  }
                   placeholder="Character or player name"
                 />
               </div>
@@ -444,7 +484,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add a tag"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addTag();
                     }
@@ -473,7 +513,7 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
         </Card>
 
         {/* Wiki Items */}
-        {mode === 'edit' && wikiEntities.length > 0 && quest && (
+        {mode === "edit" && wikiEntities.length > 0 && quest && (
           <Card>
             <CardHeader>
               <CardTitle>Wiki Items</CardTitle>
@@ -493,12 +533,15 @@ export default function QuestForm({ quest, campaignId, adventures, adventureId: 
         )}
 
         <div className="flex gap-4">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isPending}>
             <Save className="w-4 h-4 mr-2" />
-            {isSubmitting 
-              ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
-              : (mode === 'edit' ? 'Update' : 'Create')
-            }
+            {isPending
+              ? mode === "edit"
+                ? "Updating..."
+                : "Creating..."
+              : mode === "edit"
+                ? "Update"
+                : "Create"}
           </Button>
           <Button
             type="button"

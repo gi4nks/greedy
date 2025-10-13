@@ -1,13 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import { WikiEntitiesDisplayProps } from '@/lib/types/wiki';
-import { groupWikiEntities, generateItemId, getEntityBadges, getCategoryConfig } from '@/lib/utils/wiki';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { WikiEntitiesDisplayProps } from "@/lib/types/wiki";
+import {
+  groupWikiEntities,
+  generateItemId,
+  getEntityBadges,
+  getCategoryConfig,
+} from "@/lib/utils/wiki";
 
 export default function WikiEntitiesDisplay({
   wikiEntities,
@@ -20,7 +25,8 @@ export default function WikiEntitiesDisplay({
 }: WikiEntitiesDisplayProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  const { magicItems, spells, monsters, otherItems } = groupWikiEntities(wikiEntities);
+  const { magicItems, spells, monsters, otherItems } =
+    groupWikiEntities(wikiEntities);
 
   const toggleExpanded = (itemId: string) => {
     const newExpanded = new Set(expandedItems);
@@ -35,7 +41,7 @@ export default function WikiEntitiesDisplay({
   const renderEntitySection = (
     entities: typeof wikiEntities,
     categoryKey: string,
-    title: string
+    title: string,
   ) => {
     if (entities.length === 0) return null;
 
@@ -67,17 +73,29 @@ export default function WikiEntitiesDisplay({
                       onClick={() => toggleExpanded(itemId)}
                     >
                       <span className="text-2xl">{categoryConfig?.icon}</span>
-                      <span className={`font-medium ${categoryConfig?.textColor}`}>{entity.title}</span>
+                      <span
+                        className={`font-medium ${categoryConfig?.textColor}`}
+                      >
+                        {entity.title}
+                      </span>
                       <div className="flex items-center gap-2">
                         {badges.map((badge) => (
-                          <Badge key={badge.key} variant={badge.variant} className={badge.className}>
+                          <Badge
+                            key={badge.key}
+                            variant={badge.variant}
+                            className={badge.className}
+                          >
                             {badge.text}
                           </Badge>
                         ))}
                         {isExpanded ? (
-                          <ChevronUp className={`w-4 h-4 ${categoryConfig?.chevronColor}`} />
+                          <ChevronUp
+                            className={`w-4 h-4 ${categoryConfig?.chevronColor}`}
+                          />
                         ) : (
-                          <ChevronDown className={`w-4 h-4 ${categoryConfig?.chevronColor}`} />
+                          <ChevronDown
+                            className={`w-4 h-4 ${categoryConfig?.chevronColor}`}
+                          />
                         )}
                       </div>
                     </div>
@@ -87,8 +105,12 @@ export default function WikiEntitiesDisplay({
                         variant="neutral"
                         className="gap-2 mr-3 mt-3"
                         size="sm"
-                        onClick={() => onRemoveEntity(entity.id, entity.contentType)}
-                        disabled={removingItems.has(`${entity.contentType}-${entity.id}`)}
+                        onClick={() =>
+                          onRemoveEntity(entity.id, entity.contentType)
+                        }
+                        disabled={removingItems.has(
+                          `${entity.contentType}-${entity.id}`,
+                        )}
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
@@ -97,7 +119,10 @@ export default function WikiEntitiesDisplay({
                   </div>
                   {isExpanded && entity.description && (
                     <div className="px-3 pb-3">
-                      <MarkdownRenderer content={entity.description} className="prose-sm" />
+                      <MarkdownRenderer
+                        content={entity.description}
+                        className="prose-sm"
+                      />
                     </div>
                   )}
                 </div>
@@ -109,7 +134,11 @@ export default function WikiEntitiesDisplay({
     );
   };
 
-  const hasAnyEntities = magicItems.length > 0 || spells.length > 0 || monsters.length > 0 || otherItems.length > 0;
+  const hasAnyEntities =
+    magicItems.length > 0 ||
+    spells.length > 0 ||
+    monsters.length > 0 ||
+    otherItems.length > 0;
 
   if (!hasAnyEntities) {
     return null;
@@ -117,15 +146,24 @@ export default function WikiEntitiesDisplay({
 
   return (
     <div className="space-y-6">
-      {renderEntitySection(magicItems, 'magic-item', 'Magic Items from Wiki Import')}
-      {renderEntitySection(spells, 'spell', 'Spells from Wiki Import')}
-      {renderEntitySection(monsters, 'monster', 'Creatures from Wiki Import')}
-      {renderEntitySection(otherItems, 'other', 'Other Items from Wiki Import')}
+      {renderEntitySection(
+        magicItems,
+        "magic-item",
+        "Magic Items from Wiki Import",
+      )}
+      {renderEntitySection(spells, "spell", "Spells from Wiki Import")}
+      {renderEntitySection(monsters, "monster", "Creatures from Wiki Import")}
+      {renderEntitySection(otherItems, "other", "Other Items from Wiki Import")}
 
       {showImportMessage && (
         <div className="text-center text-gray-600 text-sm">
-          <p>These entities were assigned to this {entityType} through the Wiki Import feature.</p>
-          <p>Use the Wiki Import page to add more entities to this {entityType}.</p>
+          <p>
+            These entities were assigned to this {entityType} through the Wiki
+            Import feature.
+          </p>
+          <p>
+            Use the Wiki Import page to add more entities to this {entityType}.
+          </p>
         </div>
       )}
     </div>

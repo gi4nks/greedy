@@ -6,7 +6,7 @@ import { Skeleton } from "../../../components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 // Force dynamic rendering to avoid database queries during build
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 async function SessionsList() {
   const sessions = await getSessions();
@@ -25,11 +25,7 @@ export default function SessionsPage() {
     <div className="min-h-screen bg-base-200">
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <DynamicBreadcrumb
-          items={[
-            { label: 'Sessions' }
-          ]}
-        />
+        <DynamicBreadcrumb items={[{ label: "Sessions" }]} />
 
         <div className="flex justify-between items-center mb-8">
           <div>

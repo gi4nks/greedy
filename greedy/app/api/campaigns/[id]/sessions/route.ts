@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { sessions, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { sessions, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const campaignId = parseInt(id);
-    
+
     if (isNaN(campaignId)) {
       return NextResponse.json(
-        { error: 'Invalid campaign ID' },
-        { status: 400 }
+        { error: "Invalid campaign ID" },
+        { status: 400 },
       );
     }
 
@@ -31,10 +31,10 @@ export async function GET(
 
     return NextResponse.json(campaignSessions);
   } catch (error) {
-    console.error('Failed to fetch campaign sessions:', error);
+    console.error("Failed to fetch campaign sessions:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch sessions' },
-      { status: 500 }
+      { error: "Failed to fetch sessions" },
+      { status: 500 },
     );
   }
 }

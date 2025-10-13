@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { quests, adventures, campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import QuestForm from '@/components/quest/QuestForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { quests, adventures, campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import QuestForm from "@/components/quest/QuestForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditAdventureQuestPageProps {
   params: Promise<{ id: string; adventureId: string; questId: string }>;
@@ -67,12 +67,14 @@ async function getAdventures(campaignId: number) {
     .orderBy(adventures.startDate);
 }
 
-export default async function EditAdventureQuestPage({ params }: EditAdventureQuestPageProps) {
+export default async function EditAdventureQuestPage({
+  params,
+}: EditAdventureQuestPageProps) {
   const resolvedParams = await params;
   const questId = parseInt(resolvedParams.questId);
   const adventureId = parseInt(resolvedParams.adventureId);
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const quest = await getQuest(questId);
   const campaign = await getCampaign(campaignId);
 
@@ -90,7 +92,7 @@ export default async function EditAdventureQuestPage({ params }: EditAdventureQu
     .from(adventures)
     .where(eq(adventures.id, adventureId))
     .limit(1);
-    
+
   if (!adventure || adventure.campaignId !== campaignId) {
     notFound();
   }
@@ -104,11 +106,20 @@ export default async function EditAdventureQuestPage({ params }: EditAdventureQu
         campaignId={campaignId}
         campaignTitle={campaign.title}
         sectionItems={[
-          { label: 'Adventures', href: `/campaigns/${campaignId}/adventures` },
-          { label: adventure.title, href: `/campaigns/${campaignId}/adventures/${adventureId}` },
-          { label: 'Quests', href: `/campaigns/${campaignId}/adventures/${adventureId}/quests` },
-          { label: quest.title, href: `/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}` },
-          { label: 'Edit' }
+          { label: "Adventures", href: `/campaigns/${campaignId}/adventures` },
+          {
+            label: adventure.title,
+            href: `/campaigns/${campaignId}/adventures/${adventureId}`,
+          },
+          {
+            label: "Quests",
+            href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+          },
+          {
+            label: quest.title,
+            href: `/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}`,
+          },
+          { label: "Edit" },
         ]}
       />
 
@@ -164,12 +175,14 @@ function EditQuestSkeleton() {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: EditAdventureQuestPageProps) {
+export async function generateMetadata({
+  params,
+}: EditAdventureQuestPageProps) {
   const resolvedParams = await params;
   const quest = await getQuest(parseInt(resolvedParams.questId));
 
   return {
-    title: quest ? `Edit ${quest.title}` : 'Edit Quest',
+    title: quest ? `Edit ${quest.title}` : "Edit Quest",
     description: quest?.description || `Edit quest details`,
   };
 }

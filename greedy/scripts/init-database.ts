@@ -4,14 +4,14 @@
  * Sets up the database schema and runs necessary migrations
  */
 
-import { db } from '@/lib/db';
-import { sql } from 'drizzle-orm';
-import fs from 'fs';
-import path from 'path';
+import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
 
 // SQL to create all necessary tables
 const initializeSchema = async () => {
-  console.log('🗄️  Initializing database schema...');
+  console.log("🗄️  Initializing database schema...");
 
   try {
     // Create game_editions table
@@ -208,27 +208,28 @@ const initializeSchema = async () => {
       )
     `);
 
-    console.log('✅ Database schema initialized successfully');
+    console.log("✅ Database schema initialized successfully");
 
     // Create default game edition if none exists
     try {
-      const existingEditions = await db.run(sql`SELECT COUNT(*) as count FROM game_editions LIMIT 1`);
-      console.log('📚 Creating default game edition...');
+      const existingEditions = await db.run(
+        sql`SELECT COUNT(*) as count FROM game_editions LIMIT 1`,
+      );
+      console.log("📚 Creating default game edition...");
       await db.run(sql`
         INSERT OR IGNORE INTO game_editions (code, name, publisher, is_active)
         VALUES ('dnd5e', 'D&D 5th Edition', 'Wizards of the Coast', 1)
       `);
-      console.log('✅ Default game edition created');
+      console.log("✅ Default game edition created");
     } catch (error) {
-      console.log('ℹ️  Default game edition setup skipped');
+      console.log("ℹ️  Default game edition setup skipped");
     }
 
     // Verify tables exist
-    console.log('📋 Database tables created successfully');
-    console.log('🎉 Database initialization complete!');
-
+    console.log("📋 Database tables created successfully");
+    console.log("🎉 Database initialization complete!");
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
+    console.error("❌ Database initialization failed:", error);
     throw error;
   }
 };

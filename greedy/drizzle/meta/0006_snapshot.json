@@ -94,12 +94,8 @@
           "name": "adventures_campaign_id_campaigns_id_fk",
           "tableFrom": "adventures",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -192,12 +188,8 @@
           "name": "campaigns_game_edition_id_game_editions_id_fk",
           "tableFrom": "campaigns",
           "tableTo": "game_editions",
-          "columnsFrom": [
-            "game_edition_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_edition_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -253,12 +245,8 @@
           "name": "character_magic_items_character_id_characters_id_fk",
           "tableFrom": "character_magic_items",
           "tableTo": "characters",
-          "columnsFrom": [
-            "character_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["character_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -266,12 +254,8 @@
           "name": "character_magic_items_magic_item_id_magic_items_id_fk",
           "tableFrom": "character_magic_items",
           "tableTo": "magic_items",
-          "columnsFrom": [
-            "magic_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["magic_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -615,12 +599,8 @@
           "name": "characters_campaign_id_campaigns_id_fk",
           "tableFrom": "characters",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -628,12 +608,8 @@
           "name": "characters_adventure_id_adventures_id_fk",
           "tableFrom": "characters",
           "tableTo": "adventures",
-          "columnsFrom": [
-            "adventure_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -707,9 +683,7 @@
       "indexes": {
         "game_editions_code_unique": {
           "name": "game_editions_code_unique",
-          "columns": [
-            "code"
-          ],
+          "columns": ["code"],
           "isUnique": true
         }
       },
@@ -793,12 +767,8 @@
           "name": "locations_adventure_id_adventures_id_fk",
           "tableFrom": "locations",
           "tableTo": "adventures",
-          "columnsFrom": [
-            "adventure_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -806,12 +776,8 @@
           "name": "locations_campaign_id_campaigns_id_fk",
           "tableFrom": "locations",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -975,24 +941,17 @@
       "indexes": {
         "idx_magic_item_assignments_magic_item": {
           "name": "idx_magic_item_assignments_magic_item",
-          "columns": [
-            "magic_item_id"
-          ],
+          "columns": ["magic_item_id"],
           "isUnique": false
         },
         "idx_magic_item_assignments_entity": {
           "name": "idx_magic_item_assignments_entity",
-          "columns": [
-            "entity_type",
-            "entity_id"
-          ],
+          "columns": ["entity_type", "entity_id"],
           "isUnique": false
         },
         "idx_magic_item_assignments_campaign": {
           "name": "idx_magic_item_assignments_campaign",
-          "columns": [
-            "campaign_id"
-          ],
+          "columns": ["campaign_id"],
           "isUnique": false
         }
       },
@@ -1001,12 +960,8 @@
           "name": "magic_item_assignments_magic_item_id_magic_items_id_fk",
           "tableFrom": "magic_item_assignments",
           "tableTo": "magic_items",
-          "columnsFrom": [
-            "magic_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["magic_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1014,12 +969,8 @@
           "name": "magic_item_assignments_campaign_id_campaigns_id_fk",
           "tableFrom": "magic_item_assignments",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1028,11 +979,7 @@
       "uniqueConstraints": {
         "uniq_magic_item_assignment": {
           "name": "uniq_magic_item_assignment",
-          "columns": [
-            "magic_item_id",
-            "entity_type",
-            "entity_id"
-          ]
+          "columns": ["magic_item_id", "entity_type", "entity_id"]
         }
       },
       "checkConstraints": {}
@@ -1112,12 +1059,8 @@
           "name": "npcs_adventure_id_adventures_id_fk",
           "tableFrom": "npcs",
           "tableTo": "adventures",
-          "columnsFrom": [
-            "adventure_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1232,12 +1175,8 @@
           "name": "quests_adventure_id_adventures_id_fk",
           "tableFrom": "quests",
           "tableTo": "adventures",
-          "columnsFrom": [
-            "adventure_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1314,12 +1253,8 @@
           "name": "sessions_adventure_id_adventures_id_fk",
           "tableFrom": "sessions",
           "tableTo": "adventures",
-          "columnsFrom": [
-            "adventure_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1424,12 +1359,8 @@
           "name": "timeline_events_campaign_id_campaigns_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1437,12 +1368,8 @@
           "name": "timeline_events_session_id_sessions_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1511,12 +1438,8 @@
           "name": "wiki_article_entities_wiki_article_id_wiki_articles_id_fk",
           "tableFrom": "wiki_article_entities",
           "tableTo": "wiki_articles",
-          "columnsFrom": [
-            "wiki_article_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["wiki_article_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

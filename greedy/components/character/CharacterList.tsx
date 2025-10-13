@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Character, Adventure } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Plus, Users, Crown, Edit, View } from 'lucide-react';
-import { formatDisplayDate } from '@/lib/utils/date';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
+import { Character, Adventure } from "@/lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Plus, Users, Crown, Edit, View } from "lucide-react";
+import { formatDisplayDate } from "@/lib/utils/date";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
 
 interface CharacterListProps {
   characters: Character[];
@@ -15,12 +15,16 @@ interface CharacterListProps {
   adventures: Adventure[];
 }
 
-export default function CharacterList({ characters, campaignId, adventures }: CharacterListProps) {
+export default function CharacterList({
+  characters,
+  campaignId,
+  adventures,
+}: CharacterListProps) {
   const getCharacterTypeIcon = (type: string | null) => {
     switch (type) {
-      case 'pc':
+      case "pc":
         return <Crown className="w-4 h-4" />;
-      case 'npc':
+      case "npc":
         return <Users className="w-4 h-4" />;
       default:
         return <Users className="w-4 h-4" />;
@@ -29,18 +33,18 @@ export default function CharacterList({ characters, campaignId, adventures }: Ch
 
   const getCharacterTypeColor = (type: string | null) => {
     switch (type) {
-      case 'pc':
-        return 'badge-primary';
-      case 'npc':
-        return 'badge-secondary';
+      case "pc":
+        return "badge-primary";
+      case "npc":
+        return "badge-secondary";
       default:
-        return 'badge-ghost';
+        return "badge-ghost";
     }
   };
 
   const getAdventureName = (adventureId: number | null) => {
-    const adventure = adventures.find(a => a.id === adventureId);
-    return adventure?.title || 'Unknown Adventure';
+    const adventure = adventures.find((a) => a.id === adventureId);
+    return adventure?.title || "Unknown Adventure";
   };
 
   return (
@@ -63,7 +67,8 @@ export default function CharacterList({ characters, campaignId, adventures }: Ch
             <Users className="w-12 h-12 text-base-content/60 mb-4" />
             <h3 className="text-lg font-medium mb-2">No characters yet</h3>
             <p className="text-base-content/70 text-center mb-4">
-              Start building your campaign by adding player characters, NPCs, and monsters.
+              Start building your campaign by adding player characters, NPCs,
+              and monsters.
             </p>
             <Link href={`/campaigns/${campaignId}/characters/create`}>
               <Button>
@@ -76,14 +81,23 @@ export default function CharacterList({ characters, campaignId, adventures }: Ch
       ) : (
         <div className="grid gap-4">
           {characters.map((character) => (
-            <Card key={character.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={character.id}
+              className="hover:shadow-md transition-shadow"
+            >
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold">{character.name}</CardTitle>
+                  <CardTitle className="text-lg font-semibold">
+                    {character.name}
+                  </CardTitle>
                   <div className="flex items-center gap-2">
-                    <Badge className={getCharacterTypeColor(character.characterType)}>
+                    <Badge
+                      className={getCharacterTypeColor(character.characterType)}
+                    >
                       {getCharacterTypeIcon(character.characterType)}
-                      <span className="ml-1">{character.characterType?.toUpperCase() || 'UNKNOWN'}</span>
+                      <span className="ml-1">
+                        {character.characterType?.toUpperCase() || "UNKNOWN"}
+                      </span>
                     </Badge>
                   </div>
                 </div>
@@ -93,11 +107,12 @@ export default function CharacterList({ characters, campaignId, adventures }: Ch
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        {Array.isArray(character.classes) && character.classes.length > 0 && (
-                          <p className="text-base-content/70">
-                            {character.race} {character.classes.join(', ')}
-                          </p>
-                        )}
+                        {Array.isArray(character.classes) &&
+                          character.classes.length > 0 && (
+                            <p className="text-base-content/70">
+                              {character.race} {character.classes.join(", ")}
+                            </p>
+                          )}
                       </div>
                     </div>
 
@@ -125,13 +140,17 @@ export default function CharacterList({ characters, campaignId, adventures }: Ch
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/campaigns/${campaignId}/characters/${character.id}`}>
+                      <Link
+                        href={`/campaigns/${campaignId}/characters/${character.id}`}
+                      >
                         <Button variant="warning" className="gap-2" size="sm">
                           <View className="w-4 h-4" />
                           View
                         </Button>
                       </Link>
-                      <Link href={`/campaigns/${campaignId}/characters/${character.id}/edit`}>
+                      <Link
+                        href={`/campaigns/${campaignId}/characters/${character.id}/edit`}
+                      >
                         <Button variant="secondary" className="gap-2">
                           <Edit className="w-4 h-4" />
                           Edit

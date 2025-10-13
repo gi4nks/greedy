@@ -1,24 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Save, ArrowLeft, X, EyeOff } from 'lucide-react';
-import { createLocation, updateLocation } from '@/lib/actions/locations';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
-import { WikiEntity } from '@/lib/types/wiki';
-import { ImageManager } from '@/components/ui/image-manager';
-import { ImageInfo, parseImagesJson } from '@/lib/utils/imageUtils.client';
+import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Save, ArrowLeft, X, EyeOff } from "lucide-react";
+import { createLocation, updateLocation } from "@/lib/actions/locations";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { ImageManager } from "@/components/ui/image-manager";
+import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { toast } from "sonner";
 
 interface LocationFormProps {
   campaignId: number;
   adventureId?: number;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   location?: {
     id?: number;
     name?: string;
@@ -29,107 +31,124 @@ interface LocationFormProps {
   };
 }
 
-export default function LocationForm({ campaignId, adventureId, mode, location }: LocationFormProps) {
+export default function LocationForm({
+  campaignId,
+  adventureId,
+  mode,
+  location,
+}: LocationFormProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(location?.wikiEntities || []);
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
-  
-  const [formData, setFormData] = useState({
-    name: location?.name || '',
-    description: location?.description || '',
-    tags: (location?.tags ? (typeof location.tags === 'string' ? JSON.parse(location.tags) : location.tags) : []) as string[],
-  });
 
-  const [images, setImages] = useState<ImageInfo[]>(() => parseImagesJson(location?.images));
-
-  const [newTag, setNewTag] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const createOrUpdateLocation = async (
+    prevState: { success: boolean; error?: string } | undefined,
+    formData: FormData,
+  ) => {
     try {
-      const formDataToSubmit = new FormData();
-      formDataToSubmit.append('name', formData.name);
-      formDataToSubmit.append('description', formData.description);
-      formDataToSubmit.append('tags', formData.tags.join(','));
-      formDataToSubmit.append('images', JSON.stringify(images));
-      formDataToSubmit.append('campaignId', campaignId.toString());
-      
-      if (adventureId) {
-        formDataToSubmit.append('adventureId', adventureId.toString());
-      }
-
-      if (mode === 'edit' && location?.id) {
-        formDataToSubmit.append('id', location.id.toString());
-        const result = await updateLocation(formDataToSubmit);
-        if (result.message) {
-          throw new Error(result.message);
+      if (mode === "edit" && location?.id) {
+        const result = await updateLocation(formData);
+        if (!result.success) {
+          throw new Error("Failed to update location");
         }
       } else {
-        const result = await createLocation(formDataToSubmit);
-        if (result.message) {
-          throw new Error(result.message);
+        const result = await createLocation(formData);
+        if (!result.success) {
+          throw new Error("Failed to create location");
         }
       }
 
+      toast.success(
+        `Location ${mode === "edit" ? "updated" : "created"} successfully!`,
+      );
       router.push(`/campaigns/${campaignId}/locations`);
+      return { success: true };
     } catch (error) {
-      console.error('Error saving location:', error);
-      // TODO: Add proper error handling/toast notification
-    } finally {
-      setIsLoading(false);
+      console.error("Error saving location:", error);
+      toast.error("Failed to save location. Please try again.");
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   };
+
+  const [state, formAction, isPending] = useActionState(
+    createOrUpdateLocation,
+    { success: false },
+  );
+  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(
+    location?.wikiEntities || [],
+  );
+  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+
+  const [formData, setFormData] = useState({
+    name: location?.name || "",
+    description: location?.description || "",
+    tags: (location?.tags
+      ? typeof location.tags === "string"
+        ? JSON.parse(location.tags)
+        : location.tags
+      : []) as string[],
+  });
+
+  const [images, setImages] = useState<ImageInfo[]>(() =>
+    parseImagesJson(location?.images),
+  );
+
+  const [newTag, setNewTag] = useState("");
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData({
         ...formData,
-        tags: [...formData.tags, newTag.trim()]
+        tags: [...formData.tags, newTag.trim()],
       });
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
-      tags: formData.tags.filter(tag => tag !== tagToRemove)
+      tags: formData.tags.filter((tag) => tag !== tagToRemove),
     });
   };
 
-  const removeWikiItem = async (wikiArticleId: number, _contentType: string) => {
+  const removeWikiItem = async (
+    wikiArticleId: number,
+    _contentType: string,
+  ) => {
     const itemKey = `wiki-${wikiArticleId}`;
-    
+
     // Prevent duplicate removal operations
     if (removingItems.has(itemKey)) {
       return;
     }
 
     // Add to removing set to show loading state
-    setRemovingItems(prev => new Set(prev).add(itemKey));
+    setRemovingItems((prev) => new Set(prev).add(itemKey));
 
     try {
-      const response = await fetch(`/api/wiki-articles/${wikiArticleId}/entities`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/wiki-articles/${wikiArticleId}/entities`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entityType: "location",
+            entityId: location?.id,
+          }),
         },
-        body: JSON.stringify({
-          entityType: 'location',
-          entityId: location?.id,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error response:', errorText);
-        
+        console.error("API error response:", errorText);
+
         // Treat 404 as success (item already removed)
         if (response.status === 404) {
-          console.log('Item already removed (404), treating as success');
+          console.log("Item already removed (404), treating as success");
         } else {
           throw new Error(`Failed to remove wiki item: ${errorText}`);
         }
@@ -137,18 +156,20 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
 
       const result = response.ok ? await response.json() : null;
       if (result) {
-        console.log('API success result:', result);
+        console.log("API success result:", result);
       }
 
       // Update local state - remove the entity from wikiEntities
-      setWikiEntities(prev => prev.filter(entity => entity.id !== wikiArticleId));
-      console.log('Wiki item removed successfully');
+      setWikiEntities((prev) =>
+        prev.filter((entity) => entity.id !== wikiArticleId),
+      );
+      console.log("Wiki item removed successfully");
     } catch (error) {
-      console.error('Error removing wiki item:', error);
-      // Could add toast notification here
+      console.error("Error removing wiki item:", error);
+      toast.error("Failed to remove wiki item. Please try again.");
     } finally {
       // Remove from removing set
-      setRemovingItems(prev => {
+      setRemovingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(itemKey);
         return newSet;
@@ -157,7 +178,7 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       addTag();
     }
@@ -177,26 +198,27 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
             Back
           </Button>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="p-2 bg-green-500/10 rounded-lg">
             <MapPin className="w-6 h-6 text-green-500" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">
-              {mode === 'create' ? 'Create New Location' : `Edit ${location?.name}`}
+              {mode === "create"
+                ? "Create New Location"
+                : `Edit ${location?.name}`}
             </h1>
             <p className="text-base-content/70">
-              {mode === 'create' 
-                ? 'Add a new location to your campaign'
-                : 'Update location information'
-              }
+              {mode === "create"
+                ? "Add a new location to your campaign"
+                : "Update location information"}
             </p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={formAction} className="space-y-6">
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -209,7 +231,9 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="e.g., Moonhaven, The Whispering Woods, Dragonspire Castle"
                   required
                 />
@@ -220,7 +244,9 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe this location's appearance, atmosphere, and notable features..."
                   rows={4}
                 />
@@ -267,7 +293,8 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
               )}
 
               <div className="text-sm text-base-content/70">
-                Popular tags: city, town, village, dungeon, forest, mountain, castle, tavern, temple, ruins
+                Popular tags: city, town, village, dungeon, forest, mountain,
+                castle, tavern, temple, ruins
               </div>
             </div>
           </CardContent>
@@ -279,7 +306,7 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
             <CardTitle>Images</CardTitle>
           </CardHeader>
           <CardContent>
-            {mode === 'edit' && location?.id ? (
+            {mode === "edit" && location?.id ? (
               <ImageManager
                 entityType="locations"
                 entityId={location.id}
@@ -289,14 +316,17 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
             ) : (
               <div className="text-center py-8 text-base-content/70">
                 <p>Images can be added after creating the location.</p>
-                <p className="text-sm mt-2">Save the location first, then return to edit it and add images.</p>
+                <p className="text-sm mt-2">
+                  Save the location first, then return to edit it and add
+                  images.
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Wiki Items */}
-        {mode === 'edit' && wikiEntities.length > 0 && location && (
+        {mode === "edit" && wikiEntities.length > 0 && location && (
           <Card>
             <CardHeader>
               <CardTitle>Wiki Items</CardTitle>
@@ -317,12 +347,17 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
 
         {/* Actions */}
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" className="gap-2" onClick={() => router.back()}>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => router.back()}
+          >
             <EyeOff className="w-4 h-4" />
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading || !formData.name.trim()}>
-            {isLoading ? (
+          <Button type="submit" disabled={isPending || !formData.name.trim()}>
+            {isPending ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 Saving...
@@ -330,7 +365,7 @@ export default function LocationForm({ campaignId, adventureId, mode, location }
             ) : (
               <div className="flex items-center gap-2">
                 <Save className="w-4 h-4" />
-                {mode === 'create' ? 'Create' : 'Update'}
+                {mode === "create" ? "Create" : "Update"}
               </div>
             )}
           </Button>

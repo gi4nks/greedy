@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import QuestForm from '@/components/quest/QuestForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import QuestForm from "@/components/quest/QuestForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateQuestPageProps {
   params: Promise<{ id: string }>;
@@ -45,7 +45,9 @@ async function getAdventures(campaignId: number) {
     .orderBy(adventures.startDate);
 }
 
-export default async function CreateQuestPage({ params }: CreateQuestPageProps) {
+export default async function CreateQuestPage({
+  params,
+}: CreateQuestPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
   const campaign = await getCampaign(campaignId);
@@ -61,8 +63,8 @@ export default async function CreateQuestPage({ params }: CreateQuestPageProps) 
       <DynamicBreadcrumb
         campaignId={campaignId}
         sectionItems={[
-          { label: 'Quests', href: `/campaigns/${campaignId}/quests` },
-          { label: 'Create' }
+          { label: "Quests", href: `/campaigns/${campaignId}/quests` },
+          { label: "Create" },
         ]}
       />
       <QuestForm
@@ -120,7 +122,7 @@ export async function generateMetadata({ params }: CreateQuestPageProps) {
   const campaign = await getCampaign(parseInt(resolvedParams.id));
 
   return {
-    title: campaign ? `Create Quest | ${campaign.title}` : 'Create Quest',
-    description: 'Create a new quest for your D&D campaign',
+    title: campaign ? `Create Quest | ${campaign.title}` : "Create Quest",
+    description: "Create a new quest for your D&D campaign",
   };
 }

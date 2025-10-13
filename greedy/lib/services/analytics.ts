@@ -1,7 +1,7 @@
-import { db } from '@/lib/db';
-import { campaigns, adventures, sessions, characters } from '@/lib/db/schema';
-import { eq, sql, desc, count } from 'drizzle-orm';
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { db } from "@/lib/db";
+import { campaigns, adventures, sessions, characters } from "@/lib/db/schema";
+import { eq, sql, desc, count } from "drizzle-orm";
+import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 
 export interface CampaignAnalytics {
   overview: {
@@ -37,12 +37,18 @@ export interface CampaignAnalytics {
 }
 
 export class AnalyticsService {
-  static async getCampaignAnalytics(campaignId?: number): Promise<CampaignAnalytics> {
+  static async getCampaignAnalytics(
+    campaignId?: number,
+  ): Promise<CampaignAnalytics> {
     // Get basic counts
     const [campaignCount] = await db.select({ count: count() }).from(campaigns);
-    const [adventureCount] = await db.select({ count: count() }).from(adventures);
+    const [adventureCount] = await db
+      .select({ count: count() })
+      .from(adventures);
     const [sessionCount] = await db.select({ count: count() }).from(sessions);
-    const [characterCount] = await db.select({ count: count() }).from(characters);
+    const [characterCount] = await db
+      .select({ count: count() })
+      .from(characters);
 
     // Session trends - simplified
     const monthlyTrends = [];
@@ -54,10 +60,12 @@ export class AnalyticsService {
       const [monthData] = await db
         .select({ sessions: count() })
         .from(sessions)
-        .where(sql`${sessions.date} >= ${monthStart.toISOString()} AND ${sessions.date} <= ${monthEnd.toISOString()}`);
+        .where(
+          sql`${sessions.date} >= ${monthStart.toISOString()} AND ${sessions.date} <= ${monthEnd.toISOString()}`,
+        );
 
       monthlyTrends.push({
-        month: format(date, 'MMM yyyy'),
+        month: format(date, "MMM yyyy"),
         sessions: monthData.sessions || 0,
         hours: 0,
       });
@@ -104,7 +112,7 @@ export class AnalyticsService {
       },
       sessionTrends: {
         monthly: monthlyTrends,
-        recent: recentSessions.map(session => ({
+        recent: recentSessions.map((session) => ({
           date: session.date,
           title: session.title,
           duration: 0,

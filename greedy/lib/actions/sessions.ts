@@ -1,9 +1,12 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { sessions, adventures, campaigns, wikiArticleEntities, wikiArticles } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+import { db } from "@/lib/db";
+import { sessions, adventures, campaigns } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { getSessionWithWikiEntities } from "@/lib/db/queries";
+import { revalidatePath } from "next/cache";
+import { ActionResult } from "@/lib/types/api";
+import type { Session } from "@/lib/db/schema";
 
 export async function getSessions() {
   return await db
@@ -26,16 +29,13 @@ export async function getSessions() {
 }
 
 export async function getSession(id: number) {
-  const [result] = await db
+  const session = await getSessionWithWikiEntities(id);
+
+  if (!session) return null;
+
+  // Get campaign info separately since the optimized query doesn't include it
+  const [campaignInfo] = await db
     .select({
-      id: sessions.id,
-      adventureId: sessions.adventureId,
-      title: sessions.title,
-      date: sessions.date,
-      text: sessions.text,
-      images: sessions.images,
-      createdAt: sessions.createdAt,
-      updatedAt: sessions.updatedAt,
       campaignId: adventures.campaignId,
       campaignTitle: campaigns.title,
     })
@@ -45,81 +45,79 @@ export async function getSession(id: number) {
     .where(eq(sessions.id, id))
     .limit(1);
 
-  if (!result) return null;
-
-  // Get assigned wiki entities
-  const wikiEntitiesResult = await db
-    .select({
-      id: wikiArticles.id,
-      title: wikiArticles.title,
-      contentType: wikiArticles.contentType,
-      wikiUrl: wikiArticles.wikiUrl,
-      description: wikiArticles.rawContent, // Map rawContent to description for frontend compatibility
-      parsedData: wikiArticles.parsedData,
-      relationshipType: wikiArticleEntities.relationshipType,
-      relationshipData: wikiArticleEntities.relationshipData,
-    })
-    .from(wikiArticleEntities)
-    .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
-    .where(sql`${wikiArticleEntities.entityType} = 'session' AND ${wikiArticleEntities.entityId} = ${id}`);
-
   return {
-    ...result,
-    wikiEntities: wikiEntitiesResult.map(entity => ({
-      ...entity,
-      wikiUrl: entity.wikiUrl || undefined,
-      description: entity.description || undefined,
-      relationshipType: entity.relationshipType || undefined,
-    })),
+    ...session,
+    campaignId: campaignInfo?.campaignId || null,
+    campaignTitle: campaignInfo?.campaignTitle || null,
   };
 }
 
-export async function createSession(formData: FormData) {
-  const title = formData.get('title') as string;
-  const date = formData.get('date') as string;
-  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
-  const text = formData.get('text') as string;
-  const images = formData.get('images') as string;
-  const campaignId = formData.get('campaignId') as string;
+export async function createSession(
+  formData: FormData,
+): Promise<ActionResult<Session>> {
+  const title = formData.get("title") as string;
+  const date = formData.get("date") as string;
+  const adventureId = formData.get("adventureId")
+    ? Number(formData.get("adventureId"))
+    : null;
+  const text = formData.get("text") as string;
+  const images = formData.get("images") as string;
+  const campaignId = formData.get("campaignId") as string;
 
   if (!title || !date) {
-    throw new Error('Title and date are required');
+    return {
+      success: false,
+      message: "Title and date are required",
+    };
   }
 
   try {
-    const [session] = await db.insert(sessions).values({
-      title,
-      date,
-      adventureId,
-      text: text || null,
-      images: images ? JSON.parse(images) : null,
-    }).returning();
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        title,
+        date,
+        adventureId,
+        text: text || null,
+        images: images ? JSON.parse(images) : null,
+      })
+      .returning();
 
     // Revalidate campaign-specific sessions path
     if (campaignId) {
       revalidatePath(`/campaigns/${campaignId}/sessions`);
     } else {
-      revalidatePath('/sessions');
+      revalidatePath("/sessions");
     }
-    
-    return { success: true, session };
+
+    return { success: true, data: session };
   } catch (error) {
-    console.error('Database error:', error);
-    throw new Error('Failed to create session');
+    console.error("Database error:", error);
+    return {
+      success: false,
+      message: "Failed to create session",
+    };
   }
 }
 
-export async function updateSession(formData: FormData) {
-  const id = Number(formData.get('id'));
-  const title = formData.get('title') as string;
-  const date = formData.get('date') as string;
-  const adventureId = formData.get('adventureId') ? Number(formData.get('adventureId')) : null;
-  const text = formData.get('text') as string;
-  const images = formData.get('images') as string;
-  const campaignId = formData.get('campaignId') as string;
+export async function updateSession(
+  formData: FormData,
+): Promise<ActionResult<Session>> {
+  const id = Number(formData.get("id"));
+  const title = formData.get("title") as string;
+  const date = formData.get("date") as string;
+  const adventureId = formData.get("adventureId")
+    ? Number(formData.get("adventureId"))
+    : null;
+  const text = formData.get("text") as string;
+  const images = formData.get("images") as string;
+  const campaignId = formData.get("campaignId") as string;
 
   if (!title || !date) {
-    throw new Error('Title and date are required');
+    return {
+      success: false,
+      message: "Title and date are required",
+    };
   }
 
   try {
@@ -140,21 +138,24 @@ export async function updateSession(formData: FormData) {
     if (campaignId) {
       revalidatePath(`/campaigns/${campaignId}/sessions`);
     } else {
-      revalidatePath('/sessions');
+      revalidatePath("/sessions");
     }
-    
-    return { success: true, session };
+
+    return { success: true, data: session };
   } catch (error) {
-    console.error('Database error:', error);
-    throw new Error('Failed to update session');
+    console.error("Database error:", error);
+    return {
+      success: false,
+      message: "Failed to update session",
+    };
   }
 }
 
-export async function deleteSession(id: number) {
+export async function deleteSession(id: number): Promise<ActionResult> {
   try {
     // First get the session to determine campaign context for revalidation
     const session = await getSession(id);
-    
+
     // Delete the session
     await db.delete(sessions).where(eq(sessions.id, id));
 
@@ -162,18 +163,23 @@ export async function deleteSession(id: number) {
     if (session?.campaignId) {
       revalidatePath(`/campaigns/${session.campaignId}/sessions`);
     } else {
-      revalidatePath('/sessions');
+      revalidatePath("/sessions");
     }
-    
+
     return { success: true };
   } catch (error) {
-    console.error('Database error:', error);
-    throw new Error('Failed to delete session');
+    console.error("Database error:", error);
+    return {
+      success: false,
+      message: "Failed to delete session",
+    };
   }
 }
 
-export async function deleteSessionAction(formData: FormData) {
-  'use server';
-  const id = Number(formData.get('id'));
-  await deleteSession(id);
+export async function deleteSessionAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  "use server";
+  const id = Number(formData.get("id"));
+  return await deleteSession(id);
 }

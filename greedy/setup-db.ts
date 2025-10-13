@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-import path from 'path';
-import fs from 'fs';
-import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
+import path from "path";
+import fs from "fs";
+import Database from "better-sqlite3";
+import { fileURLToPath } from "url";
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Database path
-const DB_PATH = path.resolve(__dirname, '../app/database/campaign.db');
+const DB_PATH = path.resolve(__dirname, "../app/database/campaign.db");
 
 // Ensure directory exists
 const dbDir = path.dirname(DB_PATH);
@@ -23,22 +23,25 @@ console.log(`Setting up database at: ${DB_PATH}`);
 const db = new Database(DB_PATH);
 
 // Migration tracking table
-db.prepare(`
+db.prepare(
+  `
   CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     executed_at TEXT DEFAULT CURRENT_TIMESTAMP
   )
-`).run();
+`,
+).run();
 
 // Basic schema setup - simplified version for the Next.js app
 const migrations = [
   {
     version: 1,
-    name: '001_initial_schema',
+    name: "001_initial_schema",
     up: (db: Database.Database) => {
       // Campaigns table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE campaigns (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
@@ -49,10 +52,12 @@ const migrations = [
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
-      `).run();
+      `,
+      ).run();
 
       // Adventures table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE adventures (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           campaign_id INTEGER NOT NULL,
@@ -64,10 +69,12 @@ const migrations = [
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Characters table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE characters (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           adventure_id INTEGER NOT NULL,
@@ -81,10 +88,12 @@ const migrations = [
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Sessions table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE sessions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           adventure_id INTEGER NOT NULL,
@@ -95,10 +104,12 @@ const migrations = [
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Session logs table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE session_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           session_id INTEGER NOT NULL,
@@ -108,10 +119,12 @@ const migrations = [
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Locations table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE locations (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           adventure_id INTEGER NOT NULL,
@@ -122,10 +135,12 @@ const migrations = [
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Quests table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE quests (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           adventure_id INTEGER NOT NULL,
@@ -140,10 +155,12 @@ const migrations = [
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE
         )
-      `).run();
+      `,
+      ).run();
 
       // Magic items table
-      db.prepare(`
+      db.prepare(
+        `
         CREATE TABLE magic_items (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
@@ -154,14 +171,17 @@ const migrations = [
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
-      `).run();
-    }
-  }
+      `,
+      ).run();
+    },
+  },
 ];
 
 function runMigrations() {
-  const executedMigrations = db.prepare('SELECT version FROM schema_migrations').all() as { version: number }[];
-  const executedVersions = new Set(executedMigrations.map(m => m.version));
+  const executedMigrations = db
+    .prepare("SELECT version FROM schema_migrations")
+    .all() as { version: number }[];
+  const executedVersions = new Set(executedMigrations.map((m) => m.version));
 
   for (const migration of migrations) {
     if (executedVersions.has(migration.version)) {
@@ -174,7 +194,9 @@ function runMigrations() {
     try {
       db.transaction(() => {
         migration.up(db);
-        db.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(migration.version, migration.name);
+        db.prepare(
+          "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
+        ).run(migration.version, migration.name);
       })();
       console.log(`✅ Migration ${migration.name} completed successfully`);
     } catch (error) {
@@ -186,9 +208,9 @@ function runMigrations() {
 
 try {
   runMigrations();
-  console.log('🎉 Database setup completed successfully!');
+  console.log("🎉 Database setup completed successfully!");
 } catch (error) {
-  console.error('💥 Database setup failed:', error);
+  console.error("💥 Database setup failed:", error);
   process.exit(1);
 } finally {
   db.close();

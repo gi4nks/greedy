@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 // GET /api/game-editions - Get all active game editions
 export async function GET() {
@@ -20,10 +20,10 @@ export async function GET() {
 
     return NextResponse.json(editions);
   } catch (error) {
-    console.error('Failed to fetch game editions:', error);
+    console.error("Failed to fetch game editions:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch game editions' },
-      { status: 500 }
+      { error: "Failed to fetch game editions" },
+      { status: 500 },
     );
   }
 }

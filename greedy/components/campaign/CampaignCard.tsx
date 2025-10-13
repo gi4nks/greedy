@@ -1,6 +1,8 @@
-import Link from 'next/link';
-import { Campaign } from '@/lib/db/schema';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
+import Link from "next/link";
+import { Campaign } from "@/lib/db/schema";
+import { Card, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -9,9 +11,9 @@ interface CampaignCardProps {
 export default function CampaignCard({ campaign }: CampaignCardProps) {
   return (
     <Link href={`/campaigns/${campaign.id}`}>
-      <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer">
-        <div className="card-body">
-          <h2 className="card-title">{campaign.title}</h2>
+      <Card className="shadow-xl hover:shadow-2xl transition-shadow cursor-pointer">
+        <CardContent>
+          <CardTitle>{campaign.title}</CardTitle>
           {campaign.description && (
             <div className="text-sm text-base-content/70 mb-2 max-h-16 overflow-hidden">
               <MarkdownRenderer
@@ -20,13 +22,11 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
               />
             </div>
           )}
-          <div className="card-actions justify-end">
-            <div className="badge badge-outline">
-              {campaign.status || 'active'}
-            </div>
-          </div>
-        </div>
-      </div>
+          <CardFooter>
+            <Badge variant="outline">{campaign.status || "active"}</Badge>
+          </CardFooter>
+        </CardContent>
+      </Card>
     </Link>
   );
 }

@@ -8,24 +8,26 @@ import { WikiEntity } from "@/lib/types/wiki";
 import { Edit } from "lucide-react";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 
-
 interface SessionHeaderProps {
-  session: Session & { campaignId?: number | null; wikiEntities?: WikiEntity[] };
+  session: Session & {
+    campaignId?: number | null;
+    wikiEntities?: WikiEntity[];
+  };
 }
 
 export function SessionHeader({ session }: SessionHeaderProps) {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid Date';
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      if (isNaN(date.getTime())) return "Invalid Date";
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     } catch {
-      return 'Invalid Date';
+      return "Invalid Date";
     }
   };
 
@@ -49,7 +51,11 @@ export function SessionHeader({ session }: SessionHeaderProps) {
 
         <div className="flex gap-2 ml-4">
           <Link
-            href={session.campaignId ? `/campaigns/${session.campaignId}/sessions/${session.id}/edit` : `/sessions/${session.id}/edit`}
+            href={
+              session.campaignId
+                ? `/campaigns/${session.campaignId}/sessions/${session.id}/edit`
+                : `/sessions/${session.id}/edit`
+            }
           >
             <Button variant="secondary" className="gap-2">
               <Edit className="w-4 h-4" />
@@ -87,13 +93,9 @@ export function SessionHeader({ session }: SessionHeaderProps) {
       <Card className="bg-base-100 shadow-sm">
         <CardContent className="p-4">
           <div className="flex justify-between items-center text-sm text-base-content/70">
-            <div>
-              Created: {formatDisplayDate(session.createdAt)}
-            </div>
+            <div>Created: {formatDisplayDate(session.createdAt)}</div>
             {session.updatedAt && session.updatedAt !== session.createdAt && (
-              <div>
-                Updated: {formatDisplayDate(session.updatedAt)}
-              </div>
+              <div>Updated: {formatDisplayDate(session.updatedAt)}</div>
             )}
           </div>
         </CardContent>

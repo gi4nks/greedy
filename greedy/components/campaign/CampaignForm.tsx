@@ -1,16 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useActionState } from 'react';
-import { updateCampaign } from '@/lib/actions/campaigns';
-import { Campaign } from '@/lib/db/schema';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Link from 'next/link';
-import { EyeOff, Save } from 'lucide-react';
+import { useState, useActionState } from "react";
+import { updateCampaign } from "@/lib/actions/campaigns";
+import { Campaign } from "@/lib/db/schema";
+import { ActionResult } from "@/lib/types/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Link from "next/link";
+import { EyeOff, Save } from "lucide-react";
 
 interface CampaignFormProps {
   campaign: Campaign;
@@ -19,9 +26,12 @@ interface CampaignFormProps {
 export default function CampaignForm({ campaign }: CampaignFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateCampaignWithId = async (prevState: { errors?: Record<string, string[]>; message?: string } | undefined, formData: FormData) => {
+  const updateCampaignWithId = async (
+    prevState: ActionResult | undefined,
+    formData: FormData,
+  ): Promise<ActionResult> => {
     const result = await updateCampaign(campaign.id, formData);
-    if (!result.errors && !result.message) {
+    if (result.success) {
       // Success - redirect will happen via revalidatePath
       window.location.href = `/campaigns/${campaign.id}`;
     }
@@ -59,7 +69,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
                 placeholder="Campaign title"
                 required
               />
-              {state?.errors?.title && (
+              {state && !state.success && state.errors?.title && (
                 <p className="text-sm text-red-600">{state.errors.title[0]}</p>
               )}
             </div>
@@ -69,7 +79,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={campaign.description || ''}
+                defaultValue={campaign.description || ""}
                 placeholder="Campaign description"
                 rows={4}
               />
@@ -77,7 +87,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select defaultValue={campaign.status || 'active'} name="status">
+              <Select defaultValue={campaign.status || "active"} name="status">
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -97,7 +107,11 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
                   id="startDate"
                   name="startDate"
                   type="date"
-                  defaultValue={campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : ''}
+                  defaultValue={
+                    campaign.startDate
+                      ? new Date(campaign.startDate).toISOString().split("T")[0]
+                      : ""
+                  }
                 />
               </div>
 
@@ -107,12 +121,16 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
                   id="endDate"
                   name="endDate"
                   type="date"
-                  defaultValue={campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : ''}
+                  defaultValue={
+                    campaign.endDate
+                      ? new Date(campaign.endDate).toISOString().split("T")[0]
+                      : ""
+                  }
                 />
               </div>
             </div>
 
-            {state?.message && (
+            {state && !state.success && state.message && (
               <div className="p-4 rounded-md bg-red-50 border border-red-200">
                 <p className="text-sm text-red-600">{state.message}</p>
               </div>
@@ -121,7 +139,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
             <div className="flex gap-4 pt-4">
               <Button type="submit" variant="primary" disabled={isSubmitting}>
                 <Save className="w-4 h-4 mr-2" />
-                {isSubmitting ? 'Updating...' : 'Update'}
+                {isSubmitting ? "Updating..." : "Update"}
               </Button>
               <Link href={`/campaigns/${campaign.id}`}>
                 <Button type="button" variant="outline" className="gap-2">

@@ -20,7 +20,7 @@
       }
     ],
     "paths": {
-  "@/lib/utils": ["./lib/utils.ts"],
+      "@/lib/utils": ["./lib/utils.ts"],
       "@/lib/utils/*": ["./lib/utils/*"],
       "@/*": ["./*"]
     }

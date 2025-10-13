@@ -1,17 +1,17 @@
-import { Suspense } from 'react';
-import { db } from '@/lib/db';
-import { characters } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import RelationshipsList from '@/components/relationships/RelationshipsList';
-import RelationshipFilters from '@/components/relationships/RelationshipFilters';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { characters } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import RelationshipsList from "@/components/relationships/RelationshipsList";
+import RelationshipFilters from "@/components/relationships/RelationshipFilters";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 // Force dynamic rendering to avoid database queries during build
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface RelationshipsPageProps {
   searchParams: Promise<{
@@ -36,7 +36,7 @@ async function getNpcs() {
       classes: characters.classes,
     })
     .from(characters)
-    .where(eq(characters.characterType, 'npc'))
+    .where(eq(characters.characterType, "npc"))
     .orderBy(characters.name);
 
   return npcs;
@@ -51,13 +51,15 @@ async function getPlayerCharacters() {
       classes: characters.classes,
     })
     .from(characters)
-    .where(eq(characters.characterType, 'pc'))
+    .where(eq(characters.characterType, "pc"))
     .orderBy(characters.name);
 
   return pcs;
 }
 
-export default async function RelationshipsPage({ searchParams }: RelationshipsPageProps) {
+export default async function RelationshipsPage({
+  searchParams,
+}: RelationshipsPageProps) {
   const resolvedSearchParams = await searchParams;
   const [relationships, npcs, playerCharacters] = await Promise.all([
     getRelationships(),
@@ -68,11 +70,7 @@ export default async function RelationshipsPage({ searchParams }: RelationshipsP
   return (
     <div className="container mx-auto p-6">
       {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        items={[
-          { label: 'Relationships' }
-        ]}
-      />
+      <DynamicBreadcrumb items={[{ label: "Relationships" }]} />
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -143,7 +141,8 @@ function RelationshipsListSkeleton() {
 // Generate metadata for SEO
 export async function generateMetadata() {
   return {
-    title: 'NPC Relationships | Adventure Diary',
-    description: 'Manage relationships between NPCs and player characters in your campaigns',
+    title: "NPC Relationships | Adventure Diary",
+    description:
+      "Manage relationships between NPCs and player characters in your campaigns",
   };
 }

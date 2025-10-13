@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SearchResult } from '@/lib/services/search';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
+import { Checkbox } from "../../../components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
+import { SearchResult } from "../../../lib/services/search";
+import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
 import {
   Search,
   Filter,
@@ -22,52 +28,52 @@ import {
   MapPin,
   Sword,
   Star,
-  Tag
-} from 'lucide-react';
+  Tag,
+} from "lucide-react";
 
 const ENTITY_TYPES = [
-  { value: 'campaign', label: 'Campaigns', icon: BookOpen },
-  { value: 'adventure', label: 'Adventures', icon: MapPin },
-  { value: 'session', label: 'Sessions', icon: Calendar },
-  { value: 'character', label: 'Characters', icon: Users },
-  { value: 'npc', label: 'NPCs', icon: Users },
-  { value: 'location', label: 'Locations', icon: MapPin },
-  { value: 'magic_item', label: 'Magic Items', icon: Star },
-  { value: 'quest', label: 'Quests', icon: Sword },
+  { value: "campaign", label: "Campaigns", icon: BookOpen },
+  { value: "adventure", label: "Adventures", icon: MapPin },
+  { value: "session", label: "Sessions", icon: Calendar },
+  { value: "character", label: "Characters", icon: Users },
+  { value: "npc", label: "NPCs", icon: Users },
+  { value: "location", label: "Locations", icon: MapPin },
+  { value: "magic_item", label: "Magic Items", icon: Star },
+  { value: "quest", label: "Quests", icon: Sword },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Relevance' },
-  { value: 'date_desc', label: 'Newest First' },
-  { value: 'date_asc', label: 'Oldest First' },
-  { value: 'title_asc', label: 'Title A-Z' },
-  { value: 'title_desc', label: 'Title Z-A' },
+  { value: "relevance", label: "Relevance" },
+  { value: "date_desc", label: "Newest First" },
+  { value: "date_asc", label: "Oldest First" },
+  { value: "title_asc", label: "Title A-Z" },
+  { value: "title_desc", label: "Title Z-A" },
 ] as const;
 
-type SortOption = typeof SORT_OPTIONS[number]['value'];
+type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
 function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [query, setQuery] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [entityTypes, setEntityTypes] = useState<string[]>(
-    searchParams.get('entityTypes')?.split(',') || []
+    searchParams.get("entityTypes")?.split(",") || [],
   );
   const [dateRange, setDateRange] = useState({
-    start: searchParams.get('start') || '',
-    end: searchParams.get('end') || '',
+    start: searchParams.get("start") || "",
+    end: searchParams.get("end") || "",
   });
   const [tags, setTags] = useState<string[]>(
-    searchParams.get('tags')?.split(',') || []
+    searchParams.get("tags")?.split(",") || [],
   );
   const [sortBy, setSortBy] = useState<SortOption>(
-    (searchParams.get('sort') as SortOption) || 'relevance'
+    (searchParams.get("sort") as SortOption) || "relevance",
   );
   const [showFilters, setShowFilters] = useState(false);
-  const [newTag, setNewTag] = useState('');
+  const [newTag, setNewTag] = useState("");
 
   // Perform search
   const performSearch = useCallback(async () => {
@@ -79,18 +85,19 @@ function SearchPageContent() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('q', query);
-      if (entityTypes.length > 0) params.set('entityTypes', entityTypes.join(','));
-      if (dateRange.start) params.set('start', dateRange.start);
-      if (dateRange.end) params.set('end', dateRange.end);
-      if (tags.length > 0) params.set('tags', tags.join(','));
-      if (sortBy !== 'relevance') params.set('sort', sortBy);
+      params.set("q", query);
+      if (entityTypes.length > 0)
+        params.set("entityTypes", entityTypes.join(","));
+      if (dateRange.start) params.set("start", dateRange.start);
+      if (dateRange.end) params.set("end", dateRange.end);
+      if (tags.length > 0) params.set("tags", tags.join(","));
+      if (sortBy !== "relevance") params.set("sort", sortBy);
 
       const response = await fetch(`/api/search?${params}`);
       const data = await response.json();
       setResults(data.results || []);
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
       setResults([]);
     } finally {
       setLoading(false);
@@ -101,14 +108,17 @@ function SearchPageContent() {
   const updateURL = useCallback(() => {
     const params = new URLSearchParams();
 
-    if (query.trim()) params.set('q', query);
-    if (entityTypes.length > 0) params.set('entityTypes', entityTypes.join(','));
-    if (dateRange.start) params.set('start', dateRange.start);
-    if (dateRange.end) params.set('end', dateRange.end);
-    if (tags.length > 0) params.set('tags', tags.join(','));
-    if (sortBy !== 'relevance') params.set('sort', sortBy);
+    if (query.trim()) params.set("q", query);
+    if (entityTypes.length > 0)
+      params.set("entityTypes", entityTypes.join(","));
+    if (dateRange.start) params.set("start", dateRange.start);
+    if (dateRange.end) params.set("end", dateRange.end);
+    if (tags.length > 0) params.set("tags", tags.join(","));
+    if (sortBy !== "relevance") params.set("sort", sortBy);
 
-    const newURL = params.toString() ? `/search?${params.toString()}` : '/search';
+    const newURL = params.toString()
+      ? `/search?${params.toString()}`
+      : "/search";
     router.replace(newURL, { scroll: false });
   }, [query, entityTypes, dateRange, tags, sortBy, router]);
 
@@ -126,7 +136,7 @@ function SearchPageContent() {
 
   // Initial search on page load
   useEffect(() => {
-    const q = searchParams.get('q');
+    const q = searchParams.get("q");
     if (q) {
       setQuery(q);
       performSearch();
@@ -135,29 +145,29 @@ function SearchPageContent() {
 
   // Handle entity type filter change
   const handleEntityTypeChange = (entityType: string, checked: boolean) => {
-    setEntityTypes(prev =>
+    setEntityTypes((prev) =>
       checked
         ? [...prev, entityType]
-        : prev.filter(type => type !== entityType)
+        : prev.filter((type) => type !== entityType),
     );
   };
 
   // Handle tag addition
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags(prev => [...prev, newTag.trim()]);
-      setNewTag('');
+      setTags((prev) => [...prev, newTag.trim()]);
+      setNewTag("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   // Group results by entity type
   const groupedResults = useMemo(() => {
     const groups: Record<string, SearchResult[]> = {};
-    results.forEach(result => {
+    results.forEach((result) => {
       if (!groups[result.entityType]) {
         groups[result.entityType] = [];
       }
@@ -168,43 +178,41 @@ function SearchPageContent() {
 
   // Get entity type info
   const getEntityTypeInfo = (entityType: string) => {
-    return ENTITY_TYPES.find(type => type.value === entityType) || {
-      label: entityType,
-      icon: Search
-    };
+    return (
+      ENTITY_TYPES.find((type) => type.value === entityType) || {
+        label: entityType,
+        icon: Search,
+      }
+    );
   };
 
   const getEntityUrl = (result: SearchResult) => {
     switch (result.entityType) {
-      case 'campaign':
+      case "campaign":
         return `/campaigns/${result.id}`;
-      case 'adventure':
+      case "adventure":
         return `/campaigns/${result.campaignId}/adventures/${result.id}`;
-      case 'session':
+      case "session":
         return `/campaigns/${result.campaignId}/sessions/${result.id}`;
-      case 'character':
+      case "character":
         return `/campaigns/${result.campaignId}/characters/${result.id}`;
-      case 'npc':
+      case "npc":
         return `#npc-${result.id}`; // Placeholder until NPC pages are implemented
-      case 'location':
+      case "location":
         return `/campaigns/${result.campaignId}/locations/${result.id}`;
-      case 'quest':
+      case "quest":
         return `/campaigns/${result.campaignId}/quests/${result.id}`;
-      case 'magic_item':
+      case "magic_item":
         return `/magic-items/${result.id}`;
       default:
-        return '#';
+        return "#";
     }
   };
 
   return (
     <div className="container mx-auto p-6">
       {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        items={[
-          { label: 'Search' }
-        ]}
-      />
+      <DynamicBreadcrumb items={[{ label: "Search" }]} />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Advanced Search</h1>
@@ -224,7 +232,7 @@ function SearchPageContent() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10 pr-4 py-3 text-lg"
-              onKeyPress={(e) => e.key === 'Enter' && performSearch()}
+              onKeyPress={(e) => e.key === "Enter" && performSearch()}
             />
           </div>
           <Button
@@ -234,9 +242,15 @@ function SearchPageContent() {
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
-            {(entityTypes.length > 0 || tags.length > 0 || dateRange.start || dateRange.end) && (
+            {(entityTypes.length > 0 ||
+              tags.length > 0 ||
+              dateRange.start ||
+              dateRange.end) && (
               <Badge variant="secondary" className="ml-2">
-                {entityTypes.length + tags.length + (dateRange.start ? 1 : 0) + (dateRange.end ? 1 : 0)}
+                {entityTypes.length +
+                  tags.length +
+                  (dateRange.start ? 1 : 0) +
+                  (dateRange.end ? 1 : 0)}
               </Badge>
             )}
           </Button>
@@ -264,7 +278,10 @@ function SearchPageContent() {
                   {ENTITY_TYPES.map((type) => {
                     const Icon = type.icon;
                     return (
-                      <div key={type.value} className="flex items-center space-x-2">
+                      <div
+                        key={type.value}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={type.value}
                           checked={entityTypes.includes(type.value)}
@@ -296,13 +313,20 @@ function SearchPageContent() {
                     type="date"
                     placeholder="Start date"
                     value={dateRange.start}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    onChange={(e) =>
+                      setDateRange((prev) => ({
+                        ...prev,
+                        start: e.target.value,
+                      }))
+                    }
                   />
                   <Input
                     type="date"
                     placeholder="End date"
                     value={dateRange.end}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    onChange={(e) =>
+                      setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -319,7 +343,7 @@ function SearchPageContent() {
                       placeholder="Add tag"
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                      onKeyPress={(e) => e.key === "Enter" && addTag()}
                       className="flex-1"
                     />
                     <Button onClick={addTag} size="sm" variant="outline">
@@ -327,7 +351,7 @@ function SearchPageContent() {
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {tags.map(tag => (
+                    {tags.map((tag) => (
                       <Badge key={tag} variant="secondary" className="gap-1">
                         {tag}
                         <button
@@ -345,12 +369,16 @@ function SearchPageContent() {
               {/* Sort Options */}
               <div>
                 <h4 className="font-semibold mb-3">Sort By</h4>
-                <Select name="sortBy" value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <Select
+                  name="sortBy"
+                  value={sortBy}
+                  onValueChange={(value) => setSortBy(value as SortOption)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SORT_OPTIONS.map(option => (
+                    {SORT_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -386,38 +414,56 @@ function SearchPageContent() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-base-content/70">
-                Found {results.length} result{results.length !== 1 ? 's' : ''}
+                Found {results.length} result{results.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="all">All ({results.length})</TabsTrigger>
-                {Object.entries(groupedResults).slice(0, 4).map(([entityType, items]) => {
-                  const typeInfo = getEntityTypeInfo(entityType);
-                  const Icon = typeInfo.icon;
-                  return (
-                    <TabsTrigger key={entityType} value={entityType} className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
-                      {typeInfo.label} ({items.length})
-                    </TabsTrigger>
-                  );
-                })}
+                {Object.entries(groupedResults)
+                  .slice(0, 4)
+                  .map(([entityType, items]) => {
+                    const typeInfo = getEntityTypeInfo(entityType);
+                    const Icon = typeInfo.icon;
+                    return (
+                      <TabsTrigger
+                        key={entityType}
+                        value={entityType}
+                        className="flex items-center gap-2"
+                      >
+                        <Icon className="w-4 h-4" />
+                        {typeInfo.label} ({items.length})
+                      </TabsTrigger>
+                    );
+                  })}
               </TabsList>
 
               <TabsContent value="all" className="mt-6">
                 <div className="space-y-4">
                   {results.map((result, index) => (
-                    <SearchResultCard key={`${result.entityType}-${result.id}-${index}`} result={result} getEntityUrl={getEntityUrl} />
+                    <SearchResultCard
+                      key={`${result.entityType}-${result.id}-${index}`}
+                      result={result}
+                      getEntityUrl={getEntityUrl}
+                    />
                   ))}
                 </div>
               </TabsContent>
 
               {Object.entries(groupedResults).map(([entityType, items]) => (
-                <TabsContent key={entityType} value={entityType} className="mt-6">
+                <TabsContent
+                  key={entityType}
+                  value={entityType}
+                  className="mt-6"
+                >
                   <div className="space-y-4">
                     {items.map((result, index) => (
-                      <SearchResultCard key={`${result.entityType}-${result.id}-${index}`} result={result} getEntityUrl={getEntityUrl} />
+                      <SearchResultCard
+                        key={`${result.entityType}-${result.id}-${index}`}
+                        result={result}
+                        getEntityUrl={getEntityUrl}
+                      />
                     ))}
                   </div>
                 </TabsContent>
@@ -431,12 +477,20 @@ function SearchPageContent() {
 }
 
 // Search Result Card Component
-function SearchResultCard({ result, getEntityUrl }: { result: SearchResult; getEntityUrl: (result: SearchResult) => string }) {
+function SearchResultCard({
+  result,
+  getEntityUrl,
+}: {
+  result: SearchResult;
+  getEntityUrl: (result: SearchResult) => string;
+}) {
   const getEntityTypeInfo = (entityType: string) => {
-    return ENTITY_TYPES.find(type => type.value === entityType) || {
-      label: entityType,
-      icon: Search
-    };
+    return (
+      ENTITY_TYPES.find((type) => type.value === entityType) || {
+        label: entityType,
+        icon: Search,
+      }
+    );
   };
 
   const typeInfo = getEntityTypeInfo(result.entityType);
@@ -489,8 +543,12 @@ function SearchResultCard({ result, getEntityUrl }: { result: SearchResult; getE
                 <div className="flex items-center gap-1">
                   <Tag className="w-3 h-3" />
                   <div className="flex gap-1">
-                    {result.tags.slice(0, 3).map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs px-1 py-0">
+                    {result.tags.slice(0, 3).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs px-1 py-0"
+                      >
                         {tag}
                       </Badge>
                     ))}

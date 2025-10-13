@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Edit, Trash2, Images, View } from 'lucide-react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import { deleteMagicItemAction } from '@/lib/actions/magicItems';
-import type { MagicItemWithAssignments } from '@/lib/actions/magicItems';
+import Link from "next/link";
+import { Edit, Trash2, Images, View } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { deleteMagicItemAction } from "@/lib/actions/magicItems";
+import type { MagicItemWithAssignments } from "@/lib/actions/magicItems";
 
 interface MagicItemCardProps {
   item: MagicItemWithAssignments;
@@ -20,36 +20,45 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${item.name}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
     setIsDeleting(true);
     try {
       const formData = new FormData();
-      formData.append('id', item.id.toString());
-      
+      formData.append("id", item.id.toString());
+
       const result = await deleteMagicItemAction(undefined, formData);
-      
-      if (result.message) {
+
+      if (!result.success && result.message) {
         alert(result.message);
       } else {
-        router.push('/magic-items');
+        router.push("/magic-items");
       }
     } catch (error) {
-      console.error('Failed to delete magic item:', error);
-      alert('Failed to delete magic item. Please try again.');
+      console.error("Failed to delete magic item:", error);
+      alert("Failed to delete magic item. Please try again.");
     } finally {
       setIsDeleting(false);
     }
   };
-  const assignmentBadges = item.assignments.length > 0 ? (
-    item.assignments.slice(0, 3).map((assignment) => (
-      <Badge key={`${assignment.entityType}-${assignment.entityId}`} variant="secondary" className="capitalize">
-        {assignment.entityType} • {assignment.entityName ?? 'Unnamed'}
-      </Badge>
-    ))
-  ) : null;
+  const assignmentBadges =
+    item.assignments.length > 0
+      ? item.assignments.slice(0, 3).map((assignment) => (
+          <Badge
+            key={`${assignment.entityType}-${assignment.entityId}`}
+            variant="secondary"
+            className="capitalize"
+          >
+            {assignment.entityType} • {assignment.entityName ?? "Unnamed"}
+          </Badge>
+        ))
+      : null;
 
   const sortedAssignments = [...item.assignments]
     .sort((a, b) => {
@@ -61,7 +70,7 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
 
   const primaryImage = Array.isArray(item.images)
     ? item.images[0]
-    : typeof item.images === 'string'
+    : typeof item.images === "string"
       ? (() => {
           try {
             const parsed = JSON.parse(item.images);
@@ -74,7 +83,7 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
 
   return (
     <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-      {primaryImage && typeof primaryImage === 'string' ? (
+      {primaryImage && typeof primaryImage === "string" ? (
         <div className="relative h-40 w-full overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -94,8 +103,8 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
             {item.name}
           </CardTitle>
           <Badge
-            variant={item.source === 'wiki' ? 'default' : 'outline'}
-            className={`capitalize ${item.source === 'wiki' ? 'bg-blue-500 text-white' : ''}`}
+            variant={item.source === "wiki" ? "default" : "outline"}
+            className={`capitalize ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
           >
             {item.source}
           </Badge>
@@ -140,7 +149,10 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
               </p>
               <ul className="space-y-1 text-sm">
                 {sortedAssignments.map((assignment) => (
-                  <li key={assignment.id} className="flex items-center justify-between gap-2">
+                  <li
+                    key={assignment.id}
+                    className="flex items-center justify-between gap-2"
+                  >
                     <span className="truncate capitalize">
                       {assignment.entityType}: {assignment.entityName}
                     </span>
@@ -169,14 +181,14 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
               Edit
             </Button>
           </Link>
-          <Button 
-            variant="neutral" 
+          <Button
+            variant="neutral"
             className="gap-2"
             onClick={handleDelete}
             disabled={isDeleting}
           >
             <Trash2 className="w-4 h-4" />
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         </div>
       </CardContent>

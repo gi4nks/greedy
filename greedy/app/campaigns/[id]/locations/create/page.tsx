@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import LocationForm from '@/components/location/LocationForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import LocationForm from "@/components/location/LocationForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateLocationPageProps {
   params: Promise<{ id: string }>;
@@ -37,7 +37,9 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function CreateLocationPage({ params }: CreateLocationPageProps) {
+export default async function CreateLocationPage({
+  params,
+}: CreateLocationPageProps) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
   const campaign = await getCampaign(campaignId);
@@ -52,16 +54,13 @@ export default async function CreateLocationPage({ params }: CreateLocationPageP
         campaignId={campaignId}
         campaignTitle={campaign.title}
         sectionItems={[
-          { label: 'Locations', href: `/campaigns/${campaignId}/locations` },
-          { label: 'Create Location' }
+          { label: "Locations", href: `/campaigns/${campaignId}/locations` },
+          { label: "Create Location" },
         ]}
       />
-      
+
       <Suspense fallback={<CreateLocationSkeleton />}>
-        <LocationForm
-          campaignId={campaignId}
-          mode="create"
-        />
+        <LocationForm campaignId={campaignId} mode="create" />
       </Suspense>
     </div>
   );
@@ -103,7 +102,7 @@ export async function generateMetadata({ params }: CreateLocationPageProps) {
   const campaign = await getCampaign(parseInt(resolvedParams.id));
 
   return {
-    title: campaign ? `Create Location | ${campaign.title}` : 'Create Location',
-    description: 'Create a new location for your D&D campaign',
+    title: campaign ? `Create Location | ${campaign.title}` : "Create Location",
+    description: "Create a new location for your D&D campaign",
   };
 }

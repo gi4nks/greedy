@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 const Progress = React.forwardRef<
   HTMLProgressElement,
@@ -11,14 +11,11 @@ const Progress = React.forwardRef<
 >(({ className, value, ...props }, ref) => (
   <progress
     ref={ref}
-    className={cn(
-      "progress progress-primary w-full",
-      className
-    )}
+    className={cn("progress progress-primary w-full", className)}
     value={value}
     {...props}
   />
-))
-Progress.displayName = "Progress"
+));
+Progress.displayName = "Progress";
 
-export { Progress }
+export { Progress };

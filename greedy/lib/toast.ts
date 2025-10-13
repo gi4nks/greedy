@@ -1,4 +1,4 @@
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 export const showToast = {
   success: (message: string, description?: string) => {
@@ -49,7 +49,7 @@ export const showToast = {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: Error) => string);
-    }
+    },
   ) => {
     return toast.promise(promise, {
       loading,

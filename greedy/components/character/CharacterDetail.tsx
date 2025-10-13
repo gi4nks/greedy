@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { Character, Adventure, Campaign } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import EquipmentDisplay from '@/components/ui/equipment-display';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
-import { WikiEntity } from '@/lib/types/wiki';
-import { formatDate } from '@/lib/utils/date';
-import { useRouter } from 'next/navigation';
-import { Eye, X } from 'lucide-react';
+import { Character, Adventure, Campaign } from "@/lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import EquipmentDisplay from "@/components/ui/equipment-display";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { formatDate } from "@/lib/utils/date";
+import { useRouter } from "next/navigation";
+import { Eye, X } from "lucide-react";
 
 interface MagicItem {
   assignmentId?: number;
@@ -19,7 +19,7 @@ interface MagicItem {
   rarity: string | null;
   type: string | null;
   description: string | null;
-  source: 'manual' | 'wiki';
+  source: "manual" | "wiki";
   notes?: string | null;
   assignedAt?: string | null;
   campaignId?: number | null;
@@ -40,14 +40,15 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
   // Parse classes data
   const parseClasses = () => {
     try {
-      const classes = typeof character.classes === 'string'
-        ? JSON.parse(character.classes)
-        : character.classes;
+      const classes =
+        typeof character.classes === "string"
+          ? JSON.parse(character.classes)
+          : character.classes;
 
       if (Array.isArray(classes) && classes.length > 0) {
         return classes
           .map((c: { name: string; level: number }) => `${c.name} ${c.level}`)
-          .join(', ');
+          .join(", ");
       }
     } catch {
       // Ignore parsing errors
@@ -58,9 +59,10 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
   // Parse equipment data
   const parseEquipment = (): string[] => {
     try {
-      const equipment = typeof character.equipment === 'string'
-        ? JSON.parse(character.equipment)
-        : character.equipment;
+      const equipment =
+        typeof character.equipment === "string"
+          ? JSON.parse(character.equipment)
+          : character.equipment;
       return Array.isArray(equipment) ? equipment : [];
     } catch {
       return [];
@@ -74,33 +76,36 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
     }
 
     try {
-      const response = await fetch(`/api/magic-items/${itemId}/assign?entityType=character&entityId=${character.id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/magic-items/${itemId}/assign?entityType=character&entityId=${character.id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to unassign magic item');
+        throw new Error("Failed to unassign magic item");
       }
 
       // Refresh the page to update the data
       window.location.reload();
     } catch (error) {
-      console.error('Error unassigning magic item:', error);
-      alert('Failed to unassign magic item. Please try again.');
+      console.error("Error unassigning magic item:", error);
+      alert("Failed to unassign magic item. Please try again.");
     }
   };
 
   // Combine manual and wiki magic items
   const getUnifiedMagicItems = () => {
-    const manualItems = (character.magicItems || []).map(item => ({
+    const manualItems = (character.magicItems || []).map((item) => ({
       ...item,
-      source: 'manual' as const,
+      source: "manual" as const,
       assignmentId: item.assignmentId,
     }));
 
     const wikiMagicItems = (character.wikiEntities || [])
-      .filter(entity => entity.contentType === 'magic-item')
-      .map(entity => {
+      .filter((entity) => entity.contentType === "magic-item")
+      .map((entity) => {
         // Parse additional data from parsedData if available
         let rarity: string | null = null;
         let type: string | null = null;
@@ -108,15 +113,16 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
 
         try {
           if (entity.parsedData) {
-            const parsed = typeof entity.parsedData === 'string' 
-              ? JSON.parse(entity.parsedData) 
-              : entity.parsedData;
+            const parsed =
+              typeof entity.parsedData === "string"
+                ? JSON.parse(entity.parsedData)
+                : entity.parsedData;
             rarity = parsed?.rarity || null;
             type = parsed?.type || null;
             description = parsed?.description || entity.description || null;
           }
         } catch (error) {
-          console.warn('Failed to parse wiki magic item data:', error);
+          console.warn("Failed to parse wiki magic item data:", error);
         }
 
         return {
@@ -125,11 +131,13 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
           rarity,
           type,
           description,
-          source: 'wiki' as const,
+          source: "wiki" as const,
           assignmentId: undefined,
-          notes: entity.relationshipData ? 
-            (typeof entity.relationshipData === 'string' ? entity.relationshipData : JSON.stringify(entity.relationshipData)) : 
-            null,
+          notes: entity.relationshipData
+            ? typeof entity.relationshipData === "string"
+              ? entity.relationshipData
+              : JSON.stringify(entity.relationshipData)
+            : null,
           assignedAt: null, // Wiki items don't have assignment dates
           campaignId: null,
         };
@@ -140,7 +148,9 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
 
   // Filter out magic items from wiki entities for the WikiEntitiesDisplay
   const getFilteredWikiEntities = () => {
-    return (character.wikiEntities || []).filter(entity => entity.contentType !== 'magic-item');
+    return (character.wikiEntities || []).filter(
+      (entity) => entity.contentType !== "magic-item",
+    );
   };
 
   const classesDisplay = parseClasses();
@@ -158,31 +168,46 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-base-content/70">Race</label>
-              <p className="text-sm">{character.race || 'Unknown'}</p>
+              <label className="text-sm font-medium text-base-content/70">
+                Race
+              </label>
+              <p className="text-sm">{character.race || "Unknown"}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-base-content/70">Classes</label>
-              <p className="text-sm">{classesDisplay || 'Unknown'}</p>
+              <label className="text-sm font-medium text-base-content/70">
+                Classes
+              </label>
+              <p className="text-sm">{classesDisplay || "Unknown"}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-base-content/70">Alignment</label>
-              <p className="text-sm">{character.alignment || 'Unknown'}</p>
+              <label className="text-sm font-medium text-base-content/70">
+                Alignment
+              </label>
+              <p className="text-sm">{character.alignment || "Unknown"}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-base-content/70">Background</label>
-              <p className="text-sm">{character.background || 'None'}</p>
+              <label className="text-sm font-medium text-base-content/70">
+                Background
+              </label>
+              <p className="text-sm">{character.background || "None"}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-base-content/70">Experience</label>
+              <label className="text-sm font-medium text-base-content/70">
+                Experience
+              </label>
               <p className="text-sm">{character.experience || 0} XP</p>
             </div>
           </div>
 
           {character.description && (
             <div className="space-y-1">
-              <label className="text-sm font-medium text-base-content/70">Description</label>
-              <MarkdownRenderer content={character.description} className="prose-sm" />
+              <label className="text-sm font-medium text-base-content/70">
+                Description
+              </label>
+              <MarkdownRenderer
+                content={character.description}
+                className="prose-sm"
+              />
             </div>
           )}
         </CardContent>
@@ -215,15 +240,22 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
                   <div className="flex justify-between items-start p-3">
                     <div className="flex items-center gap-2 flex-1">
                       <span className="text-2xl">✨</span>
-                      <span className="font-medium text-purple-800">{item.name}</span>
-                      <Badge 
-                        variant={item.source === 'wiki' ? 'secondary' : 'default'}
-                        className={`text-xs ${item.source === 'wiki' ? 'bg-blue-500 text-white' : ''}`}
+                      <span className="font-medium text-purple-800">
+                        {item.name}
+                      </span>
+                      <Badge
+                        variant={
+                          item.source === "wiki" ? "secondary" : "default"
+                        }
+                        className={`text-xs ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
                       >
-                        {item.source === 'wiki' ? 'Wiki' : 'Manual'}
+                        {item.source === "wiki" ? "Wiki" : "Manual"}
                       </Badge>
                       {item.rarity && (
-                        <Badge variant="outline" className="text-xs bg-purple-100 border-purple-300 capitalize">
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-purple-100 border-purple-300 capitalize"
+                        >
                           {item.rarity}
                         </Badge>
                       )}
@@ -234,17 +266,17 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => router.push(`/magic-items/${item.id}`)}
                         className="gap-1"
                       >
                         <Eye className="w-4 h-4" /> View
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() => handleUnassign(item.id)}
                         className="gap-1"
                       >
@@ -256,7 +288,9 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-base-content/70">No magic items assigned yet.</p>
+            <p className="text-sm text-base-content/70">
+              No magic items assigned yet.
+            </p>
           )}
         </CardContent>
       </Card>

@@ -20,13 +20,13 @@ export function SessionCard({ session }: SessionCardProps) {
     : "";
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this session?')) {
+    if (confirm("Are you sure you want to delete this session?")) {
       startTransition(async () => {
         try {
           await deleteSession(session.id);
         } catch (error) {
-          console.error('Failed to delete session:', error);
-          alert('Failed to delete session');
+          console.error("Failed to delete session:", error);
+          alert("Failed to delete session");
         }
       });
     }
@@ -38,7 +38,7 @@ export function SessionCard({ session }: SessionCardProps) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <CardTitle className="text-lg">{session.title}</CardTitle>
-                        <span className="text-sm text-base-content/70">
+            <span className="text-sm text-base-content/70">
               Session #{session.id}
             </span>
           </div>
@@ -46,7 +46,6 @@ export function SessionCard({ session }: SessionCardProps) {
       </CardHeader>
 
       <CardContent className="pt-0">
-
         {displayText && (
           <p className="text-base-content/70 text-sm mb-4 line-clamp-3">
             {displayText}
@@ -54,22 +53,22 @@ export function SessionCard({ session }: SessionCardProps) {
         )}
 
         <div className="flex justify-between items-center text-xs text-base-content/70 mb-4">
-          {session.adventureId && (
-            <span>Adventure #{session.adventureId}</span>
-          )}
+          {session.adventureId && <span>Adventure #{session.adventureId}</span>}
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Link
-            href={`/sessions/${session.id}`}
-          >
+          <Link href={`/sessions/${session.id}`}>
             <Button variant="warning" className="gap-2" size="sm">
               <View className="w-4 h-4" />
               View
             </Button>
           </Link>
           <Link
-            href={session.campaignId ? `/campaigns/${session.campaignId}/sessions/${session.id}/edit` : `/sessions/${session.id}/edit`}
+            href={
+              session.campaignId
+                ? `/campaigns/${session.campaignId}/sessions/${session.id}/edit`
+                : `/sessions/${session.id}/edit`
+            }
           >
             <Button variant="secondary" className="gap-2">
               <Edit className="w-4 h-4" />

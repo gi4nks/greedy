@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   greedy:
     build:
-      context: ./greedy
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./greedy/Dockerfile
     ports:
       - "3000:3000"
     volumes:

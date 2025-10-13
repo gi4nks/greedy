@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import SessionForm from '@/components/session/SessionForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import SessionForm from "@/components/session/SessionForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateSessionPageProps {
   params: Promise<{ id: string }>;
@@ -59,12 +59,17 @@ async function getAdventures(campaignId: number) {
     .orderBy(adventures.startDate);
 }
 
-export default async function CreateSessionPage({ params, searchParams }: CreateSessionPageProps) {
+export default async function CreateSessionPage({
+  params,
+  searchParams,
+}: CreateSessionPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const campaignId = parseInt(resolvedParams.id);
-  const adventureId = resolvedSearchParams.adventureId ? parseInt(resolvedSearchParams.adventureId) : undefined;
-  
+  const adventureId = resolvedSearchParams.adventureId
+    ? parseInt(resolvedSearchParams.adventureId)
+    : undefined;
+
   const campaign = await getCampaign(campaignId);
   const adventure = adventureId ? await getAdventure(adventureId) : null;
 
@@ -79,15 +84,31 @@ export default async function CreateSessionPage({ params, searchParams }: Create
       <DynamicBreadcrumb
         campaignId={campaignId}
         campaignTitle={campaign.title}
-        sectionItems={adventure ? [
-          { label: 'Adventures', href: `/campaigns/${campaignId}/adventures` },
-          { label: adventure.title, href: `/campaigns/${campaignId}/adventures/${adventure.id}` },
-          { label: 'Sessions', href: `/campaigns/${campaignId}/sessions?adventure=${adventure.id}` },
-          { label: 'Create' }
-        ] : [
-          { label: 'Sessions', href: `/campaigns/${campaignId}/sessions` },
-          { label: 'Create' }
-        ]}
+        sectionItems={
+          adventure
+            ? [
+                {
+                  label: "Adventures",
+                  href: `/campaigns/${campaignId}/adventures`,
+                },
+                {
+                  label: adventure.title,
+                  href: `/campaigns/${campaignId}/adventures/${adventure.id}`,
+                },
+                {
+                  label: "Sessions",
+                  href: `/campaigns/${campaignId}/sessions?adventure=${adventure.id}`,
+                },
+                { label: "Create" },
+              ]
+            : [
+                {
+                  label: "Sessions",
+                  href: `/campaigns/${campaignId}/sessions`,
+                },
+                { label: "Create" },
+              ]
+        }
       />
       <SessionForm
         campaignId={campaignId}
@@ -140,7 +161,7 @@ export async function generateMetadata({ params }: CreateSessionPageProps) {
   const campaign = await getCampaign(parseInt(resolvedParams.id));
 
   return {
-    title: campaign ? `Create Session | ${campaign.title}` : 'Create Session',
-    description: 'Create a new session for your D&D campaign',
+    title: campaign ? `Create Session | ${campaign.title}` : "Create Session",
+    description: "Create a new session for your D&D campaign",
   };
 }

@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Download, FileText, File, Code, Printer, EyeOff } from 'lucide-react';
-import { ExportOptions } from '@/lib/services/export';
+import React, { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Download, FileText, File, Code, Printer, EyeOff } from "lucide-react";
+import { ExportOptions } from "@/lib/services/export";
 
 const formatIcons = {
   markdown: FileText,
@@ -18,10 +24,10 @@ const formatIcons = {
 };
 
 const formatLabels = {
-  markdown: 'Markdown',
-  pdf: 'PDF',
-  html: 'HTML',
-  json: 'JSON',
+  markdown: "Markdown",
+  pdf: "PDF",
+  html: "HTML",
+  json: "JSON",
 };
 
 export default function ExportPage() {
@@ -31,7 +37,7 @@ export default function ExportPage() {
 
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
     campaignId,
-    format: 'markdown',
+    format: "markdown",
     sections: {
       sessions: true,
       characters: true,
@@ -43,8 +49,11 @@ export default function ExportPage() {
 
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleSectionChange = (section: keyof ExportOptions['sections'], checked: boolean) => {
-    setExportOptions(prev => ({
+  const handleSectionChange = (
+    section: keyof ExportOptions["sections"],
+    checked: boolean,
+  ) => {
+    setExportOptions((prev) => ({
       ...prev,
       sections: {
         ...prev.sections,
@@ -56,27 +65,27 @@ export default function ExportPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch('/api/export', {
-        method: 'POST',
+      const response = await fetch("/api/export", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(exportOptions),
       });
 
       if (!response.ok) {
-        throw new Error('Export failed');
+        throw new Error("Export failed");
       }
 
       // Create download link
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
 
-      const contentDisposition = response.headers.get('content-disposition');
+      const contentDisposition = response.headers.get("content-disposition");
       const filename = contentDisposition
-        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        ? contentDisposition.split("filename=")[1]?.replace(/"/g, "")
         : `campaign-export.${exportOptions.format}`;
 
       a.download = filename;
@@ -85,19 +94,39 @@ export default function ExportPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export error:', error);
-      alert('Export failed. Please try again.');
+      console.error("Export error:", error);
+      alert("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
     }
   };
 
   const sections = [
-    { key: 'sessions' as const, label: 'Sessions', description: 'Session summaries and logs' },
-    { key: 'characters' as const, label: 'Characters', description: 'Player characters and NPCs' },
-    { key: 'locations' as const, label: 'Locations', description: 'Campaign locations and maps' },
-    { key: 'quests' as const, label: 'Quests', description: 'Active and completed quests' },
-    { key: 'magicItems' as const, label: 'Magic Items', description: 'All magic items in the campaign' },
+    {
+      key: "sessions" as const,
+      label: "Sessions",
+      description: "Session summaries and logs",
+    },
+    {
+      key: "characters" as const,
+      label: "Characters",
+      description: "Player characters and NPCs",
+    },
+    {
+      key: "locations" as const,
+      label: "Locations",
+      description: "Campaign locations and maps",
+    },
+    {
+      key: "quests" as const,
+      label: "Quests",
+      description: "Active and completed quests",
+    },
+    {
+      key: "magicItems" as const,
+      label: "Magic Items",
+      description: "All magic items in the campaign",
+    },
   ];
 
   return (
@@ -105,7 +134,8 @@ export default function ExportPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Export Campaign</h1>
         <p className="text-base-content/70">
-          Export your campaign data in various formats for backup, sharing, or printing.
+          Export your campaign data in various formats for backup, sharing, or
+          printing.
         </p>
       </div>
 
@@ -122,7 +152,10 @@ export default function ExportPage() {
                 name="format"
                 value={exportOptions.format}
                 onValueChange={(value) =>
-                  setExportOptions(prev => ({ ...prev, format: value as ExportOptions['format'] }))
+                  setExportOptions((prev) => ({
+                    ...prev,
+                    format: value as ExportOptions["format"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -130,7 +163,8 @@ export default function ExportPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(formatLabels).map(([format, label]) => {
-                    const Icon = formatIcons[format as keyof typeof formatIcons];
+                    const Icon =
+                      formatIcons[format as keyof typeof formatIcons];
                     return (
                       <SelectItem key={format} value={format}>
                         <div className="flex items-center gap-2">
@@ -143,10 +177,14 @@ export default function ExportPage() {
                 </SelectContent>
               </Select>
               <p className="text-sm text-base-content/70 mt-1">
-                {exportOptions.format === 'markdown' && 'Plain text format, great for version control and editing'}
-                {exportOptions.format === 'pdf' && 'Professional PDF document, perfect for printing and sharing'}
-                {exportOptions.format === 'html' && 'Web page format, viewable in any browser'}
-                {exportOptions.format === 'json' && 'Raw data format, useful for importing into other tools'}
+                {exportOptions.format === "markdown" &&
+                  "Plain text format, great for version control and editing"}
+                {exportOptions.format === "pdf" &&
+                  "Professional PDF document, perfect for printing and sharing"}
+                {exportOptions.format === "html" &&
+                  "Web page format, viewable in any browser"}
+                {exportOptions.format === "json" &&
+                  "Raw data format, useful for importing into other tools"}
               </p>
             </div>
 
@@ -154,13 +192,15 @@ export default function ExportPage() {
               <Label>Date Range (Optional)</Label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <div>
-                  <Label htmlFor="startDate" className="text-xs">Start Date</Label>
+                  <Label htmlFor="startDate" className="text-xs">
+                    Start Date
+                  </Label>
                   <Input
                     id="startDate"
                     type="date"
-                    value={exportOptions.dateRange?.start || ''}
+                    value={exportOptions.dateRange?.start || ""}
                     onChange={(e) =>
-                      setExportOptions(prev => ({
+                      setExportOptions((prev) => ({
                         ...prev,
                         dateRange: {
                           ...prev.dateRange!,
@@ -171,13 +211,15 @@ export default function ExportPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="endDate" className="text-xs">End Date</Label>
+                  <Label htmlFor="endDate" className="text-xs">
+                    End Date
+                  </Label>
                   <Input
                     id="endDate"
                     type="date"
-                    value={exportOptions.dateRange?.end || ''}
+                    value={exportOptions.dateRange?.end || ""}
                     onChange={(e) =>
-                      setExportOptions(prev => ({
+                      setExportOptions((prev) => ({
                         ...prev,
                         dateRange: {
                           ...prev.dateRange!,
@@ -208,7 +250,9 @@ export default function ExportPage() {
                     type="checkbox"
                     id={section.key}
                     checked={exportOptions.sections[section.key] || false}
-                    onChange={(e) => handleSectionChange(section.key, e.target.checked)}
+                    onChange={(e) =>
+                      handleSectionChange(section.key, e.target.checked)
+                    }
                     className="checkbox checkbox-sm mt-1"
                   />
                   <div className="grid gap-1.5 leading-none">
@@ -239,7 +283,9 @@ export default function ExportPage() {
             <div>
               <h4 className="font-semibold mb-2">Format</h4>
               <div className="flex items-center gap-2">
-                {React.createElement(formatIcons[exportOptions.format], { className: "w-4 h-4" })}
+                {React.createElement(formatIcons[exportOptions.format], {
+                  className: "w-4 h-4",
+                })}
                 <span>{formatLabels[exportOptions.format]}</span>
               </div>
             </div>
@@ -248,9 +294,12 @@ export default function ExportPage() {
               <h4 className="font-semibold mb-2">Sections Included</h4>
               <div className="flex flex-wrap gap-1">
                 {sections
-                  .filter(section => exportOptions.sections[section.key])
-                  .map(section => (
-                    <span key={section.key} className="badge badge-outline badge-sm">
+                  .filter((section) => exportOptions.sections[section.key])
+                  .map((section) => (
+                    <span
+                      key={section.key}
+                      className="badge badge-outline badge-sm"
+                    >
                       {section.label}
                     </span>
                   ))}
@@ -270,10 +319,13 @@ export default function ExportPage() {
             </Button>
             <Button
               onClick={handleExport}
-              disabled={isExporting || !Object.values(exportOptions.sections).some(Boolean)}
+              disabled={
+                isExporting ||
+                !Object.values(exportOptions.sections).some(Boolean)
+              }
             >
               <Download className="w-4 h-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export Campaign'}
+              {isExporting ? "Exporting..." : "Export Campaign"}
             </Button>
           </div>
         </CardContent>

@@ -26,15 +26,18 @@ async function SessionContent({ sessionId }: { sessionId: number }) {
           campaignId={session.campaignId}
           campaignTitle={session.campaignTitle || undefined}
           sectionItems={[
-            { label: 'Sessions', href: `/campaigns/${session.campaignId}/sessions` },
-            { label: session.title || `Session ${sessionId}` }
+            {
+              label: "Sessions",
+              href: `/campaigns/${session.campaignId}/sessions`,
+            },
+            { label: session.title || `Session ${sessionId}` },
           ]}
         />
       ) : (
         <DynamicBreadcrumb
           items={[
-            { label: 'Sessions', href: '/sessions' },
-            { label: session.title || `Session ${sessionId}` }
+            { label: "Sessions", href: "/sessions" },
+            { label: session.title || `Session ${sessionId}` },
           ]}
         />
       )}

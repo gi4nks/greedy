@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { adventures, campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import AdventureForm from '@/components/adventure/AdventureForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { adventures, campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import AdventureForm from "@/components/adventure/AdventureForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditAdventurePageProps {
   params: Promise<{ id: string; adventureId: string }>;
@@ -49,11 +49,13 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function EditAdventurePage({ params }: EditAdventurePageProps) {
+export default async function EditAdventurePage({
+  params,
+}: EditAdventurePageProps) {
   const resolvedParams = await params;
   const adventureId = parseInt(resolvedParams.adventureId);
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const adventure = await getAdventure(adventureId);
   const campaign = await getCampaign(campaignId);
 
@@ -68,9 +70,12 @@ export default async function EditAdventurePage({ params }: EditAdventurePagePro
         campaignId={campaignId}
         campaignTitle={campaign.title}
         sectionItems={[
-          { label: 'Adventures', href: `/campaigns/${campaignId}/adventures` },
-          { label: adventure.title, href: `/campaigns/${campaignId}/adventures/${adventureId}` },
-          { label: 'Edit' }
+          { label: "Adventures", href: `/campaigns/${campaignId}/adventures` },
+          {
+            label: adventure.title,
+            href: `/campaigns/${campaignId}/adventures/${adventureId}`,
+          },
+          { label: "Edit" },
         ]}
       />
 
@@ -124,7 +129,8 @@ export async function generateMetadata({ params }: EditAdventurePageProps) {
   const adventure = await getAdventure(parseInt(resolvedParams.adventureId));
 
   return {
-    title: adventure ? `Edit ${adventure.title}` : 'Edit Adventure',
-    description: adventure?.description || `Edit ${adventure?.title} adventure details`,
+    title: adventure ? `Edit ${adventure.title}` : "Edit Adventure",
+    description:
+      adventure?.description || `Edit ${adventure?.title} adventure details`,
   };
 }

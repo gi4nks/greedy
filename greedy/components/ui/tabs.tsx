@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface TabsContextType {
   value?: string;
@@ -16,26 +16,42 @@ const Tabs = React.forwardRef<
     value?: string;
     onValueChange?: (value: string) => void;
   }
->(({ defaultValue, value, onValueChange, className, children, ...props }, ref) => {
-  const [internalValue, setInternalValue] = React.useState(value || defaultValue || "");
-  
-  const currentValue = value !== undefined ? value : internalValue;
-  
-  const handleValueChange = React.useCallback((newValue: string) => {
-    if (value === undefined) {
-      setInternalValue(newValue);
-    }
-    onValueChange?.(newValue);
-  }, [value, onValueChange]);
+>(
+  (
+    { defaultValue, value, onValueChange, className, children, ...props },
+    ref,
+  ) => {
+    const [internalValue, setInternalValue] = React.useState(
+      value || defaultValue || "",
+    );
 
-  return (
-    <TabsContext.Provider value={{ value: currentValue, onValueChange: handleValueChange, defaultValue }}>
-      <div ref={ref} className={cn("", className)} {...props}>
-        {children}
-      </div>
-    </TabsContext.Provider>
-  );
-});
+    const currentValue = value !== undefined ? value : internalValue;
+
+    const handleValueChange = React.useCallback(
+      (newValue: string) => {
+        if (value === undefined) {
+          setInternalValue(newValue);
+        }
+        onValueChange?.(newValue);
+      },
+      [value, onValueChange],
+    );
+
+    return (
+      <TabsContext.Provider
+        value={{
+          value: currentValue,
+          onValueChange: handleValueChange,
+          defaultValue,
+        }}
+      >
+        <div ref={ref} className={cn("", className)} {...props}>
+          {children}
+        </div>
+      </TabsContext.Provider>
+    );
+  },
+);
 Tabs.displayName = "Tabs";
 
 const TabsList = React.forwardRef<
@@ -44,10 +60,7 @@ const TabsList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "tabs tabs-boxed bg-base-200 p-1",
-      className
-    )}
+    className={cn("tabs tabs-boxed bg-base-200 p-1", className)}
     {...props}
   />
 ));
@@ -71,11 +84,7 @@ const TabsTrigger = React.forwardRef<
   return (
     <a
       ref={ref}
-      className={cn(
-        "tab",
-        isActive && "tab-active",
-        className
-      )}
+      className={cn("tab", isActive && "tab-active", className)}
       onClick={handleClick}
       {...props}
     >
@@ -92,7 +101,7 @@ const TabsContent = React.forwardRef<
   }
 >(({ className, value, ...props }, ref) => {
   const { value: currentValue } = React.useContext(TabsContext);
-  
+
   if (currentValue !== value) {
     return null;
   }
@@ -100,14 +109,11 @@ const TabsContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn(
-        "mt-2 focus:outline-none",
-        className
-      )}
+      className={cn("mt-2 focus:outline-none", className)}
       {...props}
     />
   );
 });
 TabsContent.displayName = "TabsContent";
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+export { Tabs, TabsList, TabsTrigger, TabsContent };

@@ -1,15 +1,15 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { locations } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
-import { LocationsList } from '@/components/locations/LocationsList';
-import { CampaignPageLayout } from '@/components/layout/CampaignPageLayout';
-import { getCampaignWithEdition } from '@/lib/utils/campaign';
-import { generateCampaignPageMetadata } from '@/lib/utils/metadata';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { locations } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus } from "lucide-react";
+import { LocationsList } from "@/components/locations/LocationsList";
+import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
+import { getCampaignWithEdition } from "@/lib/utils/campaign";
+import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
 
 interface LocationsPageProps {
   params: Promise<{ id: string }>;
@@ -51,11 +51,11 @@ export default async function LocationsPage({ params }: LocationsPageProps) {
       campaign={campaign}
       title="Locations"
       description="Manage campaign locations and points of interest"
-      sectionItems={[{ label: 'Locations' }]}
+      sectionItems={[{ label: "Locations" }]}
       createButton={{
         href: `/campaigns/${campaignId}/locations/create`,
-        label: 'Add Location',
-        icon: <Plus className="w-4 h-4" />
+        label: "Add Location",
+        icon: <Plus className="w-4 h-4" />,
       }}
     >
       <Suspense fallback={<LocationsListSkeleton />}>
@@ -97,5 +97,9 @@ export async function generateMetadata({ params }: LocationsPageProps) {
   const resolvedParams = await params;
   const campaign = await getCampaignWithEdition(parseInt(resolvedParams.id));
 
-  return generateCampaignPageMetadata(campaign, 'Locations', 'Manage your D&D campaign locations and points of interest');
+  return generateCampaignPageMetadata(
+    campaign,
+    "Locations",
+    "Manage your D&D campaign locations and points of interest",
+  );
 }

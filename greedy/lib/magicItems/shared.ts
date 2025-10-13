@@ -1,6 +1,12 @@
-export const SUPPORTED_MAGIC_ITEM_ENTITY_TYPES = ['character', 'location', 'adventure', 'session'] as const;
+export const SUPPORTED_MAGIC_ITEM_ENTITY_TYPES = [
+  "character",
+  "location",
+  "adventure",
+  "session",
+] as const;
 
-export type MagicItemAssignableEntity = typeof SUPPORTED_MAGIC_ITEM_ENTITY_TYPES[number];
+export type MagicItemAssignableEntity =
+  (typeof SUPPORTED_MAGIC_ITEM_ENTITY_TYPES)[number];
 
 export interface AssignableEntityOption {
   id: number;

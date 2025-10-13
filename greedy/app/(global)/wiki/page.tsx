@@ -1,72 +1,103 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { WikiDataService, WikiArticle, WikiArticleDetails } from '../../../lib/services/wiki-data';
-import { EditionAwareImportService, GameEdition } from '../../../lib/services/edition-aware-import';
-import { Campaign } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
-import { WikiItemAssignmentDialog } from '@/components/wiki/WikiItemAssignmentDialog';
-import { detectWikiItemCategory, getCategoryDisplayInfo } from '@/lib/utils/wiki-categories';
-import { Search, BookOpen, ChevronDown, ChevronRight, AlertCircle, CheckCircle, Info } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
+import { useState, useEffect } from "react";
+import {
+  WikiDataService,
+  WikiArticle,
+  WikiArticleDetails,
+} from "../../../lib/services/wiki-data";
+import {
+  EditionAwareImportService,
+  GameEdition,
+} from "../../../lib/services/edition-aware-import";
+import { Campaign } from "../../../lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { WikiItemAssignmentDialog } from "../../../components/wiki/WikiItemAssignmentDialog";
+import {
+  detectWikiItemCategory,
+  getCategoryDisplayInfo,
+} from "../../../lib/utils/wiki-categories";
+import {
+  Search,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle,
+  Info,
+} from "lucide-react";
+import { Label } from "../../../components/ui/label";
+import MarkdownRenderer from "../../../components/ui/markdown-renderer";
 
 interface FeedbackMessage {
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   message: string;
 }
 
 export default function WikiImport() {
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<WikiArticle[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState<boolean>(false);
-  const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
-  const [fullContentArticles, setFullContentArticles] = useState<Map<number, WikiArticleDetails>>(new Map());
-  const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null);
-  
+  const [expandedArticles, setExpandedArticles] = useState<Set<number>>(
+    new Set(),
+  );
+  const [fullContentArticles, setFullContentArticles] = useState<
+    Map<number, WikiArticleDetails>
+  >(new Map());
+  const [feedbackMessage, setFeedbackMessage] =
+    useState<FeedbackMessage | null>(null);
+
   // Edition-aware state
-  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(
+    null,
+  );
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [gameEdition, setGameEdition] = useState<GameEdition>('dnd5e');
+  const [gameEdition, setGameEdition] = useState<GameEdition>("dnd5e");
 
   // Load campaigns on component mount
   useEffect(() => {
     const loadCampaigns = async () => {
       try {
         // Use getCampaigns to get campaigns with game edition info
-        const response = await fetch('/api/campaigns/with-editions');
+        const response = await fetch("/api/campaigns/with-editions");
         if (response.ok) {
           const data = await response.json();
           setCampaigns(data);
         } else {
           // Fallback to regular campaigns endpoint
-          const fallbackResponse = await fetch('/api/campaigns');
+          const fallbackResponse = await fetch("/api/campaigns");
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
             setCampaigns(fallbackData);
           }
         }
       } catch (error) {
-        console.error('Failed to load campaigns:', error);
+        console.error("Failed to load campaigns:", error);
       }
     };
-    
+
     loadCampaigns();
   }, []);
 
   // Detect campaign edition when campaign is selected
   useEffect(() => {
     if (selectedCampaignId && campaigns.length > 0) {
-      const campaign = campaigns.find(c => c.id === selectedCampaignId);
+      const campaign = campaigns.find((c) => c.id === selectedCampaignId);
       if (campaign) {
         const detectedEdition = EditionAwareImportService.detectGameEdition(
-          campaign.gameEditionName || campaign.gameEditionVersion || undefined
+          campaign.gameEditionName || campaign.gameEditionVersion || undefined,
         );
         setGameEdition(detectedEdition);
       }
@@ -74,23 +105,27 @@ export default function WikiImport() {
   }, [selectedCampaignId, campaigns]);
 
   // Get available categories for current edition
-  const availableCategories = EditionAwareImportService.getCategoriesForEdition(gameEdition);
-  
+  const availableCategories =
+    EditionAwareImportService.getCategoriesForEdition(gameEdition);
+
   // Legacy categories for backward compatibility
   const categories = [
-    { id: 'all', name: 'All Content' },
-    { id: 'monsters', name: 'Monsters' },
-    { id: 'spells', name: 'Spells' },
-    { id: 'magic-items', name: 'Magic Items' },
-    { id: 'races', name: 'Races' },
-    { id: 'classes', name: 'Classes' },
+    { id: "all", name: "All Content" },
+    { id: "monsters", name: "Monsters" },
+    { id: "spells", name: "Spells" },
+    { id: "magic-items", name: "Magic Items" },
+    { id: "races", name: "Races" },
+    { id: "classes", name: "Classes" },
   ];
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     if (!selectedCampaignId) {
-      setFeedbackMessage({ type: 'error', message: 'Please select a campaign first' });
+      setFeedbackMessage({
+        type: "error",
+        message: "Please select a campaign first",
+      });
       return;
     }
 
@@ -100,15 +135,18 @@ export default function WikiImport() {
       const results: WikiArticle[] = await EditionAwareImportService.search(
         selectedCategory,
         searchQuery,
-        selectedCampaignId
+        selectedCampaignId,
       );
 
       setSearchResults(results);
       setFeedbackMessage(null);
     } catch (err) {
-      console.error('Search error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during search';
-      setFeedbackMessage({ type: 'error', message: errorMessage });
+      console.error("Search error:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred during search";
+      setFeedbackMessage({ type: "error", message: errorMessage });
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -116,13 +154,13 @@ export default function WikiImport() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       void handleSearch();
     }
   };
 
   const handleExpand = async (article: WikiArticle) => {
-    setExpandedArticles(prev => {
+    setExpandedArticles((prev) => {
       const newExpanded = new Set(prev);
       if (newExpanded.has(article.id)) {
         newExpanded.delete(article.id);
@@ -134,34 +172,45 @@ export default function WikiImport() {
     });
 
     // Load full content if not already loaded
-    if (!fullContentArticles.has(article.id) && !expandedArticles.has(article.id)) {
+    if (
+      !fullContentArticles.has(article.id) &&
+      !expandedArticles.has(article.id)
+    ) {
       try {
         if (article.id >= 5000000) {
           // This is a 5e.tools article, handle differently
           // For now, just show basic info
-          setFullContentArticles(prev => new Map(prev).set(article.id, {
-            id: article.id,
-            title: article.title,
-            url: article.url,
-            extract: 'D&D 5e content from 5e.tools',
-            content: 'Detailed content loading not implemented yet for 5e.tools data.',
-            isFullContent: false
-          }));
+          setFullContentArticles((prev) =>
+            new Map(prev).set(article.id, {
+              id: article.id,
+              title: article.title,
+              url: article.url,
+              extract: "D&D 5e content from 5e.tools",
+              content:
+                "Detailed content loading not implemented yet for 5e.tools data.",
+              isFullContent: false,
+            }),
+          );
         } else {
           // AD&D 2e wiki article
-          const articleDetail = await WikiDataService.getArticleFullContent(article);
-          setFullContentArticles(prev => new Map(prev).set(article.id, articleDetail));
+          const articleDetail =
+            await WikiDataService.getArticleFullContent(article);
+          setFullContentArticles((prev) =>
+            new Map(prev).set(article.id, articleDetail),
+          );
         }
       } catch (error) {
-        console.error('Error loading article details:', error);
-        setExpandedArticles(prev => new Set(prev).add(article.id));
+        console.error("Error loading article details:", error);
+        setExpandedArticles((prev) => new Set(prev).add(article.id));
       }
     } else if (!expandedArticles.has(article.id)) {
       const fullContent = fullContentArticles.get(article.id);
       if (fullContent) {
-        setFullContentArticles(prev => new Map(prev).set(article.id, fullContent));
+        setFullContentArticles((prev) =>
+          new Map(prev).set(article.id, fullContent),
+        );
       }
-      setExpandedArticles(prev => new Set(prev).add(article.id));
+      setExpandedArticles((prev) => new Set(prev).add(article.id));
     }
   };
 
@@ -172,17 +221,13 @@ export default function WikiImport() {
     } else if (details?.extract) {
       return details.extract;
     }
-    return 'Loading content...';
+    return "Loading content...";
   };
 
   return (
     <div className="container mx-auto p-6">
       {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        items={[
-          { label: 'Wiki Import' }
-        ]}
-      />
+      <DynamicBreadcrumb items={[{ label: "Wiki Import" }]} />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Wiki Import</h1>
@@ -193,16 +238,24 @@ export default function WikiImport() {
 
       <div className="space-y-6">
         {feedbackMessage && (
-          <div className={`alert ${
-            feedbackMessage.type === 'success' 
-              ? 'alert-success' 
-              : feedbackMessage.type === 'error'
-              ? 'alert-error'
-              : 'alert-info'
-          }`}>
-            {feedbackMessage.type === 'success' && <CheckCircle className="w-5 h-5 flex-shrink-0" />}
-            {feedbackMessage.type === 'error' && <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-            {feedbackMessage.type === 'info' && <Info className="w-5 h-5 flex-shrink-0" />}
+          <div
+            className={`alert ${
+              feedbackMessage.type === "success"
+                ? "alert-success"
+                : feedbackMessage.type === "error"
+                  ? "alert-error"
+                  : "alert-info"
+            }`}
+          >
+            {feedbackMessage.type === "success" && (
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            )}
+            {feedbackMessage.type === "error" && (
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            )}
+            {feedbackMessage.type === "info" && (
+              <Info className="w-5 h-5 flex-shrink-0" />
+            )}
             <div className="flex-1">
               <p className="text-sm font-medium">{feedbackMessage.message}</p>
             </div>
@@ -227,23 +280,32 @@ export default function WikiImport() {
             <div>
               <Label htmlFor="campaign-select">Select Campaign</Label>
               <Select
-                name='campaign-select'
-                value={selectedCampaignId?.toString() || ''}
-                onValueChange={(value) => setSelectedCampaignId(value ? Number(value) : null)}
+                name="campaign-select"
+                value={selectedCampaignId?.toString() || ""}
+                onValueChange={(value) =>
+                  setSelectedCampaignId(value ? Number(value) : null)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a campaign..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {campaigns.map(campaign => (
-                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                      {campaign.title} ({campaign.gameEditionName || campaign.gameEditionVersion || 'Unknown Edition'})
+                  {campaigns.map((campaign) => (
+                    <SelectItem
+                      key={campaign.id}
+                      value={campaign.id.toString()}
+                    >
+                      {campaign.title} (
+                      {campaign.gameEditionName ||
+                        campaign.gameEditionVersion ||
+                        "Unknown Edition"}
+                      )
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {gameEdition && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">
@@ -251,11 +313,11 @@ export default function WikiImport() {
                 </Badge>
               </div>
             )}
-            
+
             {availableCategories.length > 0 && (
               <div className="text-sm text-base-content/70">
-                <span className="font-medium">Available Content Types:</span>{' '}
-                {availableCategories.map(cat => cat.name).join(', ')}
+                <span className="font-medium">Available Content Types:</span>{" "}
+                {availableCategories.map((cat) => cat.name).join(", ")}
               </div>
             )}
           </CardContent>
@@ -290,7 +352,7 @@ export default function WikiImport() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(cat => (
+                    {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
                       </SelectItem>
@@ -303,7 +365,7 @@ export default function WikiImport() {
                 disabled={loading}
                 className="px-6"
               >
-                {loading ? 'Searching...' : 'Search'}
+                {loading ? "Searching..." : "Search"}
               </Button>
             </div>
           </CardContent>
@@ -318,13 +380,16 @@ export default function WikiImport() {
             <CardContent className="space-y-3">
               {searchResults.map((article) => {
                 const fullArticle = fullContentArticles.get(article.id);
-                const category = detectWikiItemCategory(article.title, fullArticle?.content);
+                const category = detectWikiItemCategory(
+                  article.title,
+                  fullArticle?.content,
+                );
                 const categoryInfo = getCategoryDisplayInfo(category);
-                
+
                 return (
                   <Card key={article.id} className="overflow-hidden">
                     <div className="p-4">
-                      <div 
+                      <div
                         className="cursor-pointer hover:bg-base-200 transition-colors -m-4 p-4"
                         onClick={() => handleExpand(article)}
                       >
@@ -335,20 +400,25 @@ export default function WikiImport() {
                             </h3>
                             <div className="flex gap-2 mt-2 flex-wrap">
                               <Badge variant="outline">
-                                {article.id >= 5000000 ? 'D&D 5e (5e.tools)' : 'AD&D 2e (Fandom Wiki)'}
+                                {article.id >= 5000000
+                                  ? "D&D 5e (5e.tools)"
+                                  : "AD&D 2e (Fandom Wiki)"}
                               </Badge>
-                              <Badge className={`${categoryInfo.color} text-white`}>
+                              <Badge
+                                className={`${categoryInfo.color} text-white`}
+                              >
                                 {categoryInfo.icon} {categoryInfo.label}
                               </Badge>
                             </div>
                           </div>
-                          {expandedArticles.has(article.id) ? 
-                            <ChevronDown className="w-5 h-5 text-base-content/70" /> : 
+                          {expandedArticles.has(article.id) ? (
+                            <ChevronDown className="w-5 h-5 text-base-content/70" />
+                          ) : (
                             <ChevronRight className="w-5 h-5 text-base-content/70" />
-                          }
+                          )}
                         </div>
                       </div>
-                      
+
                       {/* Assignment button - only show if campaign is selected */}
                       {selectedCampaignId && (
                         <div className="mt-3 pt-3 border-t flex justify-end">
@@ -360,69 +430,98 @@ export default function WikiImport() {
                             onAssign={async (assignment) => {
                               try {
                                 // Get the full content for parsing
-                                const fullContent = fullContentArticles.get(article.id);
+                                const fullContent = fullContentArticles.get(
+                                  article.id,
+                                );
                                 let parsedData = {};
 
                                 // Parse the content based on category
                                 if (fullContent?.content) {
-                                  if (category === 'spell') {
-                                    parsedData = WikiDataService.parseSpellData(fullContent.content);
-                                  } else if (category === 'monster') {
-                                    parsedData = WikiDataService.parseMonsterData(fullContent.content);
-                                  } else if (category === 'magic-item') {
-                                    parsedData = WikiDataService.parseMagicItemData(fullContent.content);
+                                  if (category === "spell") {
+                                    parsedData = WikiDataService.parseSpellData(
+                                      fullContent.content,
+                                    );
+                                  } else if (category === "monster") {
+                                    parsedData =
+                                      WikiDataService.parseMonsterData(
+                                        fullContent.content,
+                                      );
+                                  } else if (category === "magic-item") {
+                                    parsedData =
+                                      WikiDataService.parseMagicItemData(
+                                        fullContent.content,
+                                      );
                                   }
                                 }
 
                                 // First, create or find the wiki article in our database
-                                const articleResponse = await fetch('/api/wiki-articles', {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
+                                const articleResponse = await fetch(
+                                  "/api/wiki-articles",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      title: article.title,
+                                      contentType: category,
+                                      wikiUrl:
+                                        article.id >= 5000000
+                                          ? article.url
+                                          : `https://adnd2e.fandom.com${article.url}`,
+                                      rawContent: fullContent?.content || "",
+                                      parsedData: parsedData,
+                                      importedFrom:
+                                        article.id >= 5000000
+                                          ? "dnd5e-tools"
+                                          : "adnd2e-wiki",
+                                    }),
                                   },
-                                  body: JSON.stringify({
-                                    title: article.title,
-                                    contentType: category,
-                                    wikiUrl: article.id >= 5000000 ? article.url : `https://adnd2e.fandom.com${article.url}`,
-                                    rawContent: fullContent?.content || '',
-                                    parsedData: parsedData,
-                                    importedFrom: article.id >= 5000000 ? 'dnd5e-tools' : 'adnd2e-wiki',
-                                  }),
-                                });
+                                );
 
                                 if (!articleResponse.ok) {
-                                  throw new Error('Failed to create wiki article');
+                                  throw new Error(
+                                    "Failed to create wiki article",
+                                  );
                                 }
 
-                                const createdArticle = await articleResponse.json();
+                                const createdArticle =
+                                  await articleResponse.json();
 
                                 // Then create the entity relationship
-                                const relationshipResponse = await fetch(`/api/wiki-articles/${createdArticle.id}/entities`, {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
+                                const relationshipResponse = await fetch(
+                                  `/api/wiki-articles/${createdArticle.id}/entities`,
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      entityType: assignment.entityType,
+                                      entityId: assignment.entityId,
+                                      relationshipType: "referenced",
+                                      relationshipData: assignment.notes
+                                        ? { notes: assignment.notes }
+                                        : {},
+                                    }),
                                   },
-                                  body: JSON.stringify({
-                                    entityType: assignment.entityType,
-                                    entityId: assignment.entityId,
-                                    relationshipType: 'referenced',
-                                    relationshipData: assignment.notes ? { notes: assignment.notes } : {},
-                                  }),
-                                });
+                                );
 
                                 if (!relationshipResponse.ok) {
-                                  throw new Error('Failed to create entity relationship');
+                                  throw new Error(
+                                    "Failed to create entity relationship",
+                                  );
                                 }
 
                                 setFeedbackMessage({
-                                  type: 'success',
-                                  message: `Successfully assigned "${article.title}" to ${assignment.entityType} "${assignment.entityName}"`
+                                  type: "success",
+                                  message: `Successfully assigned "${article.title}" to ${assignment.entityType} "${assignment.entityName}"`,
                                 });
                               } catch (error) {
-                                console.error('Assignment error:', error);
+                                console.error("Assignment error:", error);
                                 setFeedbackMessage({
-                                  type: 'error',
-                                  message: `Failed to assign "${article.title}": ${error instanceof Error ? error.message : 'Unknown error'}`
+                                  type: "error",
+                                  message: `Failed to assign "${article.title}": ${error instanceof Error ? error.message : "Unknown error"}`,
                                 });
                               }
                             }}
@@ -430,8 +529,7 @@ export default function WikiImport() {
                         </div>
                       )}
                     </div>
-                  
-                    
+
                     {expandedArticles.has(article.id) && (
                       <div className="bg-base-200 border-t">
                         <div className="p-4">
@@ -456,7 +554,8 @@ export default function WikiImport() {
               <Search className="w-12 h-12 mx-auto text-base-content/70 mb-4" />
               <h3 className="text-lg font-semibold mb-2">No results found</h3>
               <p className="text-base-content/70">
-                No results found for &quot;{searchQuery}&quot;. Try a different search term or category.
+                No results found for &quot;{searchQuery}&quot;. Try a different
+                search term or category.
               </p>
             </CardContent>
           </Card>

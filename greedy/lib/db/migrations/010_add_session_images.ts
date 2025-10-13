@@ -1,4 +1,4 @@
-import { Database } from 'better-sqlite3';
+import { Database } from "better-sqlite3";
 
 export function up(db: Database) {
   // Add images field to sessions table

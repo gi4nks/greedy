@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { 
-  characters, 
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import {
+  characters,
   magicItems,
   magicItemAssignments,
   wikiArticleEntities,
-  wikiArticles
-} from '@/lib/db/schema';
-import { and, eq, sql } from 'drizzle-orm';
+  wikiArticles,
+} from "@/lib/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 
 // GET /api/characters/[id] - Get character with all assigned entities
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const resolvedParams = await params;
     const characterId = parseInt(resolvedParams.id);
-    
+
     // Get character basic info
     const [character] = await db
       .select()
@@ -25,7 +25,10 @@ export async function GET(
       .where(eq(characters.id, characterId));
 
     if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Character not found" },
+        { status: 404 },
+      );
     }
 
     // Get assigned magic items
@@ -44,12 +47,15 @@ export async function GET(
         campaignId: magicItemAssignments.campaignId,
       })
       .from(magicItemAssignments)
-      .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
+      .innerJoin(
+        magicItems,
+        eq(magicItemAssignments.magicItemId, magicItems.id),
+      )
       .where(
         and(
-          eq(magicItemAssignments.entityType, 'character'),
-          eq(magicItemAssignments.entityId, characterId)
-        )
+          eq(magicItemAssignments.entityType, "character"),
+          eq(magicItemAssignments.entityId, characterId),
+        ),
       );
 
     // Get assigned wiki entities from unified tables
@@ -65,8 +71,13 @@ export async function GET(
         relationshipData: wikiArticleEntities.relationshipData,
       })
       .from(wikiArticleEntities)
-      .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
-      .where(sql`${wikiArticleEntities.entityType} = 'character' AND ${wikiArticleEntities.entityId} = ${characterId}`);
+      .innerJoin(
+        wikiArticles,
+        eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+      )
+      .where(
+        sql`${wikiArticleEntities.entityType} = 'character' AND ${wikiArticleEntities.entityId} = ${characterId}`,
+      );
 
     return NextResponse.json({
       ...character,
@@ -74,7 +85,10 @@ export async function GET(
       wikiEntities: wikiEntitiesResult,
     });
   } catch (error) {
-    console.error('Error fetching character with entities:', error);
-    return NextResponse.json({ error: 'Failed to fetch character data' }, { status: 500 });
+    console.error("Error fetching character with entities:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch character data" },
+      { status: 500 },
+    );
   }
 }

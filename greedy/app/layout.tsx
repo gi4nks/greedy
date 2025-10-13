@@ -1,37 +1,32 @@
-import type { Metadata, Viewport } from 'next'
-import './globals.css'
-import Navigation from '@/components/Navigation'
-import { SessionProvider } from '@/components/SessionProvider'
-import { Toaster } from 'sonner'
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+import Navigation from "../components/Navigation";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: 'Greedy',
-  description: 'A simple D&D campaign management system',
-}
+  title: "Greedy",
+  description: "A simple D&D campaign management system",
+};
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" data-theme="emerald" data-scroll-behavior="smooth">
       <body className="min-h-screen bg-base-200">
-        <SessionProvider>
-          <Navigation />
-          <main>
-            {children}
-          </main>
-          <Toaster position="top-right" richColors />
-        </SessionProvider>
+        <Navigation />
+        <main>{children}</main>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
-  )
+  );
 }

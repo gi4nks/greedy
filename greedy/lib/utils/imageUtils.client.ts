@@ -1,6 +1,14 @@
 // Client-side image utilities (no Node.js imports)
 
-export type EntityType = 'adventures' | 'sessions' | 'quests' | 'characters' | 'locations' | 'magic-items';
+import { logger } from "@/lib/utils/logger";
+
+export type EntityType =
+  | "adventures"
+  | "sessions"
+  | "quests"
+  | "characters"
+  | "locations"
+  | "magic-items";
 
 export interface ImageUploadResult {
   success: boolean;
@@ -22,18 +30,18 @@ export interface ImageInfo {
  */
 export function parseImagesJson(imagesJson: unknown): ImageInfo[] {
   if (!imagesJson) return [];
-  
+
   try {
-    if (typeof imagesJson === 'string') {
+    if (typeof imagesJson === "string") {
       return JSON.parse(imagesJson) as ImageInfo[];
     }
     if (Array.isArray(imagesJson)) {
       return imagesJson as ImageInfo[];
     }
   } catch (error) {
-    console.error('Error parsing images JSON:', error);
+    logger.error("Error parsing images JSON", error);
   }
-  
+
   return [];
 }
 
@@ -42,12 +50,12 @@ export function parseImagesJson(imagesJson: unknown): ImageInfo[] {
  */
 export function resultsToImageInfo(results: ImageUploadResult[]): ImageInfo[] {
   return results
-    .filter(result => result.success && result.filename && result.url)
-    .map(result => ({
+    .filter((result) => result.success && result.filename && result.url)
+    .map((result) => ({
       filename: result.filename!,
       url: result.url!,
       thumbnailUrl: result.thumbnailUrl,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
     }));
 }
 
@@ -56,7 +64,7 @@ export function resultsToImageInfo(results: ImageUploadResult[]): ImageInfo[] {
  */
 export function addImagesToEntity(
   existingImages: ImageInfo[],
-  newImages: ImageInfo[]
+  newImages: ImageInfo[],
 ): ImageInfo[] {
   return [...existingImages, ...newImages];
 }
@@ -66,7 +74,7 @@ export function addImagesToEntity(
  */
 export function removeImageFromEntity(
   images: ImageInfo[],
-  filename: string
+  filename: string,
 ): ImageInfo[] {
-  return images.filter(img => img.filename !== filename);
+  return images.filter((img) => img.filename !== filename);
 }

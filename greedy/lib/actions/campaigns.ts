@@ -1,22 +1,16 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { ActionResult } from "@/lib/types/api";
+import { logger } from "@/lib/utils/logger";
 
 const CreateCampaignSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  gameEditionId: z.number().optional(),
-  worldName: z.string().optional(),
-  tags: z.array(z.string()).default([]),
-});
-
-const UpdateCampaignSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   status: z.string().optional(),
   startDate: z.string().optional(),
@@ -26,61 +20,107 @@ const UpdateCampaignSchema = z.object({
   tags: z.array(z.string()).default([]),
 });
 
-export async function createCampaign(prevState: { errors?: Record<string, string[]>; message?: string } | undefined, formData: FormData) {
+const UpdateCampaignSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  status: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  gameEditionId: z.number().optional(),
+  worldName: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+});
+
+export async function createCampaign(
+  state: ActionResult<{ id: number }> | undefined,
+  formData: FormData,
+): Promise<ActionResult<{ id: number }>> {
   const validatedFields = CreateCampaignSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    gameEditionId: formData.get('gameEditionId') ? Number(formData.get('gameEditionId')) : undefined,
-    worldName: formData.get('worldName'),
-    tags: formData.get('tags') ? JSON.parse(formData.get('tags') as string) : [],
+    title: formData.get("title"),
+    description: formData.get("description"),
+    status: formData.get("status"),
+    startDate: formData.get("startDate") || undefined,
+    endDate: formData.get("endDate") || undefined,
+    gameEditionId: formData.get("gameEditionId")
+      ? Number(formData.get("gameEditionId"))
+      : undefined,
+    worldName: formData.get("worldName"),
+    tags: formData.get("tags")
+      ? JSON.parse(formData.get("tags") as string)
+      : [],
   });
 
   if (!validatedFields.success) {
     return {
+      success: false,
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
 
-  const { title, description, gameEditionId, tags } = validatedFields.data;
+  const {
+    title,
+    description,
+    status,
+    startDate,
+    endDate,
+    gameEditionId,
+    tags,
+  } = validatedFields.data;
 
   try {
-    const [campaign] = await db.insert(campaigns).values({
-      title,
-      description,
-      gameEditionId: gameEditionId || 1, // Default to D&D 5e
-      tags: JSON.stringify(tags),
-    }).returning();
+    const [campaign] = await db
+      .insert(campaigns)
+      .values({
+        title,
+        description,
+        status: status || "active",
+        startDate: startDate || null,
+        endDate: endDate || null,
+        gameEditionId: gameEditionId || 1, // Default to D&D 5e
+        tags: JSON.stringify(tags),
+      })
+      .returning();
 
-    revalidatePath('/campaigns');
+    revalidatePath("/campaigns");
     redirect(`/campaigns/${campaign.id}`);
   } catch (error) {
-    console.error('Database error:', error);
+    logger.error("Database error creating campaign", error);
     return {
-      message: 'Database Error: Failed to create campaign.',
+      success: false,
+      message: "Database Error: Failed to create campaign.",
     };
   }
 }
 
-export async function updateCampaign(id: number, formData: FormData) {
+export async function updateCampaign(
+  id: number,
+  formData: FormData,
+): Promise<ActionResult> {
   const validatedFields = UpdateCampaignSchema.safeParse({
-    title: formData.get('title'),
-    description: formData.get('description'),
-    status: formData.get('status'),
-    startDate: formData.get('startDate') || undefined,
-    endDate: formData.get('endDate') || undefined,
-    gameEditionId: formData.get('gameEditionId') ? Number(formData.get('gameEditionId')) : undefined,
-    worldName: formData.get('worldName'),
-    tags: formData.get('tags') ? JSON.parse(formData.get('tags') as string) : [],
+    title: formData.get("title"),
+    description: formData.get("description"),
+    status: formData.get("status"),
+    startDate: formData.get("startDate") || undefined,
+    endDate: formData.get("endDate") || undefined,
+    gameEditionId: formData.get("gameEditionId")
+      ? Number(formData.get("gameEditionId"))
+      : undefined,
+    worldName: formData.get("worldName"),
+    tags: formData.get("tags")
+      ? JSON.parse(formData.get("tags") as string)
+      : [],
   });
 
   if (!validatedFields.success) {
     return {
+      success: false,
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
 
   try {
-    await db.update(campaigns)
+    await db
+      .update(campaigns)
       .set({
         ...validatedFields.data,
         tags: JSON.stringify(validatedFields.data.tags),
@@ -89,55 +129,75 @@ export async function updateCampaign(id: number, formData: FormData) {
       .where(eq(campaigns.id, id));
 
     revalidatePath(`/campaigns/${id}`);
-    return { message: 'Campaign updated successfully.' };
+    return { success: true };
   } catch (error) {
-    console.error('Database error:', error);
+    logger.error("Database error updating campaign", error);
     return {
-      message: 'Database Error: Failed to update campaign.',
+      success: false,
+      message: "Database Error: Failed to update campaign.",
     };
   }
 }
 
-export async function deleteCampaign(id: number) {
+export async function deleteCampaign(id: number): Promise<ActionResult> {
   try {
     await db.delete(campaigns).where(eq(campaigns.id, id));
-    revalidatePath('/campaigns');
-    redirect('/campaigns');
+    revalidatePath("/campaigns");
+    redirect("/campaigns");
   } catch (error) {
-    console.error('Database error:', error);
+    logger.error("Database error deleting campaign", error);
     return {
-      message: 'Database Error: Failed to delete campaign.',
+      success: false,
+      message: "Database Error: Failed to delete campaign.",
     };
   }
 }
 
-export async function createCampaignDirect(formData: FormData) {
-  const title = formData.get('title') as string;
-  const description = formData.get('description') as string;
-  const status = formData.get('status') as string;
-  const startDate = formData.get('startDate') as string;
-  const endDate = formData.get('endDate') as string;
-  const tags = formData.get('tags') as string;
+export async function createCampaignDirect(
+  formData: FormData,
+): Promise<ActionResult<{ id: number }>> {
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const status = formData.get("status") as string;
+  const startDate = formData.get("startDate") as string;
+  const endDate = formData.get("endDate") as string;
+  const tags = formData.get("tags") as string;
 
   if (!title) {
-    throw new Error('Title is required');
+    return {
+      success: false,
+      errors: { title: ["Title is required"] },
+    };
   }
 
   try {
-    const [campaign] = await db.insert(campaigns).values({
-      title,
-      description: description || null,
-      status: status || 'active',
-      startDate: startDate || null,
-      endDate: endDate || null,
-      tags: tags ? JSON.stringify(tags.split(',').map(t => t.trim()).filter(t => t)) : null,
-    }).returning();
+    const [campaign] = await db
+      .insert(campaigns)
+      .values({
+        title,
+        description: description || null,
+        status: status || "active",
+        startDate: startDate || null,
+        endDate: endDate || null,
+        tags: tags
+          ? JSON.stringify(
+              tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t),
+            )
+          : null,
+      })
+      .returning();
 
-    revalidatePath('/campaigns');
+    revalidatePath("/campaigns");
     redirect(`/campaigns/${campaign.id}`);
   } catch (error) {
-    console.error('Database error:', error);
-    throw new Error('Failed to create campaign');
+    logger.error("Database error creating campaign direct", error);
+    return {
+      success: false,
+      message: "Failed to create campaign",
+    };
   }
 }
 

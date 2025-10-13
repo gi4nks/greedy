@@ -1,32 +1,44 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { db } from "@/lib/db";
+import { adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { ActionResult } from "@/lib/types/api";
 
 export async function getAdventures(campaignId?: number) {
   if (campaignId) {
-    return await db.select().from(adventures).where(eq(adventures.campaignId, campaignId));
+    return await db
+      .select()
+      .from(adventures)
+      .where(eq(adventures.campaignId, campaignId));
   }
   return await db.select().from(adventures);
 }
 
 export async function getAdventure(id: number) {
-  const [adventure] = await db.select().from(adventures).where(eq(adventures.id, id)).limit(1);
+  const [adventure] = await db
+    .select()
+    .from(adventures)
+    .where(eq(adventures.id, id))
+    .limit(1);
   return adventure;
 }
 
-export async function createAdventure(formData: FormData) {
-  const title = formData.get('title') as string;
-  const description = formData.get('description') as string;
-  const campaignId = formData.get('campaignId') ? Number(formData.get('campaignId')) : null;
-  const startDate = formData.get('startDate') as string;
-  const endDate = formData.get('endDate') as string;
-  const status = formData.get('status') as string;
-  const slug = formData.get('slug') as string;
-  const images = formData.get('images') as string;
+export async function createAdventure(
+  formData: FormData,
+): Promise<ActionResult> {
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const campaignId = formData.get("campaignId")
+    ? Number(formData.get("campaignId"))
+    : null;
+  const startDate = formData.get("startDate") as string;
+  const endDate = formData.get("endDate") as string;
+  const status = formData.get("status") as string;
+  const slug = formData.get("slug") as string;
+  const images = formData.get("images") as string;
 
   try {
     await db.insert(adventures).values({
@@ -35,7 +47,7 @@ export async function createAdventure(formData: FormData) {
       campaignId,
       startDate: startDate || null,
       endDate: endDate || null,
-      status: status || 'planned',
+      status: status || "planned",
       slug: slug || null,
       images: images ? JSON.parse(images) : null,
     });
@@ -43,23 +55,28 @@ export async function createAdventure(formData: FormData) {
     revalidatePath(`/campaigns/${campaignId}/adventures`);
     redirect(`/campaigns/${campaignId}/adventures`);
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to create adventure.',
+      success: false,
+      message: "Database Error: Failed to create adventure.",
     };
   }
 }
 
-export async function updateAdventure(formData: FormData) {
-  const id = Number(formData.get('id'));
-  const title = formData.get('title') as string;
-  const description = formData.get('description') as string;
-  const campaignId = formData.get('campaignId') ? Number(formData.get('campaignId')) : null;
-  const startDate = formData.get('startDate') as string;
-  const endDate = formData.get('endDate') as string;
-  const status = formData.get('status') as string;
-  const slug = formData.get('slug') as string;
-  const images = formData.get('images') as string;
+export async function updateAdventure(
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = Number(formData.get("id"));
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const campaignId = formData.get("campaignId")
+    ? Number(formData.get("campaignId"))
+    : null;
+  const startDate = formData.get("startDate") as string;
+  const endDate = formData.get("endDate") as string;
+  const status = formData.get("status") as string;
+  const slug = formData.get("slug") as string;
+  const images = formData.get("images") as string;
 
   try {
     await db
@@ -70,7 +87,7 @@ export async function updateAdventure(formData: FormData) {
         campaignId,
         startDate: startDate || null,
         endDate: endDate || null,
-        status: status || 'planned',
+        status: status || "planned",
         slug: slug || null,
         images: images ? JSON.parse(images) : null,
         updatedAt: new Date().toISOString(),
@@ -80,29 +97,36 @@ export async function updateAdventure(formData: FormData) {
     revalidatePath(`/campaigns/${campaignId}/adventures`);
     redirect(`/campaigns/${campaignId}/adventures`);
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to update adventure.',
+      success: false,
+      message: "Database Error: Failed to update adventure.",
     };
   }
 }
 
-export async function deleteAdventure(id: number, campaignId: number) {
+export async function deleteAdventure(
+  id: number,
+  campaignId: number,
+): Promise<ActionResult> {
   try {
     await db.delete(adventures).where(eq(adventures.id, id));
     revalidatePath(`/campaigns/${campaignId}/adventures`);
-    return { message: 'Adventure deleted successfully.' };
+    return { success: true };
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     return {
-      message: 'Database Error: Failed to delete adventure.',
+      success: false,
+      message: "Database Error: Failed to delete adventure.",
     };
   }
 }
 
-export async function deleteAdventureAction(formData: FormData) {
-  'use server';
-  const id = Number(formData.get('id'));
-  const campaignId = Number(formData.get('campaignId'));
+export async function deleteAdventureAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  "use server";
+  const id = Number(formData.get("id"));
+  const campaignId = Number(formData.get("campaignId"));
   return await deleteAdventure(id, campaignId);
 }

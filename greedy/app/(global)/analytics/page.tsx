@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CampaignAnalytics } from '@/lib/services/analytics';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Badge } from "../../../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
+import { CampaignAnalytics } from "../../../lib/services/analytics";
+import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
 import {
   BarChart,
   Bar,
@@ -16,8 +16,8 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
-} from 'recharts';
+  Cell,
+} from "recharts";
 import {
   TrendingUp,
   Users,
@@ -25,10 +25,18 @@ import {
   Calendar,
   Clock,
   Target,
-  BarChart3
-} from 'lucide-react';
+  BarChart3,
+} from "lucide-react";
 
-const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = [
+  "#3b82f6",
+  "#ef4444",
+  "#10b981",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+];
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(null);
@@ -37,14 +45,14 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
-        const response = await fetch('/api/analytics');
+        const response = await fetch("/api/analytics");
         if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
+          throw new Error("Failed to fetch analytics");
         }
         const data = await response.json();
         setAnalytics(data);
       } catch (error) {
-        console.error('Failed to load analytics:', error);
+        console.error("Failed to load analytics:", error);
       } finally {
         setLoading(false);
       }
@@ -82,7 +90,9 @@ export default function AnalyticsPage() {
         <div className="text-center py-12">
           <BarChart3 className="w-12 h-12 mx-auto text-base-content/60 mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Analytics Data</h3>
-          <p className="text-base-content/70">Unable to load analytics data at this time.</p>
+          <p className="text-base-content/70">
+            Unable to load analytics data at this time.
+          </p>
         </div>
       </div>
     );
@@ -91,11 +101,7 @@ export default function AnalyticsPage() {
   return (
     <div className="container mx-auto p-6">
       {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        items={[
-          { label: 'Analytics' }
-        ]}
-      />
+      <DynamicBreadcrumb items={[{ label: "Analytics" }]} />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Campaign Analytics</h1>
@@ -113,7 +119,9 @@ export default function AnalyticsPage() {
                 <BookOpen className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{analytics.overview.totalCampaigns}</p>
+                <p className="text-2xl font-bold">
+                  {analytics.overview.totalCampaigns}
+                </p>
                 <p className="text-sm text-base-content/70">Campaigns</p>
               </div>
             </div>
@@ -127,7 +135,9 @@ export default function AnalyticsPage() {
                 <Target className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{analytics.overview.totalAdventures}</p>
+                <p className="text-2xl font-bold">
+                  {analytics.overview.totalAdventures}
+                </p>
                 <p className="text-sm text-base-content/70">Adventures</p>
               </div>
             </div>
@@ -141,7 +151,9 @@ export default function AnalyticsPage() {
                 <Calendar className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{analytics.overview.totalSessions}</p>
+                <p className="text-2xl font-bold">
+                  {analytics.overview.totalSessions}
+                </p>
                 <p className="text-sm text-base-content/70">Sessions</p>
               </div>
             </div>
@@ -155,7 +167,9 @@ export default function AnalyticsPage() {
                 <Users className="w-6 h-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{analytics.overview.totalCharacters}</p>
+                <p className="text-2xl font-bold">
+                  {analytics.overview.totalCharacters}
+                </p>
                 <p className="text-sm text-base-content/70">Characters</p>
               </div>
             </div>
@@ -202,19 +216,22 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {analytics.sessionTrends.recent.slice(0, 5).map((session, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">{session.title}</p>
-                        <p className="text-xs text-base-content/70">
-                          {new Date(session.date).toLocaleDateString()}
-                        </p>
+                  {analytics.sessionTrends.recent
+                    .slice(0, 5)
+                    .map((session, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-base-200 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-medium text-sm">{session.title}</p>
+                          <p className="text-xs text-base-content/70">
+                            {new Date(session.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant="outline">{session.duration}h</Badge>
                       </div>
-                      <Badge variant="outline">
-                        {session.duration}h
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -239,7 +256,10 @@ export default function AnalyticsPage() {
                       label={({ race, count }) => `${race}: ${count}`}
                     >
                       {analytics.characterStats.byRace.map((entry, index) => (
-                        <Cell key={`race-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`race-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -264,7 +284,10 @@ export default function AnalyticsPage() {
                       label={({ type, count }) => `${type}: ${count}`}
                     >
                       {analytics.characterStats.byType.map((entry, index) => (
-                        <Cell key={`type-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`type-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -285,19 +308,28 @@ export default function AnalyticsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Sessions per Campaign</span>
                   <span className="font-semibold">
-                    {(analytics.overview.totalSessions / Math.max(analytics.overview.totalCampaigns, 1)).toFixed(1)}
+                    {(
+                      analytics.overview.totalSessions /
+                      Math.max(analytics.overview.totalCampaigns, 1)
+                    ).toFixed(1)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Characters per Adventure</span>
                   <span className="font-semibold">
-                    {(analytics.overview.totalCharacters / Math.max(analytics.overview.totalAdventures, 1)).toFixed(1)}
+                    {(
+                      analytics.overview.totalCharacters /
+                      Math.max(analytics.overview.totalAdventures, 1)
+                    ).toFixed(1)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Adventures per Campaign</span>
                   <span className="font-semibold">
-                    {(analytics.overview.totalAdventures / Math.max(analytics.overview.totalCampaigns, 1)).toFixed(1)}
+                    {(
+                      analytics.overview.totalAdventures /
+                      Math.max(analytics.overview.totalCampaigns, 1)
+                    ).toFixed(1)}
                   </span>
                 </div>
               </CardContent>

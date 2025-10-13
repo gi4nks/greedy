@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Users, Heart, Shield, Sword } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Edit, Trash2, Users, Heart, Shield, Sword } from "lucide-react";
+import Link from "next/link";
 
 interface Relationship {
   id: number;
@@ -40,17 +40,21 @@ interface RelationshipsListProps {
   };
 }
 
-export default function RelationshipsList({ initialRelationships, filters }: RelationshipsListProps) {
-  const [relationships, setRelationships] = useState<Relationship[]>(initialRelationships);
+export default function RelationshipsList({
+  initialRelationships,
+  filters,
+}: RelationshipsListProps) {
+  const [relationships, setRelationships] =
+    useState<Relationship[]>(initialRelationships);
   const [loading, setLoading] = useState(false);
 
   const fetchRelationships = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.npcId) params.set('npcId', filters.npcId);
-      if (filters.characterId) params.set('characterId', filters.characterId);
-      if (filters.type) params.set('type', filters.type);
+      if (filters.npcId) params.set("npcId", filters.npcId);
+      if (filters.characterId) params.set("characterId", filters.characterId);
+      if (filters.type) params.set("type", filters.type);
 
       const response = await fetch(`/api/relationships?${params.toString()}`);
       if (response.ok) {
@@ -58,7 +62,7 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
         setRelationships(data);
       }
     } catch (error) {
-      console.error('Error fetching relationships:', error);
+      console.error("Error fetching relationships:", error);
     } finally {
       setLoading(false);
     }
@@ -69,38 +73,38 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
   }, [fetchRelationships]);
 
   const getRelationshipColor = (strength: number) => {
-    if (strength >= 75) return 'text-green-600';
-    if (strength >= 50) return 'text-blue-600';
-    if (strength >= 25) return 'text-yellow-600';
-    return 'text-red-600';
+    if (strength >= 75) return "text-green-600";
+    if (strength >= 50) return "text-blue-600";
+    if (strength >= 25) return "text-yellow-600";
+    return "text-red-600";
   };
 
   const getRelationshipTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'ally':
-      case 'friend':
-        return 'badge-success';
-      case 'enemy':
-      case 'rival':
-        return 'badge-error';
-      case 'romantic':
-        return 'badge-secondary';
-      case 'family':
-        return 'badge-primary';
+      case "ally":
+      case "friend":
+        return "badge-success";
+      case "enemy":
+      case "rival":
+        return "badge-error";
+      case "romantic":
+        return "badge-secondary";
+      case "family":
+        return "badge-primary";
       default:
-        return 'badge-neutral';
+        return "badge-neutral";
     }
   };
 
   const getRelationshipIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'ally':
-      case 'friend':
+      case "ally":
+      case "friend":
         return <Users className="w-4 h-4" />;
-      case 'romantic':
+      case "romantic":
         return <Heart className="w-4 h-4" />;
-      case 'enemy':
-      case 'rival':
+      case "enemy":
+      case "rival":
         return <Sword className="w-4 h-4" />;
       default:
         return <Shield className="w-4 h-4" />;
@@ -139,8 +143,8 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
           <h3 className="text-lg font-semibold mb-2">No Relationships Found</h3>
           <p className="text-base-content/70 mb-4">
             {Object.values(filters).some(Boolean)
-              ? 'Try adjusting your filters to see more relationships.'
-              : 'Start building relationships between your NPCs and player characters.'}
+              ? "Try adjusting your filters to see more relationships."
+              : "Start building relationships between your NPCs and player characters."}
           </p>
           <Link href="/relationships/create">
             <Button size="sm">Create First Relationship</Button>
@@ -153,7 +157,10 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
   return (
     <div className="space-y-4">
       {relationships.map((relationship) => (
-        <Card key={relationship.id} className="hover:shadow-md transition-shadow">
+        <Card
+          key={relationship.id}
+          className="hover:shadow-md transition-shadow"
+        >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="avatar">
@@ -167,25 +174,32 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
                   <h3 className="font-semibold">
                     {relationship.npc_name} ↔ {relationship.target_name}
                   </h3>
-                  <Badge className={getRelationshipTypeColor(relationship.relationshipType)}>
+                  <Badge
+                    className={getRelationshipTypeColor(
+                      relationship.relationshipType,
+                    )}
+                  >
                     {relationship.relationshipType}
                   </Badge>
                 </div>
 
                 <p className="text-sm text-base-content/70 mb-2">
-                  {relationship.notes || 'No description available'}
+                  {relationship.notes || "No description available"}
                 </p>
 
                 {relationship.latestEvent && (
                   <p className="text-xs text-base-content/70">
                     Latest: {relationship.latestEvent.description}
-                    {relationship.latestEvent.sessionTitle && ` (${relationship.latestEvent.sessionTitle})`}
+                    {relationship.latestEvent.sessionTitle &&
+                      ` (${relationship.latestEvent.sessionTitle})`}
                   </p>
                 )}
               </div>
 
               <div className="text-right">
-                <div className={`text-2xl font-bold ${getRelationshipColor(relationship.strength)}`}>
+                <div
+                  className={`text-2xl font-bold ${getRelationshipColor(relationship.strength)}`}
+                >
                   {relationship.strength}
                 </div>
                 <div className="text-xs text-base-content/70">Strength</div>
@@ -203,7 +217,11 @@ export default function RelationshipsList({ initialRelationships, filters }: Rel
                   className="gap-2"
                   size="sm"
                   onClick={() => {
-                    if (confirm('Are you sure you want to delete this relationship?')) {
+                    if (
+                      confirm(
+                        "Are you sure you want to delete this relationship?",
+                      )
+                    ) {
                       // Handle delete
                     }
                   }}

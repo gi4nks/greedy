@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { sessions, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import SessionForm from '@/components/session/SessionForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { sessions, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import SessionForm from "@/components/session/SessionForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditSessionPageProps {
   params: Promise<{ id: string }>;
@@ -24,13 +24,12 @@ async function getSession(sessionId: number) {
 }
 
 async function getAdventures() {
-  return await db
-    .select()
-    .from(adventures)
-    .orderBy(adventures.startDate);
+  return await db.select().from(adventures).orderBy(adventures.startDate);
 }
 
-export default async function EditSessionPage({ params }: EditSessionPageProps) {
+export default async function EditSessionPage({
+  params,
+}: EditSessionPageProps) {
   const resolvedParams = await params;
   const sessionId = parseInt(resolvedParams.id);
 
@@ -46,16 +45,12 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
     <Suspense fallback={<EditSessionSkeleton />}>
       <DynamicBreadcrumb
         items={[
-          { label: 'Sessions', href: '/sessions' },
+          { label: "Sessions", href: "/sessions" },
           { label: session.title, href: `/sessions/${sessionId}` },
-          { label: 'Edit' }
+          { label: "Edit" },
         ]}
       />
-      <SessionForm
-        session={session}
-        adventures={allAdventures}
-        mode="edit"
-      />
+      <SessionForm session={session} adventures={allAdventures} mode="edit" />
     </Suspense>
   );
 }
@@ -101,7 +96,9 @@ export async function generateMetadata({ params }: EditSessionPageProps) {
   const session = await getSession(parseInt(resolvedParams.id));
 
   return {
-    title: session ? `Edit ${session.title}` : 'Edit Session',
-    description: session ? `Edit session details for ${session.title}` : 'Edit session details',
+    title: session ? `Edit ${session.title}` : "Edit Session",
+    description: session
+      ? `Edit session details for ${session.title}`
+      : "Edit session details",
   };
 }

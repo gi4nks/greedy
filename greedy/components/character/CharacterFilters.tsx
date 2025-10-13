@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { Adventure } from '@/lib/db/schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter, X } from 'lucide-react';
-import Link from 'next/link';
+import { Adventure } from "@/lib/db/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Filter, X } from "lucide-react";
+import Link from "next/link";
 
 interface CharacterFiltersProps {
   campaignId: number;
@@ -20,13 +26,17 @@ interface CharacterFiltersProps {
   };
 }
 
-export default function CharacterFilters({ campaignId, adventures, currentFilters }: CharacterFiltersProps) {
+export default function CharacterFilters({
+  campaignId,
+  adventures,
+  currentFilters,
+}: CharacterFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== 'all' && value !== 'none') {
+    if (value && value !== "all" && value !== "none") {
       params.set(key, value);
     } else {
       params.delete(key);
@@ -38,7 +48,7 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
     router.push(`/campaigns/${campaignId}/characters`);
   };
 
-  const hasActiveFilters = Object.values(currentFilters).some(value => value);
+  const hasActiveFilters = Object.values(currentFilters).some((value) => value);
 
   return (
     <Card>
@@ -52,11 +62,13 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
       <CardContent className="space-y-4">
         {/* Character Type Filter */}
         <div>
-          <label className="text-sm font-medium mb-2 block">Character Type</label>
+          <label className="text-sm font-medium mb-2 block">
+            Character Type
+          </label>
           <Select
             name="type"
-            value={currentFilters.type || ''}
-            onValueChange={(value) => updateFilter('type', value)}
+            value={currentFilters.type || ""}
+            onValueChange={(value) => updateFilter("type", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All types" />
@@ -74,8 +86,8 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
           <label className="text-sm font-medium mb-2 block">Adventure</label>
           <Select
             name="adventure_id"
-            value={currentFilters.adventure_id || ''}
-            onValueChange={(value) => updateFilter('adventure_id', value)}
+            value={currentFilters.adventure_id || ""}
+            onValueChange={(value) => updateFilter("adventure_id", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All adventures" />
@@ -96,8 +108,8 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
           <label className="text-sm font-medium mb-2 block">Race</label>
           <Select
             name="race"
-            value={currentFilters.race || ''}
-            onValueChange={(value) => updateFilter('race', value)}
+            value={currentFilters.race || ""}
+            onValueChange={(value) => updateFilter("race", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All races" />
@@ -123,8 +135,8 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
           <label className="text-sm font-medium mb-2 block">Class</label>
           <Select
             name="class"
-            value={currentFilters.class || ''}
-            onValueChange={(value) => updateFilter('class', value)}
+            value={currentFilters.class || ""}
+            onValueChange={(value) => updateFilter("class", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All classes" />
@@ -161,15 +173,20 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
               {currentFilters.type && (
                 <Badge variant="secondary" className="gap-1">
                   Type: {currentFilters.type}
-                  <button onClick={() => updateFilter('type', '')}>
+                  <button onClick={() => updateFilter("type", "")}>
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
               )}
               {currentFilters.adventure_id && (
                 <Badge variant="secondary" className="gap-1">
-                  Adventure: {adventures.find(a => a.id.toString() === currentFilters.adventure_id)?.title}
-                  <button onClick={() => updateFilter('adventure_id', '')}>
+                  Adventure:{" "}
+                  {
+                    adventures.find(
+                      (a) => a.id.toString() === currentFilters.adventure_id,
+                    )?.title
+                  }
+                  <button onClick={() => updateFilter("adventure_id", "")}>
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
@@ -177,7 +194,7 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
               {currentFilters.race && (
                 <Badge variant="secondary" className="gap-1">
                   Race: {currentFilters.race}
-                  <button onClick={() => updateFilter('race', '')}>
+                  <button onClick={() => updateFilter("race", "")}>
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
@@ -185,7 +202,7 @@ export default function CharacterFilters({ campaignId, adventures, currentFilter
               {currentFilters.class && (
                 <Badge variant="secondary" className="gap-1">
                   Class: {currentFilters.class}
-                  <button onClick={() => updateFilter('class', '')}>
+                  <button onClick={() => updateFilter("class", "")}>
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>

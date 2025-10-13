@@ -20,6 +20,7 @@ Adventure Diary is a comprehensive web application designed for Dungeons & Drago
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **UI Library**: React 19
@@ -30,6 +31,7 @@ Adventure Diary is a comprehensive web application designed for Dungeons & Drago
 - **Markdown**: React Markdown with syntax highlighting
 
 ### Backend
+
 - **Runtime**: Node.js 20
 - **Framework**: Next.js API Routes
 - **Database**: SQLite with Drizzle ORM
@@ -37,6 +39,7 @@ Adventure Diary is a comprehensive web application designed for Dungeons & Drago
 - **File Storage**: Local filesystem with image optimization
 
 ### DevOps & Tools
+
 - **Containerization**: Docker + Docker Compose
 - **Linting**: ESLint
 - **Package Manager**: npm
@@ -48,6 +51,16 @@ Adventure Diary is a comprehensive web application designed for Dungeons & Drago
 ```
 greedy/
 ├── app/                          # Next.js App Router pages
+│   ├── (global)/                 # Route group for global pages (not campaign-scoped)
+│   │   ├── adventures/           # Global adventure pages
+│   │   ├── analytics/            # Analytics dashboard
+│   │   ├── characters/           # Global character pages
+│   │   ├── login/                # Authentication pages
+│   │   ├── magic-items/          # Magic item management
+│   │   ├── relationships/        # NPC relationship management
+│   │   ├── search/               # Global search
+│   │   ├── sessions/             # Global session pages
+│   │   └── wiki/                 # Wiki articles and entities
 │   ├── campaigns/                # Campaign management pages
 │   │   ├── [id]/                 # Campaign-scoped pages
 │   │   │   ├── adventures/       # Adventure management
@@ -58,11 +71,9 @@ greedy/
 │   │   │   └── network/          # Relationship visualization
 │   │   ├── new/                  # Create new campaign
 │   │   └── page.tsx              # Campaigns list
-│   ├── characters/               # Global character pages
-│   ├── relationships/            # NPC relationship management
-│   ├── search/                   # Global search
-│   ├── sessions/                 # Global session pages
-│   ├── wiki/                     # Wiki articles and entities
+│   ├── globals.css               # Global styles
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Home page
 │   └── api/                      # REST API endpoints
 ├── components/                   # Reusable React components
 │   ├── ui/                       # DaisyUI-based UI components
@@ -76,7 +87,7 @@ greedy/
 ├── lib/                          # Core application logic
 │   ├── actions/                  # Server actions for data operations
 │   ├── db/                       # Database schema and connection
-│   ├── services/                 # Business logic services
+│   ├── services/                  # Business logic services
 │   └── utils/                    # Utility functions
 ├── public/                       # Static assets
 ├── scripts/                      # Database setup and migration scripts
@@ -87,8 +98,9 @@ greedy/
 
 ### Architecture Notes
 
+- **Route Groups**: The `(global)` folder groups all non-campaign-scoped pages together for better organization. URLs remain unchanged (e.g., `/analytics` still works despite being in `(global)/analytics/`)
 - **Campaign-Scoped Entities**: Most entities (adventures, characters, quests, etc.) are scoped within campaigns, following the pattern `campaigns/[id]/entity/`
-- **Global Pages**: Some entities like wiki articles and relationships have global pages at the root level
+- **Global Pages**: Pages in the `(global)` route group are accessible across all campaigns and don't require campaign context
 - **API Routes**: RESTful API endpoints mirror the page structure for data operations
 - **Component Organization**: Components are organized by feature/domain for maintainability
 
@@ -103,12 +115,14 @@ greedy/
 ### Quick Start with Docker (Recommended)
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd greedy/greedy
    ```
 
 2. **Start the development environment**
+
    ```bash
    # From the project root (greedy/)
    docker-compose -f docker-compose.dev.yml --profile dev up --build
@@ -121,6 +135,7 @@ greedy/
 ### Local Development Setup
 
 1. **Clone and install dependencies**
+
    ```bash
    git clone <repository-url>
    cd greedy/greedy
@@ -128,6 +143,7 @@ greedy/
    ```
 
 2. **Set up the database**
+
    ```bash
    # Initialize the database
    npm run init-db
@@ -137,6 +153,7 @@ greedy/
    ```
 
 3. **Start the development server**
+
    ```bash
    npm run dev
    ```
@@ -177,6 +194,7 @@ docker-compose -f docker-compose.dev.yml --profile dev up
 ### Code Quality
 
 - **Linting**: ESLint with Next.js configuration
+
   ```bash
   npm run lint
   ```
@@ -189,6 +207,7 @@ docker-compose -f docker-compose.dev.yml --profile dev up
 ### Database Operations
 
 - **Initialize Database**: Set up initial schema and seed data
+
   ```bash
   npm run init-db
   ```
@@ -217,24 +236,52 @@ User Interaction → Server Action/API Route → Drizzle ORM → SQLite Database
 Database Response → Server Component → Client Component → UI Update
 ```
 
+### Mutation Flow Patterns
+
+**Server Actions for Forms**: All form submissions should use Server Actions for optimal performance and user experience.
+
+- ✅ **Use Server Actions** for: Form submissions, data mutations from UI components
+- ✅ **Use API Routes** for: Client-side data fetching, third-party integrations, complex queries
+
+**Examples**:
+
+```typescript
+// ✅ Correct: Server Action for form submission
+"use server";
+export async function createCampaign(formData: FormData) {
+  // Handle form submission with validation and redirect
+}
+
+// ✅ Correct: API Route for data fetching
+export async function GET() {
+  // Return JSON data for client consumption
+}
+```
+
+**Migration Notes**: Legacy API routes for mutations are deprecated. New features should use Server Actions. Existing API routes are maintained for backward compatibility but should be migrated over time.
+
 ### Key Features Implementation
 
 #### Wiki System
+
 - **Storage**: Wiki articles stored in `wiki_articles` table
 - **Linking**: Articles connected to entities via `wiki_article_entities` junction table
 - **Rendering**: Markdown content with syntax highlighting and image support
 
 #### Image Management
+
 - **Upload**: Images stored locally with metadata tracking
 - **Display**: Carousel component with lazy loading
 - **Optimization**: Automatic image optimization via Next.js Image component
 
 #### Relationship Graph
+
 - **Visualization**: D3.js force-directed graph for entity relationships
 - **Data**: Dynamic relationship data from database queries
 - **Interactivity**: Zoom, pan, and node selection capabilities
 
 #### Shared Type System
+
 - **Type Safety**: Centralized TypeScript interfaces for all entities
 - **Validation**: Zod schemas for runtime data validation
 - **Consistency**: Shared types across frontend and backend
@@ -244,6 +291,7 @@ Database Response → Server Component → Client Component → UI Update
 We welcome contributions! Please follow these guidelines:
 
 ### Development Setup
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
 3. Make your changes following our coding standards
@@ -251,12 +299,14 @@ We welcome contributions! Please follow these guidelines:
 5. Submit a pull request
 
 ### Coding Standards
+
 - **UI Consistency**: Use only DaisyUI components and Tailwind classes (no custom CSS)
 - **TypeScript**: Strict typing required, no `any` types
 - **Component Structure**: Follow the established component organization
 - **Commit Messages**: Use conventional commits format
 
 ### Code Quality
+
 - Run linting before committing: `npm run lint`
 - Ensure TypeScript compilation passes: `npx tsc --noEmit`
 - Test your changes in both development and production builds
@@ -266,6 +316,7 @@ We welcome contributions! Please follow these guidelines:
 ### Production Deployment
 
 1. **Build the production image**
+
    ```bash
    docker-compose -f docker-compose.app.yml up --build -d
    ```
@@ -296,11 +347,13 @@ NODE_ENV=production
 ## 🔮 Known Issues & Future Improvements
 
 ### Current Limitations
+
 - **Graph Performance**: Large relationship graphs may have performance issues
 - **Image Storage**: Local filesystem storage (consider cloud storage for production)
 - **Real-time Updates**: No real-time synchronization between users
 
 ### Planned Enhancements
+
 - **Enhanced Graph Visualization**: Improved interactivity and performance
 - **Cloud Storage Integration**: Support for AWS S3, Cloudinary, etc.
 - **Collaborative Features**: Real-time collaboration for campaign management

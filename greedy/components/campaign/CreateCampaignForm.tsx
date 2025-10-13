@@ -1,28 +1,59 @@
-'use client';
+"use client";
 
-import { useState, useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { EyeOff, Plus } from 'lucide-react';
-import { createCampaign } from '@/lib/actions/campaigns';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { EyeOff, Plus } from "lucide-react";
+import { createCampaign } from "@/lib/actions/campaigns";
+import { ActionResult } from "@/lib/types/api";
+import { toast } from "sonner";
 
 export default function CreateCampaignForm() {
   const [isOpen, setIsOpen] = useState(false);
-  const [state, formAction] = useActionState(createCampaign, undefined);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const result: ActionResult<{ id: number }> = await createCampaign(
+        undefined,
+        formData,
+      );
+
+      if (result?.success === false) {
+        if (result.errors) {
+          setErrors(result.errors);
+          toast.error(
+            "Failed to create campaign. Please check the form for errors.",
+          );
+        } else {
+          toast.error(result.message || "Failed to create campaign.");
+        }
+      } else {
+        toast.success("Campaign created successfully!");
+        setIsOpen(false);
+      }
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      toast.error("Failed to create campaign. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
-      <button
-        className="btn btn-primary"
-        onClick={() => setIsOpen(true)}
-      >
+      <Button variant="primary" onClick={() => setIsOpen(true)}>
         New Campaign
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg">Create New Campaign</h3>
-            <form action={formAction} className="space-y-4">
+            <form action={handleSubmit} className="space-y-4">
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Title</span>
@@ -34,8 +65,8 @@ export default function CreateCampaignForm() {
                   className="input input-bordered"
                   required
                 />
-                {state?.errors?.title && (
-                  <span className="text-error text-sm">{state.errors.title[0]}</span>
+                {errors?.title && (
+                  <span className="text-error text-sm">{errors.title[0]}</span>
                 )}
               </div>
 
@@ -65,18 +96,13 @@ export default function CreateCampaignForm() {
 
               <input type="hidden" name="tags" value="[]" />
 
-              {state?.message && (
-                <div className="alert alert-error">
-                  {state.message}
-                </div>
-              )}
-
               <div className="modal-action">
                 <Button
                   type="button"
                   variant="outline"
                   className="gap-2"
                   onClick={() => setIsOpen(false)}
+                  disabled={isSubmitting}
                 >
                   <EyeOff className="w-4 h-4" />
                   Cancel
@@ -85,9 +111,10 @@ export default function CreateCampaignForm() {
                   type="submit"
                   variant="primary"
                   className="gap-2"
+                  disabled={isSubmitting}
                 >
                   <Plus className="w-4 h-4" />
-                  Create
+                  {isSubmitting ? "Creating..." : "Create"}
                 </Button>
               </div>
             </form>

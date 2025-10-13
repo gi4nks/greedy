@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { locations, adventures } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import LocationForm from '@/components/location/LocationForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { locations, adventures } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import LocationForm from "@/components/location/LocationForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface EditLocationPageProps {
   params: Promise<{ id: string; locationId: string }>;
@@ -27,7 +27,7 @@ async function getLocation(locationId: number) {
         id: adventures.id,
         title: adventures.title,
         campaignId: adventures.campaignId,
-      }
+      },
     })
     .from(locations)
     .leftJoin(adventures, eq(locations.adventureId, adventures.id))
@@ -37,11 +37,13 @@ async function getLocation(locationId: number) {
   return location;
 }
 
-export default async function EditLocationPage({ params }: EditLocationPageProps) {
+export default async function EditLocationPage({
+  params,
+}: EditLocationPageProps) {
   const resolvedParams = await params;
   const locationId = parseInt(resolvedParams.locationId);
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const location = await getLocation(locationId);
 
   if (!location || location.campaignId !== campaignId) {
@@ -53,9 +55,12 @@ export default async function EditLocationPage({ params }: EditLocationPageProps
       <DynamicBreadcrumb
         campaignId={campaignId}
         sectionItems={[
-          { label: 'Locations', href: `/campaigns/${campaignId}/locations` },
-          { label: location.name, href: `/campaigns/${campaignId}/locations/${locationId}` },
-          { label: 'Edit' }
+          { label: "Locations", href: `/campaigns/${campaignId}/locations` },
+          {
+            label: location.name,
+            href: `/campaigns/${campaignId}/locations/${locationId}`,
+          },
+          { label: "Edit" },
         ]}
       />
       <LocationForm
@@ -107,7 +112,8 @@ export async function generateMetadata({ params }: EditLocationPageProps) {
   const location = await getLocation(parseInt(resolvedParams.locationId));
 
   return {
-    title: location ? `Edit ${location.name}` : 'Edit Location',
-    description: location?.description || `Edit ${location?.name} location details`,
+    title: location ? `Edit ${location.name}` : "Edit Location",
+    description:
+      location?.description || `Edit ${location?.name} location details`,
   };
 }

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { wikiArticles, wikiArticleEntities, characters } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { wikiArticles, wikiArticleEntities, characters } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 type AssignedCharacter = {
   id: number;
@@ -23,10 +23,15 @@ function parseAssignedCharacters(raw: string | null): AssignedCharacter[] {
     }
 
     return parsed.filter((char): char is AssignedCharacter => {
-      return char !== null && typeof char === 'object' && 'id' in char && 'name' in char;
+      return (
+        char !== null &&
+        typeof char === "object" &&
+        "id" in char &&
+        "name" in char
+      );
     });
   } catch (err) {
-    console.warn('Unable to parse assigned characters', err);
+    console.warn("Unable to parse assigned characters", err);
     return [];
   }
 }
@@ -57,27 +62,40 @@ export async function GET() {
               'notes', ${wikiArticleEntities.relationshipData}
             )
           END
-        )`.as('assignedCharacters')
+        )`.as("assignedCharacters"),
       })
       .from(wikiArticles)
-      .leftJoin(wikiArticleEntities, eq(wikiArticles.id, wikiArticleEntities.wikiArticleId))
-      .leftJoin(characters, sql`${wikiArticleEntities.entityType} = 'character' AND ${wikiArticleEntities.entityId} = ${characters.id}`)
-      .where(eq(wikiArticles.contentType, 'monster'))
+      .leftJoin(
+        wikiArticleEntities,
+        eq(wikiArticles.id, wikiArticleEntities.wikiArticleId),
+      )
+      .leftJoin(
+        characters,
+        sql`${wikiArticleEntities.entityType} = 'character' AND ${wikiArticleEntities.entityId} = ${characters.id}`,
+      )
+      .where(eq(wikiArticles.contentType, "monster"))
       .groupBy(wikiArticles.id)
       .orderBy(wikiArticles.title);
 
     type MonsterWithCharacters = (typeof monsters)[number];
 
     // Parse assigned characters and filter out nulls
-    const monstersWithCharacters = monsters.map((monster: MonsterWithCharacters) => ({
-      ...monster,
-      assignedCharacters: parseAssignedCharacters(monster.assignedCharacters ?? null),
-    }));
+    const monstersWithCharacters = monsters.map(
+      (monster: MonsterWithCharacters) => ({
+        ...monster,
+        assignedCharacters: parseAssignedCharacters(
+          monster.assignedCharacters ?? null,
+        ),
+      }),
+    );
 
     return NextResponse.json(monstersWithCharacters);
   } catch (error) {
-    console.error('Error fetching wiki monsters:', error);
-    return NextResponse.json({ error: 'Failed to fetch wiki monsters' }, { status: 500 });
+    console.error("Error fetching wiki monsters:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch wiki monsters" },
+      { status: 500 },
+    );
   }
 }
 
@@ -85,19 +103,25 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    const [newMonster] = await db.insert(wikiArticles).values({
-      title: body.name,
-      contentType: 'monster',
-      wikiUrl: body.wiki_url || body.wikiUrl,
-      rawContent: body.rawContent || '',
-      parsedData: body.parsedData || {},
-      importedFrom: body.imported_from || 'wiki',
-    }).returning();
+
+    const [newMonster] = await db
+      .insert(wikiArticles)
+      .values({
+        title: body.name,
+        contentType: "monster",
+        wikiUrl: body.wiki_url || body.wikiUrl,
+        rawContent: body.rawContent || "",
+        parsedData: body.parsedData || {},
+        importedFrom: body.imported_from || "wiki",
+      })
+      .returning();
 
     return NextResponse.json(newMonster, { status: 201 });
   } catch (error) {
-    console.error('Error creating wiki monster:', error);
-    return NextResponse.json({ error: 'Failed to create wiki monster' }, { status: 500 });
+    console.error("Error creating wiki monster:", error);
+    return NextResponse.json(
+      { error: "Failed to create wiki monster" },
+      { status: 500 },
+    );
   }
 }

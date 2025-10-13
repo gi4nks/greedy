@@ -1,21 +1,30 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { db } from '@/lib/db';
-import { campaigns, locations, adventures, gameEditions, wikiArticleEntities, wikiArticles, magicItems, magicItemAssignments } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Edit, Building, Mountain, Trees } from 'lucide-react';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
-import WikiEntitiesDisplay from '@/components/ui/wiki-entities-display';
-import { WikiEntity } from '@/lib/types/wiki';
-import { EntityImageCarousel } from '@/components/ui/image-carousel';
-import { parseImagesJson } from '@/lib/utils/imageUtils.client';
-import MarkdownRenderer from '@/components/ui/markdown-renderer';
-import { formatDate } from '@/lib/utils/date';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { db } from "@/lib/db";
+import {
+  campaigns,
+  locations,
+  adventures,
+  gameEditions,
+  wikiArticleEntities,
+  wikiArticles,
+  magicItems,
+  magicItemAssignments,
+} from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, Edit, Building, Mountain, Trees } from "lucide-react";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { EntityImageCarousel } from "@/components/ui/image-carousel";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { formatDate } from "@/lib/utils/date";
 
 interface LocationPageProps {
   params: Promise<{ id: string; locationId: string }>;
@@ -72,7 +81,7 @@ async function getLocation(locationId: number) {
         id: adventures.id,
         title: adventures.title,
         campaignId: adventures.campaignId,
-      }
+      },
     })
     .from(locations)
     .leftJoin(adventures, eq(locations.adventureId, adventures.id))
@@ -82,18 +91,19 @@ async function getLocation(locationId: number) {
   if (!location) return null;
 
   // Get campaign info directly from location's campaignId
-  const campaign = location.campaignId ? await db
-    .select({
-      id: campaigns.id,
-      title: campaigns.title,
-      gameEditionName: gameEditions.name,
-      gameEditionVersion: gameEditions.version,
-    })
-    .from(campaigns)
-    .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-    .where(eq(campaigns.id, location.campaignId))
-    .limit(1)
-    .then(result => result[0] || null)
+  const campaign = location.campaignId
+    ? await db
+        .select({
+          id: campaigns.id,
+          title: campaigns.title,
+          gameEditionName: gameEditions.name,
+          gameEditionVersion: gameEditions.version,
+        })
+        .from(campaigns)
+        .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
+        .where(eq(campaigns.id, location.campaignId))
+        .limit(1)
+        .then((result) => result[0] || null)
     : null;
 
   // Get wiki entities for this location
@@ -109,20 +119,23 @@ async function getLocation(locationId: number) {
       relationshipData: wikiArticleEntities.relationshipData,
     })
     .from(wikiArticleEntities)
-    .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
+    .innerJoin(
+      wikiArticles,
+      eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+    )
     .where(
       and(
-        eq(wikiArticleEntities.entityType, 'location'),
-        eq(wikiArticleEntities.entityId, locationId)
-      )
+        eq(wikiArticleEntities.entityType, "location"),
+        eq(wikiArticleEntities.entityId, locationId),
+      ),
     );
 
   // Map rawContent to description for frontend compatibility
-  const wikiEntities: WikiEntity[] = wikiEntitiesData.map(entity => ({
+  const wikiEntities: WikiEntity[] = wikiEntitiesData.map((entity) => ({
     id: entity.id,
     title: entity.title,
     contentType: entity.contentType,
-    description: entity.rawContent || '', // Map rawContent to description
+    description: entity.rawContent || "", // Map rawContent to description
     parsedData: entity.parsedData,
     wikiUrl: entity.wikiUrl || undefined,
     relationshipType: entity.relationshipType || undefined,
@@ -145,9 +158,9 @@ async function getLocation(locationId: number) {
     .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
     .where(
       and(
-        eq(magicItemAssignments.entityType, 'location'),
-        eq(magicItemAssignments.entityId, locationId)
-      )
+        eq(magicItemAssignments.entityType, "location"),
+        eq(magicItemAssignments.entityId, locationId),
+      ),
     );
 
   return {
@@ -162,7 +175,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
   const resolvedParams = await params;
   const locationId = parseInt(resolvedParams.locationId);
   const campaignId = parseInt(resolvedParams.id);
-  
+
   const location = await getLocation(locationId);
 
   if (!location || !location.campaignId || location.campaignId !== campaignId) {
@@ -172,25 +185,41 @@ export default async function LocationPage({ params }: LocationPageProps) {
   // Parse tags
   let tags: string[] = [];
   try {
-    tags = typeof location.tags === 'string' 
-      ? JSON.parse(location.tags) 
-      : location.tags || [];
+    tags =
+      typeof location.tags === "string"
+        ? JSON.parse(location.tags)
+        : location.tags || [];
   } catch {
     tags = [];
   }
 
   // Determine location icon based on tags or name
   const getLocationIcon = () => {
-    const name = location.name?.toLowerCase() || '';
-    const locationTags = tags.map(t => t.toLowerCase());
-    
-    if (locationTags.includes('city') || locationTags.includes('town') || name.includes('city') || name.includes('town')) {
+    const name = location.name?.toLowerCase() || "";
+    const locationTags = tags.map((t) => t.toLowerCase());
+
+    if (
+      locationTags.includes("city") ||
+      locationTags.includes("town") ||
+      name.includes("city") ||
+      name.includes("town")
+    ) {
       return Building;
     }
-    if (locationTags.includes('mountain') || locationTags.includes('peak') || name.includes('mountain') || name.includes('peak')) {
+    if (
+      locationTags.includes("mountain") ||
+      locationTags.includes("peak") ||
+      name.includes("mountain") ||
+      name.includes("peak")
+    ) {
       return Mountain;
     }
-    if (locationTags.includes('forest') || locationTags.includes('woods') || name.includes('forest') || name.includes('woods')) {
+    if (
+      locationTags.includes("forest") ||
+      locationTags.includes("woods") ||
+      name.includes("forest") ||
+      name.includes("woods")
+    ) {
       return Trees;
     }
     return MapPin;
@@ -205,13 +234,12 @@ export default async function LocationPage({ params }: LocationPageProps) {
         campaignId={campaignId}
         campaignTitle={location.campaign?.title}
         sectionItems={[
-          { label: 'Locations', href: `/campaigns/${campaignId}/locations` },
-          { label: location.name }
+          { label: "Locations", href: `/campaigns/${campaignId}/locations` },
+          { label: location.name },
         ]}
       />
 
       <div className="mb-6">
-        
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-500/10 rounded-lg">
@@ -279,7 +307,10 @@ function LocationDetail({ location }: { location: LocationData }) {
             <CardTitle>Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <MarkdownRenderer content={location.description} className="prose-sm" />
+            <MarkdownRenderer
+              content={location.description}
+              className="prose-sm"
+            />
           </CardContent>
         </Card>
       )}
@@ -335,12 +366,18 @@ function LocationDetail({ location }: { location: LocationData }) {
                   <div className="mt-3 flex flex-col gap-1 text-sm text-base-content/70">
                     {item.source && (
                       <div>
-                        <span className="font-medium text-base-content/60">Source:</span> {item.source}
+                        <span className="font-medium text-base-content/60">
+                          Source:
+                        </span>{" "}
+                        {item.source}
                       </div>
                     )}
                     {item.notes && (
                       <div>
-                        <span className="font-medium text-base-content/60">Notes:</span> {item.notes}
+                        <span className="font-medium text-base-content/60">
+                          Notes:
+                        </span>{" "}
+                        {item.notes}
                       </div>
                     )}
                   </div>
@@ -348,7 +385,9 @@ function LocationDetail({ location }: { location: LocationData }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-base-content/70">No magic items assigned to this location.</p>
+            <p className="text-sm text-base-content/70">
+              No magic items assigned to this location.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -371,23 +410,28 @@ function LocationDetail({ location }: { location: LocationData }) {
         </Card>
       )}
 
-      {(!location.description && (!location.wikiEntities || location.wikiEntities.length === 0)) && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <MapPin className="w-12 h-12 mx-auto text-base-content/70 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No description available</h3>
-            <p className="text-base-content/70 mb-4">
-              Add a description to bring this location to life.
-            </p>
-            <Link href={`/campaigns/${location.campaign?.id}/locations/${location.id}/edit`}>
-              <Button variant="secondary" className="gap-2">
-                <Edit className="w-4 h-4" />
-                Edit
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
+      {!location.description &&
+        (!location.wikiEntities || location.wikiEntities.length === 0) && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <MapPin className="w-12 h-12 mx-auto text-base-content/70 mb-4" />
+              <h3 className="text-lg font-medium mb-2">
+                No description available
+              </h3>
+              <p className="text-base-content/70 mb-4">
+                Add a description to bring this location to life.
+              </p>
+              <Link
+                href={`/campaigns/${location.campaign?.id}/locations/${location.id}/edit`}
+              >
+                <Button variant="secondary" className="gap-2">
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }
@@ -401,20 +445,28 @@ function LocationInfo({ location }: { location: LocationData }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <div className="text-sm font-medium text-base-content/70">Campaign</div>
-            <div className="text-sm">{location.campaign?.title || 'Unknown'}</div>
+            <div className="text-sm font-medium text-base-content/70">
+              Campaign
+            </div>
+            <div className="text-sm">
+              {location.campaign?.title || "Unknown"}
+            </div>
           </div>
-          
+
           {location.adventure && (
             <div>
-              <div className="text-sm font-medium text-base-content/70">Adventure</div>
+              <div className="text-sm font-medium text-base-content/70">
+                Adventure
+              </div>
               <div className="text-sm">{location.adventure.title}</div>
             </div>
           )}
 
           {location.createdAt && (
             <div>
-              <div className="text-sm font-medium text-base-content/70">Created</div>
+              <div className="text-sm font-medium text-base-content/70">
+                Created
+              </div>
               <div className="text-sm">
                 {new Date(location.createdAt).toLocaleDateString()}
               </div>
@@ -423,7 +475,9 @@ function LocationInfo({ location }: { location: LocationData }) {
 
           {location.updatedAt && location.updatedAt !== location.createdAt && (
             <div>
-              <div className="text-sm font-medium text-base-content/70">Last Updated</div>
+              <div className="text-sm font-medium text-base-content/70">
+                Last Updated
+              </div>
               <div className="text-sm">
                 {new Date(location.updatedAt).toLocaleDateString()}
               </div>
@@ -484,7 +538,10 @@ export async function generateMetadata({ params }: LocationPageProps) {
   const location = await getLocation(parseInt(resolvedParams.locationId));
 
   return {
-    title: location ? `${location.name} | Adventure Diary` : 'Location Not Found',
-    description: location?.description || `Explore ${location?.name} in your D&D campaign`,
+    title: location
+      ? `${location.name} | Adventure Diary`
+      : "Location Not Found",
+    description:
+      location?.description || `Explore ${location?.name} in your D&D campaign`,
   };
 }

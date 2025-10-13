@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
-import { campaigns, gameEditions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import CharacterForm from '@/components/character/CharacterForm';
-import { Skeleton } from '@/components/ui/skeleton';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { campaigns, gameEditions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import CharacterForm from "@/components/character/CharacterForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 interface CreateCharacterPageProps {
   params: Promise<{ id: string }>;
@@ -37,7 +37,9 @@ async function getCampaign(campaignId: number) {
   return campaign;
 }
 
-export default async function CreateCharacterPage({ params }: CreateCharacterPageProps) {
+export default async function CreateCharacterPage({
+  params,
+}: CreateCharacterPageProps) {
   const { id } = await params;
   const campaignId = parseInt(id);
   const campaign = await getCampaign(campaignId);
@@ -53,15 +55,12 @@ export default async function CreateCharacterPage({ params }: CreateCharacterPag
         campaignId={campaignId}
         campaignTitle={campaign.title}
         sectionItems={[
-          { label: 'Characters', href: `/campaigns/${campaignId}/characters` },
-          { label: 'Create Character' }
+          { label: "Characters", href: `/campaigns/${campaignId}/characters` },
+          { label: "Create Character" },
         ]}
       />
 
-      <CharacterForm
-        campaignId={campaignId}
-        mode="create"
-      />
+      <CharacterForm campaignId={campaignId} mode="create" />
     </Suspense>
   );
 }
@@ -106,7 +105,9 @@ export async function generateMetadata({ params }: CreateCharacterPageProps) {
   const campaign = await getCampaign(parseInt(id));
 
   return {
-    title: campaign ? `Create Character | ${campaign.title}` : 'Create Character',
-    description: 'Create a new character for your D&D campaign',
+    title: campaign
+      ? `Create Character | ${campaign.title}`
+      : "Create Character",
+    description: "Create a new character for your D&D campaign",
   };
 }

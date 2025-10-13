@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import DynamicBreadcrumb from '@/components/ui/dynamic-breadcrumb';
-import { CampaignWithEdition } from '@/lib/utils/campaign';
+import { ReactNode } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { CampaignWithEdition } from "@/lib/utils/campaign";
 
 interface CampaignPageLayoutProps {
   campaign: CampaignWithEdition;
@@ -23,7 +23,7 @@ export function CampaignPageLayout({
   description,
   sectionItems = [],
   createButton,
-  children
+  children,
 }: CampaignPageLayoutProps) {
   return (
     <div className="container mx-auto p-6">
@@ -53,9 +53,7 @@ export function CampaignPageLayout({
         </div>
       </div>
 
-      <div className="space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }

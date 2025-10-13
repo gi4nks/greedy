@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { locations, wikiArticleEntities, wikiArticles } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { locations, wikiArticleEntities, wikiArticles } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 // GET /api/locations/[id] - Get location with all assigned wiki entities
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const resolvedParams = await params;
@@ -19,7 +19,10 @@ export async function GET(
       .where(eq(locations.id, locationId));
 
     if (!location) {
-      return NextResponse.json({ error: 'Location not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Location not found" },
+        { status: 404 },
+      );
     }
 
     // Get assigned wiki entities
@@ -35,15 +38,23 @@ export async function GET(
         relationshipData: wikiArticleEntities.relationshipData,
       })
       .from(wikiArticleEntities)
-      .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
-      .where(sql`${wikiArticleEntities.entityType} = 'location' AND ${wikiArticleEntities.entityId} = ${locationId}`);
+      .innerJoin(
+        wikiArticles,
+        eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+      )
+      .where(
+        sql`${wikiArticleEntities.entityType} = 'location' AND ${wikiArticleEntities.entityId} = ${locationId}`,
+      );
 
     return NextResponse.json({
       ...location,
       wikiEntities: wikiEntitiesResult,
     });
   } catch (error) {
-    console.error('Error fetching location with wiki entities:', error);
-    return NextResponse.json({ error: 'Failed to fetch location data' }, { status: 500 });
+    console.error("Error fetching location with wiki entities:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch location data" },
+      { status: 500 },
+    );
   }
 }

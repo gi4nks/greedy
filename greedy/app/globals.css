@@ -16,7 +16,11 @@ body {
 }
 
 /* Ensure minimum touch targets */
-button, a, input, select, textarea {
+button,
+a,
+input,
+select,
+textarea {
   min-height: 44px;
   min-width: 44px;
 }
