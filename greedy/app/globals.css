@@ -1,8 +1,11 @@
-@import "tailwindcss";
-/* @import "daisyui/theme/cmyk.css"; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @plugin "daisyui" {
   themes: emerald;
 }
+
 
 /* Mobile optimizations */
 html {

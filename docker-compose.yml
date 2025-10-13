@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  greedy:
+    container_name: greedy_app
+    image: greedy:amd64
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATA_DIR: /home/gianluca/projects/greedy/data
+      IMAGES_DIR: /home/gianluca/projects/greedy/data/images
+    volumes:
+      - /home/gianluca/projects/greedy/data:/app/database
+      - /home/gianluca/projects/greedy/data/images:/app/public/images
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    driver: bridge

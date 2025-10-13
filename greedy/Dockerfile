@@ -1,77 +1,79 @@
-# Use Node.js 20 Alpine as base image for smaller size
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
+WORKDIR /app
+
+# Install base runtime dependencies once for re-use across stages
+RUN apk add --no-cache \
+    libc6-compat \
+    libstdc++
+
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat python3 python3-dev py3-pip make g++
+
+# Tooling required to build native modules such as better-sqlite3
+RUN apk add --no-cache \
+    bash \
+    build-base \
+    python3 \
+    pkgconfig \
+    openssl-dev
+
 WORKDIR /app
 
-# Copy package files
+# Leverage npm workspaces – copy manifests first for better caching
 COPY package.json package-lock.json ./
-# Copy workspace package.json
-COPY greedy/package.json ./greedy/
+COPY greedy/package.json greedy/package.json
 
-RUN \
-  if [ -f package-lock.json ]; then npm ci; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-# Remove workspace node_modules to ensure we use the root-level ones
-RUN rm -rf greedy/node_modules
-
-# Install dependencies in the greedy workspace
-WORKDIR /app/greedy
+# Install all dependencies (workspace aware)
 RUN npm ci
 
-# Change to greedy directory and build
-WORKDIR /app/greedy
+FROM base AS builder
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN npm run build
-
-# Production image, copy all the files and run next
-FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-ENV NEXT_TELEMETRY_DISABLED 1
+# Copy installed dependencies and source tree
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package-lock.json ./package-lock.json
+COPY . .
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Rebuild native modules for Alpine Linux
+RUN npm rebuild better-sqlite3
 
-# Create database directory
-RUN mkdir -p /app/database && chown nextjs:nodejs /app/database
+WORKDIR /app/greedy
 
-COPY --from=builder /app/greedy/public ./public
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+# Build the Next.js application
+RUN npm run build
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV DATA_DIR=/app/database
+ENV IMAGES_DIR=/app/public/images
+
+# Add a non-root user for runtime security
+RUN addgroup -g 1001 nodejs \
+ && adduser -D -u 1001 -G nodejs nextjs
+
+# Prepare writable directories for persistent data
+RUN mkdir -p \
+    /app/database \
+    /app/public/images \
+ && chown -R nextjs:nodejs /app
+
+# Copy the build output produced by Next.js standalone mode
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/greedy/public ./public
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-# set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
-
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
+# Start the production server
 CMD ["node", "server.js"]

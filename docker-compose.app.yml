@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: ./greedy/Dockerfile
+      platforms:
+        - linux/amd64
     ports:
       - "3000:3000"
     volumes:

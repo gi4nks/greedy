@@ -1,6 +1,3 @@
-import typography from "@tailwindcss/typography";
-import daisyui from "daisyui";
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -12,7 +9,7 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [typography, daisyui],
+  plugins: [require("@tailwindcss/typography"), require("daisyui")],
   daisyui: {
     themes: ["emerald", "cmyk"],
   },
