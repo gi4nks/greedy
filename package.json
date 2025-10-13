@@ -11,7 +11,13 @@
     "lint": "npm run lint --workspace=greedy"
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "npm run lint --workspace=greedy -- --fix"
+    ]
   },
   "dependencies": {
     "sharp": "^0.34.4",
