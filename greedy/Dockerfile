@@ -21,7 +21,7 @@ WORKDIR /app
 
 # Leverage npm workspaces – copy manifests first for better caching
 COPY package.json package-lock.json ./
-COPY greedy/package.json greedy/package.json
+COPY greedy/package.json ./greedy/package.json
 
 # Install all dependencies (workspace aware)
 RUN npm ci
@@ -33,7 +33,10 @@ WORKDIR /app
 # Copy installed dependencies and source tree
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package-lock.json ./package-lock.json
-COPY . .
+
+# Copy workspace configuration and greedy app
+COPY package.json package-lock.json ./
+COPY greedy/ ./greedy/
 
 # Rebuild native modules for Alpine Linux
 RUN npm rebuild better-sqlite3
