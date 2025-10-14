@@ -4,17 +4,18 @@ services:
   greedy:
     build:
       context: ./greedy
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
       target: development
     ports:
       - "3000:3000"
     volumes:
       - ./greedy:/app
       - /app/node_modules
-      - ./campaign.db:/app/campaign.db
+      - ./greedy/database:/app/database
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
+      - DATA_DIR=/app/database
     profiles:
       - dev
     networks:

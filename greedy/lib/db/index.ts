@@ -9,9 +9,9 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Use database from project root folder
-// Navigate from lib/db/index.ts -> greedy -> campaign.db
-const dbPath = path.resolve(__dirname, "../../campaign.db");
+// Use database from DATA_DIR environment variable or default path
+const dataDir = process.env.DATA_DIR || path.resolve(__dirname, "../..");
+const dbPath = path.join(dataDir, "campaign.db");
 
 // Ensure the database directory exists
 const dbDir = path.dirname(dbPath);

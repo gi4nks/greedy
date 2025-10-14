@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./campaign.db:/app/campaign.db
+      - ./greedy/database:/app/database
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1

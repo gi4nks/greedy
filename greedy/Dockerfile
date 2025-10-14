@@ -6,10 +6,7 @@ RUN apk add --no-cache libc6-compat libstdc++
 FROM base AS deps
 RUN apk add --no-cache bash build-base python3 pkgconfig openssl-dev
 WORKDIR /app
-#COPY package.json package-lock.json ./
-#COPY greedy/package.json ./greedy/package.json
 COPY greedy/package*.json ./
-
 # Install dependencies (include dev deps for build)
 RUN npm ci && npm cache clean --force
 
@@ -17,59 +14,27 @@ RUN npm ci && npm cache clean --force
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-#COPY --from=deps /app/greedy/node_modules ./greedy/node_modules
-#COPY --from=deps /app/package.json ./package.json
-#COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY greedy/ ./
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/package-lock.json ./package-lock.json
 
-ENV NEXT_DISABLE_ESLINT=1
-ENV NEXT_DISABLE_TYPECHECK=1
-
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm rebuild better-sqlite3
 RUN npm run build
 
 # ------------------------------------------
-FROM base AS runner
-
-# Install only production dependencies + SQLite deps
-RUN apk add --no-cache python3 make g++
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
-
+FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 \
     DATA_DIR=/app/database IMAGES_DIR=/app/public/images
-RUN mkdir -p /app/database /app/public/images && \
+RUN addgroup -g 1001 nodejs && adduser -D -u 1001 -G nodejs nextjs && \
+    mkdir -p /app/database /app/public/images && \
     chown -R nextjs:nodejs /app
 
-COPY greedy/package*.json ./
-
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy built app from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.* ./
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/data ./data
-
-# Change ownership for security
-RUN chown -R nextjs:nodejs /app
+# Copy the standalone output preserving the structure Next.js creates
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
-
-# Environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Expose app port
 EXPOSE 3000
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/health || exit 1
-
-# Start app
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]
