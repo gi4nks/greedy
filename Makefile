@@ -1,4 +1,4 @@
-.PHONY: install build dev start stop clean test help docker-build docker-dev docker-start docker-stop docker-restart docker-status docker-logs docker-clean
+.PHONY: install build dev start stop clean test help docker-build docker-build-local docker-build-amd64 docker-build-multi docker-dev docker-start docker-stop docker-restart docker-status docker-logs docker-clean docker-build-lnx docker-build-lnx-push
 
 # Colors for output
 BLUE=\033[1;34m
@@ -88,11 +88,10 @@ docker-build:
 	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
-	@echo "$(BLUE)ℹ️  Note: Building locally using docker-compose instead of direct build$(NC)"
 	@echo "$(BLUE)🐳 Building Docker image using docker-compose...$(NC)"
 	@docker compose -f docker-compose.app.yml build --no-cache 2>&1 || (echo "$(RED)❌ Build failed.$(NC)" && exit 1)
 	@echo "$(BLUE)🏷️  Tagging image for registry...$(NC)"
-	@docker tag greedy-greedy:latest $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+	@docker tag greedy-greedy:latest $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Tagging failed.$(NC)" && exit 1)
 	@echo "$(BLUE)🐳 Pushing Docker image...$(NC)"
 	@docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Push failed.$(NC)" && exit 1)
 
@@ -111,7 +110,7 @@ docker-build-multi: ## Build and push multi-platform Docker image
 	@echo "$(BLUE)🏗️  Creating buildx builder...$(NC)"
 	@docker buildx create --use --name multi-platform-builder 2>/dev/null || docker buildx use multi-platform-builder 2>/dev/null || true
 
-	@echo "$(BLUE)🐳 Building multi-platform Docker image ($(PLATFORMS))...$(NC)"
+	@echo "$(BLUE)🐳 Building and pushing multi-platform Docker image ($(PLATFORMS))...$(NC)"
 	@docker buildx build --platform $(PLATFORMS) --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f greedy/Dockerfile . 2>&1 || (echo "$(RED)❌ Multi-platform build failed.$(NC)" && exit 1)
 
 	@echo "$(GREEN)✅ Multi-platform Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
@@ -131,28 +130,31 @@ docker-build-amd64: ## Build and push Docker image for AMD64 platform
 	@docker buildx create --use --name amd64-builder 2>/dev/null || docker buildx use amd64-builder 2>/dev/null || true
 
 	@echo "$(BLUE)🐳 Building and pushing AMD64 Docker image...$(NC)"
-	@docker buildx build --platform linux/amd64 --no-cache --load -t greedy:amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f greedy/Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
+	@docker buildx build --platform linux/amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f greedy/Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
 
-	@echo "$(GREEN)✅ AMD64 Docker image built and pushed successfully!$(NC)"
-	@echo "$(BLUE)ℹ️  Local: greedy:amd64$(NC)"
-	@echo "$(BLUE)ℹ️  Registry: $(REGISTRY)/$(IMAGE_NAME):$(TAG)$(NC)"
+	@echo "$(GREEN)✅ AMD64 Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
+
+# Build local Docker image (for testing)
+docker-build-local: ## Build Docker image locally without pushing
+	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
+	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
+	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
+	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
+
+	@echo "$(BLUE)🐳 Building local Docker image...$(NC)"
+	@docker build -f greedy/Dockerfile -t $(IMAGE_NAME):local . 2>&1 || (echo "$(RED)❌ Local build failed.$(NC)" && exit 1)
+
+	@echo "$(GREEN)✅ Local Docker image built successfully as $(IMAGE_NAME):local!$(NC)"
 
 
-# Docker targets
-docker-build-lnx: ## Build and push multi-arch Docker image
-	@echo "$(BLUE)Building multi-arch Docker image for ARM & AMD64...$(NC)"
-	@docker buildx build --platform linux/amd64,linux/arm64 \
-		-t greedy:latest \
-		-f greedy/Dockerfile .
-	@echo "$(GREEN)Docker image built and pushed successfully!$(NC)"
+# Docker targets (legacy - use docker-build-* commands above)
+docker-build-lnx: ## Build multi-arch Docker image (legacy)
+	@echo "$(YELLOW)⚠️  This is a legacy command. Use 'make docker-build-multi' instead.$(NC)"
+	$(MAKE) docker-build-multi
 
-
-docker-build-lnx-push: ## Build and push multi-arch Docker image
-	@echo "$(BLUE)Building multi-arch Docker image for ARM & AMD64...$(NC)"
-	@docker buildx build --platform linux/amd64,linux/arm64 \
-		-t 192.168.1.150:5000/greedy:latest \
-		--push -f greedy/Dockerfile .
-	@echo "$(GREEN)Docker image built and pushed successfully!$(NC)"
+docker-build-lnx-push: ## Build and push multi-arch Docker image (legacy)
+	@echo "$(YELLOW)⚠️  This is a legacy command. Use 'make docker-build-multi' instead.$(NC)"
+	$(MAKE) docker-build-multi
 
 
 # Start Docker development environment
@@ -179,7 +181,7 @@ docker-stop:
 docker-restart: docker-stop
 	@echo "🐳 Restarting Docker containers..."
 	@sleep 2
-	$(MAKE) docker-dev
+	$(MAKE) docker-start
 
 # Show Docker container status
 docker-status:
@@ -228,16 +230,17 @@ help:
 	@echo "  test       - Run tests"
 	@echo ""
 	@echo "🐳 Docker Commands:"
-	@echo "  docker-build       - Build Docker image for current platform"
-	@echo "  docker-build-lnx   - Build Docker image for current platform (legacy)"
-	@echo "  docker-build-amd64 - Build and push AMD64 Docker image"
-	@echo "  docker-build-multi  - Build multi-platform image (ARM64 + AMD64)"
-	@echo "  docker-dev         - Start development environment"
-	@echo "  docker-start       - Start production containers"
-	@echo "  docker-stop        - Stop all containers"
-	@echo "  docker-status      - Show container status"
-	@echo "  docker-logs        - Show container logs"
-	@echo "  docker-clean       - Clean Docker resources"
+	@echo "  docker-build         - Build and push Docker image (via docker-compose)"
+	@echo "  docker-build-local   - Build Docker image locally for testing"
+	@echo "  docker-build-amd64   - Build and push AMD64 Docker image"
+	@echo "  docker-build-multi   - Build and push multi-platform image (ARM64 + AMD64)"
+	@echo "  docker-dev           - Start development environment"
+	@echo "  docker-start         - Start production containers"
+	@echo "  docker-stop          - Stop all containers"
+	@echo "  docker-restart       - Restart Docker containers"
+	@echo "  docker-status        - Show container status"
+	@echo "  docker-logs          - Show container logs"
+	@echo "  docker-clean         - Clean Docker resources"
 	@echo ""
 	@echo "� Quick Start:"
 	@echo "  make install   (first time only)"
