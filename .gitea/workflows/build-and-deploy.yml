@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     runs-on: [docker]
     container:
-      image: docker:24.0.5-cli-node20  # Docker CLI + Node 20
+      image: 192.168.1.150:5000/docker-node:latest
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock  # give access to host Docker
 
