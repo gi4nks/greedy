@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
-const path = require("path");
+import path from "path";
 
 const nextConfig = {
   // Enable standalone output for Docker deployment
   output: "standalone",
 
   // Fix workspace root detection warnings by explicitly setting the root
-  outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingRoot: path.join(__dirname, '..'),
 
   // External packages for server components (moved from experimental)
   serverExternalPackages: ["better-sqlite3"],

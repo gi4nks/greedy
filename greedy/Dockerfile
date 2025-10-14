@@ -16,7 +16,6 @@ COPY --from=deps /app/greedy/node_modules ./greedy/node_modules
 COPY --from=deps /app/package.json ./package.json
 COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY greedy/ ./greedy/
-WORKDIR /app/greedy
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm rebuild better-sqlite3
 RUN npm run build
