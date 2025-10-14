@@ -11,6 +11,16 @@ COPY greedy/package*.json ./
 RUN npm ci && npm cache clean --force
 
 # ------------------------------------------
+FROM base AS development
+WORKDIR /app
+COPY greedy/package*.json ./
+RUN npm ci && npm cache clean --force
+COPY greedy/ ./
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+
+# ------------------------------------------
 FROM base AS builder
 WORKDIR /app
 
