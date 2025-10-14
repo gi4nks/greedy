@@ -49,7 +49,6 @@ jobs:
           outputs: type=image,push=false
 
       - name: Push Docker image to registry
-        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -60,7 +59,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Notify deployment success
-        if: success() && github.event_name != 'pull_request'
+        if: success()
         run: |
           echo "Docker image built and pushed successfully!"
           echo "Registry: 192.168.1.150:5000/greedy"
