@@ -28,6 +28,10 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 \
 RUN addgroup -g 1001 nodejs && adduser -D -u 1001 -G nodejs nextjs && \
     mkdir -p /app/database /app/public/images && \
     chown -R nextjs:nodejs /app
+
+# Include runtime dependencies required by Next.js standalone output
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/greedy/node_modules ./greedy/node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/public ./public
