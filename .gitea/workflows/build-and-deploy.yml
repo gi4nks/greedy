@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [docker]
 
     steps:
     - name: Checkout code
