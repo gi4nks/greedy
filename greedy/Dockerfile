@@ -29,10 +29,10 @@ RUN addgroup -g 1001 nodejs && adduser -D -u 1001 -G nodejs nextjs && \
     mkdir -p /app/database /app/public/images && \
     chown -R nextjs:nodejs /app
 
-# Copy the standalone output and its dependencies
+# Copy the standalone output preserving the structure Next.js creates
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/.next/static ./greedy/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/greedy/public ./greedy/public
 USER nextjs
 EXPOSE 3000
-CMD ["node", "greedy/server.js"]
+CMD ["node", "server.js"]
