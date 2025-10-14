@@ -13,9 +13,9 @@ RUN npm ci && npm cache clean --force
 # ------------------------------------------
 FROM base AS development
 WORKDIR /app
-COPY greedy/package*.json ./
+COPY package*.json ./
 RUN npm ci && npm cache clean --force
-COPY greedy/ ./
+# Source code will be mounted as volumes, no need to copy
 ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
