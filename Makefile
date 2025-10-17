@@ -16,22 +16,22 @@ PLATFORMS=linux/arm64,linux/amd64
 # Instahelp:
 all:
 	@echo "📦 Installing dependencies..."
-	cd greedy && npm install
+	npm install
 
 # Build the application for production
 build:
 	@echo "� Building application..."
-	cd greedy && npm run build
+	npm run build
 
 # Start development server
 dev:
 	@echo "🚀 Starting development server..."
-	cd greedy && npm run dev
+	npm run dev
 
 # Start production server
 start:
 	@echo "🚀 Starting production server..."
-	cd greedy && npm run start
+	npm run start
 
 # Stop any running processes
 stop:
@@ -42,13 +42,13 @@ stop:
 # Clean build files and reinstall
 clean:
 	@echo "🧹 Cleaning build files..."
-	cd greedy && rm -rf .next node_modules package-lock.json
+	rm -rf .next node_modules package-lock.json
 	$(MAKE) install
 
 # Run tests
 test:
 	@echo "🧪 Running tests..."
-	cd greedy && npm run test
+	npm run test
 
 # Check application status
 status:
@@ -111,7 +111,7 @@ docker-build-multi: ## Build and push multi-platform Docker image
 	@docker buildx create --use --name multi-platform-builder 2>/dev/null || docker buildx use multi-platform-builder 2>/dev/null || true
 
 	@echo "$(BLUE)🐳 Building and pushing multi-platform Docker image ($(PLATFORMS))...$(NC)"
-	@docker buildx build --platform $(PLATFORMS) --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f greedy/Dockerfile . 2>&1 || (echo "$(RED)❌ Multi-platform build failed.$(NC)" && exit 1)
+	@docker buildx build --platform $(PLATFORMS) --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ Multi-platform build failed.$(NC)" && exit 1)
 
 	@echo "$(GREEN)✅ Multi-platform Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
 	@echo "$(BLUE)ℹ️  Image supports: $(PLATFORMS)$(NC)"
@@ -130,7 +130,7 @@ docker-build-amd64: ## Build and push Docker image for AMD64 platform
 	@docker buildx create --use --name amd64-builder 2>/dev/null || docker buildx use amd64-builder 2>/dev/null || true
 
 	@echo "$(BLUE)🐳 Building and pushing AMD64 Docker image...$(NC)"
-	@docker buildx build --platform linux/amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f greedy/Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
+	@docker buildx build --platform linux/amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
 
 	@echo "$(GREEN)✅ AMD64 Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
 
@@ -142,19 +142,9 @@ docker-build-local: ## Build Docker image locally without pushing
 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
 	@echo "$(BLUE)🐳 Building local Docker image...$(NC)"
-	@docker build -f greedy/Dockerfile -t $(IMAGE_NAME):local . 2>&1 || (echo "$(RED)❌ Local build failed.$(NC)" && exit 1)
+	@docker build -f Dockerfile -t $(IMAGE_NAME):local . 2>&1 || (echo "$(RED)❌ Local build failed.$(NC)" && exit 1)
 
 	@echo "$(GREEN)✅ Local Docker image built successfully as $(IMAGE_NAME):local!$(NC)"
-
-
-# Docker targets (legacy - use docker-build-* commands above)
-docker-build-lnx: ## Build multi-arch Docker image (legacy)
-	@echo "$(YELLOW)⚠️  This is a legacy command. Use 'make docker-build-multi' instead.$(NC)"
-	$(MAKE) docker-build-multi
-
-docker-build-lnx-push: ## Build and push multi-arch Docker image (legacy)
-	@echo "$(YELLOW)⚠️  This is a legacy command. Use 'make docker-build-multi' instead.$(NC)"
-	$(MAKE) docker-build-multi
 
 
 # Start Docker development environment

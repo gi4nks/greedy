@@ -1,0 +1,25 @@
+{
+  "item": [
+    {
+      "name": "Potion of Healing",
+      "source": "PHB",
+      "page": 187,
+      "type": "Potion",
+      "rarity": "common",
+      "entries": [
+        "You regain hit points when you drink this potion. The number of hit points depends on the potion's rarity."
+      ]
+    },
+    {
+      "name": "Bag of Holding",
+      "source": "DMG",
+      "page": 153,
+      "type": "Wondrous Item",
+      "rarity": "uncommon",
+      "reqAttune": false,
+      "entries": [
+        "This bag has an interior space considerably larger than its outside dimensions."
+      ]
+    }
+  ]
+}

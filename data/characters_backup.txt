@@ -1,4 +1,0 @@
-1|1||player|Test Hero|Human|Fighter|5|||0|10|10|10|10|10|10|0|0|10|0|30|2||||||||||||||||||||CURRENT_TIMESTAMP|CURRENT_TIMESTAMP
-2|1||pc|Multiclass Test Hero|Half-Elf|Fighter/Wizard|8|||0|10|10|10|10|10|10|0|0|10|0|30|2||||||||||||||||[{"name":"Fighter","level":5},{"name":"Wizard","level":3}]|A fighter who learned magic|||CURRENT_TIMESTAMP|CURRENT_TIMESTAMP
-3|1||pc|Multiclass Hero|Half-Elf|Fighter/Wizard|8|||0|10|10|10|10|10|10|0|0|10|0|30|2||||||||||||||||[{"name":"Fighter","level":5},{"name":"Wizard","level":3}]|A fighter who learned magic|||CURRENT_TIMESTAMP|CURRENT_TIMESTAMP
-4|1||pc|New Test Hero|Human|Paladin|4|||0|10|10|10|10|10|10|0|0|10|0|30|2||||||||||||||||[{"name":"Paladin","level":4}]|Testing character creation|||CURRENT_TIMESTAMP|CURRENT_TIMESTAMP

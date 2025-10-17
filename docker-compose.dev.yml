@@ -1,15 +1,20 @@
 services:
   greedy:
     build:
-      context: ./greedy
+      context: .
       dockerfile: Dockerfile
       target: development
     ports:
       - "3000:3000"
     volumes:
-      - ./greedy:/app
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./next.config.mjs:/app/next.config.mjs
+      - ./postcss.config.cjs:/app/postcss.config.cjs
+      - ./tailwind.config.js:/app/tailwind.config.js
       - /app/node_modules
-      - ./greedy/database:/app/database
+      - ./database:/app/database
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1

@@ -1,2 +1,0 @@
-1|1|Test Campaign|A campaign for testing character creation|active||||2025-10-03 19:22:05|2025-10-03 19:22:05
-2|2|Old School Campaign|A classic AD&D 2e adventure|active||||2025-10-03 19:22:05|2025-10-03 19:22:05

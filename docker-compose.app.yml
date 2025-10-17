@@ -2,13 +2,13 @@ services:
   greedy:
     build:
       context: .
-      dockerfile: ./greedy/Dockerfile
+      dockerfile: ./Dockerfile
       platforms:
         - linux/amd64
     ports:
       - "3000:3000"
     volumes:
-      - ./greedy/database:/app/database
+      - ./database:/app/database
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
