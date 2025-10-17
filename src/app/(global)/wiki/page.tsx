@@ -72,7 +72,6 @@ function ImportedArticlesTab() {
   const [articles, setArticles] = useState<ImportedArticle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
 
@@ -87,11 +86,10 @@ function ImportedArticlesTab() {
           setArticles(articlesData);
         }
 
-        // Load campaigns
+        // Load campaigns to set default campaign
         const campaignsResponse = await fetch("/api/campaigns/with-editions");
         if (campaignsResponse.ok) {
           const campaignsData = await campaignsResponse.json();
-          setCampaigns(campaignsData);
           // Set first campaign as default if available
           if (campaignsData.length > 0) {
             setSelectedCampaignId(campaignsData[0].id);
