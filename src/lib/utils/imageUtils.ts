@@ -165,6 +165,12 @@ async function generateThumbnail(
       thumbnailFilename,
     );
 
+    // Ensure the directory exists before creating thumbnail
+    const thumbnailDir = join(process.cwd(), IMAGES_DIR, entityType);
+    if (!existsSync(thumbnailDir)) {
+      await mkdir(thumbnailDir, { recursive: true });
+    }
+
     await sharp(buffer)
       .resize(
         OPTIMIZATION_CONFIG.thumbnail.width,
@@ -179,7 +185,7 @@ async function generateThumbnail(
 
     return thumbnailFilename;
   } catch (error) {
-    logger.warn("Thumbnail generation failed", error);
+    logger.error("Thumbnail generation failed", { error, filename, entityType });
     return null;
   }
 }
