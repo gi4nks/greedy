@@ -389,7 +389,7 @@ function ImportedArticlesTab() {
                             />
                           )}
                           <Button
-                            variant="destructive"
+                            variant="neutral"
                             size="sm"
                             onClick={() => handleDelete(article.id, article.title)}
                           >

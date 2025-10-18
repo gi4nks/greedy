@@ -209,9 +209,10 @@ export async function GET(
 
     campaignCharacters.forEach((character) => {
       const nodeId = `character-${character.id}`;
+      const nodeType = character.characterType === "npc" ? "npc" : "character";
       addNode({
         id: nodeId,
-        type: "character",
+        type: nodeType,
         name: character.name,
         href: `/campaigns/${campaign.id}/characters/${character.id}`,
         data: { characterType: character.characterType },
@@ -316,19 +317,58 @@ export async function GET(
           )
       : [];
 
-    characterItemAssignments.forEach((assignment) => {
-      const nodeId = `magicItem-${assignment.magicItemId}`;
+    // Also get magic items assigned to locations in this campaign
+    const locationItemAssignments = campaignLocations.length
+      ? await db
+          .select({
+            locationId: magicItemAssignments.entityId,
+            magicItemId: magicItems.id,
+            magicItemName: magicItems.name,
+          })
+          .from(magicItemAssignments)
+          .innerJoin(
+            magicItems,
+            eq(magicItemAssignments.magicItemId, magicItems.id),
+          )
+          .where(
+            and(
+              eq(magicItemAssignments.entityType, "location"),
+              inArray(magicItemAssignments.entityId, campaignLocations.map(l => l.id)),
+            ),
+          )
+      : [];
+
+    // Combine all magic item assignments
+    const allItemAssignments = [
+      ...characterItemAssignments.map(item => ({ ...item, entityType: 'character' as const, entityId: item.characterId })),
+      ...locationItemAssignments.map(item => ({ ...item, entityType: 'location' as const, entityId: item.locationId })),
+    ];
+
+    // Create a set of unique magic item IDs to avoid duplicates
+    const uniqueMagicItemIds = new Set(allItemAssignments.map(item => item.magicItemId));
+
+    uniqueMagicItemIds.forEach((magicItemId) => {
+      const assignments = allItemAssignments.filter(item => item.magicItemId === magicItemId);
+      const firstAssignment = assignments[0];
+
+      const nodeId = `magicItem-${magicItemId}`;
       addNode({
         id: nodeId,
         type: "magicItem",
-        name: assignment.magicItemName,
-        href: `/magic-items/${assignment.magicItemId}`,
+        name: firstAssignment.magicItemName,
+        href: `/magic-items/${magicItemId}`,
       });
 
-      addEdge({
-        source: `character-${assignment.characterId}`,
-        target: nodeId,
-        relation: "owns",
+      // Create edges for all assignments
+      assignments.forEach((assignment) => {
+        const sourceId = `${assignment.entityType}-${assignment.entityId}`;
+        if (nodeMap.has(sourceId)) {
+          addEdge({
+            source: sourceId,
+            target: nodeId,
+            relation: "owns",
+          });
+        }
       });
     });
 
