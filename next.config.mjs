@@ -22,11 +22,18 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Webpack configuration for better-sqlite3
+  // Webpack configuration for better-sqlite3 and path resolution
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push("better-sqlite3");
     }
+
+    // Add path resolution for @ alias
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+    };
+
     return config;
   },
 };
