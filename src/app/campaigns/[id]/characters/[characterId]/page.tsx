@@ -17,7 +17,7 @@ interface CharacterPageProps {
 async function getCharacterWithEntities(characterId: number) {
   // Use the API to get character with all assigned entities
   const response = await fetch(
-    `http://localhost:3000/api/characters/${characterId}`,
+    `/api/characters/${characterId}`,
     {
       cache: "no-store", // Ensure fresh data
     },

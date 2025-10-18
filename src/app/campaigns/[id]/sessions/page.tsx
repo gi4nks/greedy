@@ -281,7 +281,7 @@ function SessionsList({
                   </CardContent>
 
                   <div className="mt-auto flex gap-2 p-4 pt-0">
-                    <Link href={`/sessions/${session.id}`} className="flex-1">
+                    <Link href={`/campaigns/${campaignId}/sessions/${session.id}`} className="flex-1">
                       <Button variant="warning" className="gap-2 w-full" size="sm">
                         <View className="w-4 h-4" />
                         View
