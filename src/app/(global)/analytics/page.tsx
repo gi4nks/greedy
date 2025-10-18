@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { CampaignAnalytics } from "../../../lib/services/analytics";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { formatUIDate } from "../../../lib/utils/date";
 import {
   BarChart,
   Bar,
@@ -219,18 +221,20 @@ export default function AnalyticsPage() {
                   {analytics.sessionTrends.recent
                     .slice(0, 5)
                     .map((session, index) => (
-                      <div
+                      <Link
                         key={index}
-                        className="flex items-center justify-between p-3 bg-base-200 rounded-lg"
+                        href={`/sessions/${session.id}`}
+                        className="block"
                       >
-                        <div>
-                          <p className="font-medium text-sm">{session.title}</p>
-                          <p className="text-xs text-base-content/70">
-                            {new Date(session.date).toLocaleDateString()}
-                          </p>
+                        <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
+                          <div>
+                            <p className="font-medium text-sm">{session.title}</p>
+                            <p className="text-xs text-base-content/70">
+                              {formatUIDate(session.date)}
+                            </p>
+                          </div>
                         </div>
-                        <Badge variant="outline">{session.duration}h</Badge>
-                      </div>
+                      </Link>
                     ))}
                 </div>
               </CardContent>

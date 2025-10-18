@@ -15,7 +15,7 @@ interface MarkdownRendererProps {
   allowHtml?: boolean;
 }
 
-const markdownComponents: Components = {
+export const markdownComponents: Components = {
   img: (props) => (
     <img
       {...props}

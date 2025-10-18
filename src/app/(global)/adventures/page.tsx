@@ -6,6 +6,7 @@ import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import Link from "next/link";
 import { Calendar, MapPin, BookOpen, View } from "lucide-react";
+import { formatUIDate } from "../../../lib/utils/date";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
 
 // Force dynamic rendering
@@ -103,7 +104,7 @@ export default async function AdventuresPage() {
                   {adventure.startDate && (
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(adventure.startDate).toLocaleDateString()}
+                      {formatUIDate(adventure.startDate)}
                     </div>
                   )}
                 </div>

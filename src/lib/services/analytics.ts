@@ -19,6 +19,7 @@ export interface CampaignAnalytics {
       hours: number;
     }>;
     recent: Array<{
+      id: number;
       date: string;
       title: string;
       duration: number;
@@ -74,6 +75,7 @@ export class AnalyticsService {
     // Recent sessions
     const recentSessions = await db
       .select({
+        id: sessions.id,
         title: sessions.title,
         date: sessions.date,
       })
@@ -113,6 +115,7 @@ export class AnalyticsService {
       sessionTrends: {
         monthly: monthlyTrends,
         recent: recentSessions.map((session) => ({
+          id: session.id,
           date: session.date,
           title: session.title,
           duration: 0,

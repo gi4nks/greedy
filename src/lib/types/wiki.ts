@@ -9,6 +9,7 @@ export interface WikiEntity {
   parsedData?: unknown;
   relationshipType?: string;
   relationshipData?: unknown;
+  importedFrom?: string | null;
 }
 
 export interface WikiEntityGroup {

@@ -19,9 +19,9 @@ const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Campaigns", href: "/campaigns", icon: BookOpen },
   { name: "Magic Items", href: "/magic-items", icon: Sparkles },
-  { name: "Search", href: "/search", icon: Search },
   { name: "Wiki Import", href: "/wiki", icon: FileText },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Search", href: "/search", icon: Search },
 ];
 
 export default function Navigation() {

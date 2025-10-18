@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Session } from "@/lib/db/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatDisplayDate } from "@/lib/utils/date";
+import { formatDisplayDate, formatUIDate } from "@/lib/utils/date";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
 import { Edit } from "lucide-react";
@@ -16,21 +16,6 @@ interface SessionHeaderProps {
 }
 
 export function SessionHeader({ session }: SessionHeaderProps) {
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "—";
-      return date.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return "—";
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Session Header */}
@@ -39,7 +24,7 @@ export function SessionHeader({ session }: SessionHeaderProps) {
           <h1 className="text-3xl font-bold mb-2">{session.title}</h1>
           <div className="space-y-1">
             <p className="text-lg text-base-content/70">
-              {formatDate(session.date)}
+              {formatUIDate(session.date)}
             </p>
             {session.adventureId && (
               <p className="text-sm text-base-content/70">

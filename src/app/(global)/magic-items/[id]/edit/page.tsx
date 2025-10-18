@@ -139,7 +139,7 @@ export default async function EditMagicItemPage({
   // Only allow editing of manual items, not wiki items
   if (item.source === "wiki") {
     return (
-      <>
+      <div className="container mx-auto p-6">
         <DynamicBreadcrumb
           items={[
             { label: "Campaigns", href: "/campaigns" },
@@ -149,36 +149,34 @@ export default async function EditMagicItemPage({
           ]}
         />
 
-        <div className="container mx-auto p-6 max-w-5xl">
-          <div className="mb-6 flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Edit Magic Item</h1>
-              <p className="text-base-content/70 mt-2">
-                This magic item is from the wiki and cannot be edited.
-              </p>
-            </div>
-          </div>          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle>{item.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base-content/60 mb-4">
-                Wiki items are read-only. You can still assign this item to
-                entities using the assignment management below.
-              </p>
-              <div className="flex gap-2">
-                <Link href={`/magic-items/${itemId}`} className="flex-1">
-                  <Button variant="primary" className="gap-2 w-full" size="sm">
-                    <Eye className="w-4 h-4" />
-                    View Item
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Edit Magic Item</h1>
+            <p className="text-base-content/70 mt-2">
+              This magic item is from the wiki and cannot be edited.
+            </p>
+          </div>
         </div>
-      </>
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle>{item.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-base-content/60 mb-4">
+              Wiki items are read-only. You can still assign this item to
+              entities using the assignment management below.
+            </p>
+            <div className="flex gap-2">
+              <Link href={`/magic-items/${itemId}`} className="flex-1">
+                <Button variant="primary" className="gap-2 w-full" size="sm">
+                  <Eye className="w-4 h-4" />
+                  View Item
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -188,7 +186,7 @@ export default async function EditMagicItemPage({
   const properties = serializeProperties(item.properties);
 
   return (
-    <>
+    <div className="container mx-auto p-6">
       <DynamicBreadcrumb
         items={[
           { label: "Campaigns", href: "/campaigns" },
@@ -198,18 +196,16 @@ export default async function EditMagicItemPage({
         ]}
       />
 
-      <div className="container mx-auto p-6 max-w-5xl">
-        <div className="mb-6 flex items-center gap-3">
-          <Sparkles className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Edit Magic Item</h1>
-            <p className="text-base-content/70 mt-2">
-              Update the metadata, description, and properties for {item.name}.
-            </p>
-          </div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Edit Magic Item</h1>
+          <p className="text-base-content/70 mt-2">
+            Update the metadata, description, and properties for {item.name}.
+          </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form */}
           <div className="lg:col-span-2">
             <MagicItemForm
@@ -313,6 +309,5 @@ export default async function EditMagicItemPage({
           </div>
         </div>
       </div>
-    </>
-  );
-}
+    );
+  }

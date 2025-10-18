@@ -32,6 +32,7 @@ import { ImageManager } from "@/components/ui/image-manager";
 import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { formatUIDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 
 interface CharacterFormProps {
@@ -1228,6 +1229,7 @@ export default function CharacterForm({
                   variant="outline"
                   onClick={addRelationship}
                   className="w-full"
+                  size="sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Relationship
@@ -1346,7 +1348,7 @@ export default function CharacterForm({
                             )}
                             {item.assignedAt && (
                               <p className="text-sm text-gray-600">
-                                <strong>Assigned:</strong> {new Date(item.assignedAt).toLocaleDateString()}
+                                <strong>Assigned:</strong> {formatUIDate(item.assignedAt)}
                               </p>
                             )}
                           </div>

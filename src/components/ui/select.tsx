@@ -9,7 +9,11 @@ interface SelectContextType {
   isOpen?: boolean;
   setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   getLabelForValue?: (val: string) => string;
-  triggerRef?: React.RefObject<HTMLDivElement | null>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
+  contentRef?: React.RefObject<HTMLElement | null>;
+  selectedIndex?: number;
+  setSelectedIndex?: React.Dispatch<React.SetStateAction<number>>;
+  items?: Array<{ value: string; label: string }>;
 }
 
 const SelectContext = React.createContext<SelectContextType>({});
@@ -42,48 +46,55 @@ const Select = React.forwardRef<
 >(
   (
     { value, defaultValue, onValueChange, children, className, name, ...props },
-    _ref,
+    ref,
   ) => {
     const [internalValue, setInternalValue] = React.useState(
       defaultValue || "",
     );
     const [isOpen, setIsOpen] = React.useState(false);
-    const [dropdownPosition, setDropdownPosition] = React.useState<string>("");
-    const dropdownRef = React.useRef<HTMLDivElement>(null);
-    const triggerRef = React.useRef<HTMLDivElement>(null);
+    const [selectedIndex, setSelectedIndex] = React.useState(-1);
+    const triggerRef = React.useRef<HTMLElement>(null);
+    const contentRef = React.useRef<HTMLElement>(null);
 
     // Determine the current value (controlled vs uncontrolled)
     const currentValue = value !== undefined ? value : internalValue;
 
+    // Collect items from children
+    const items = React.useMemo(() => {
+      const collected: Array<{ value: string; label: string }> = [];
+      const collectItems = (nodes: React.ReactNode) => {
+        React.Children.forEach(nodes, (child) => {
+          if (React.isValidElement(child)) {
+            const childProps = child.props as {
+              children?: React.ReactNode;
+              value?: string;
+            };
+            if (
+              (child.type as { displayName?: string }).displayName ===
+                "SelectItem" &&
+              childProps.value
+            ) {
+              collected.push({
+                value: childProps.value,
+                label: getTextContentFromNode(childProps.children),
+              });
+            } else if (childProps.children) {
+              collectItems(childProps.children);
+            }
+          }
+        });
+      };
+      collectItems(children);
+      return collected;
+    }, [children]);
+
     // Memoized function to get label from children
     const getLabelFromChildren = React.useMemo(() => {
       return (val: string) => {
-        let label = "";
-        if (val) {
-          const findLabel = (nodes: React.ReactNode) => {
-            React.Children.forEach(nodes, (child) => {
-              if (React.isValidElement(child)) {
-                const childProps = child.props as {
-                  children?: React.ReactNode;
-                  value?: string;
-                };
-                if (
-                  (child.type as { displayName?: string }).displayName ===
-                    "SelectItem" &&
-                  childProps.value === val
-                ) {
-                  label = getTextContentFromNode(childProps.children);
-                } else if (childProps.children) {
-                  findLabel(childProps.children);
-                }
-              }
-            });
-          };
-          findLabel(children);
-        }
-        return label;
+        const item = items.find((i) => i.value === val);
+        return item ? item.label : "";
       };
-    }, [children]);
+    }, [items]);
 
     const handleValueChange = React.useCallback(
       (newValue: string) => {
@@ -93,87 +104,23 @@ const Select = React.forwardRef<
         }
         // Controlled component
         onValueChange?.(newValue);
+        setIsOpen(false);
+        setSelectedIndex(-1);
       },
       [value, onValueChange],
     );
-
-    // Calculate optimal dropdown position
-    const calculateDropdownPosition = React.useCallback(() => {
-      if (!triggerRef.current) return "";
-
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Simple positioning logic: prefer bottom-right, but switch to top or left if needed
-      const spaceBelow = viewportHeight - triggerRect.bottom;
-      const spaceAbove = triggerRect.top;
-      const spaceRight = viewportWidth - triggerRect.right;
-      const spaceLeft = triggerRect.left;
-
-      // Estimate dropdown size
-      const dropdownHeight = 200; // Conservative estimate
-      const dropdownWidth = Math.max(triggerRect.width, 200);
-
-      let positionClasses = "";
-
-      // Vertical positioning
-      if (spaceBelow >= dropdownHeight) {
-        positionClasses += " dropdown-bottom";
-      } else if (spaceAbove >= dropdownHeight) {
-        positionClasses += " dropdown-top";
-      } else {
-        // Default to bottom if neither has enough space
-        positionClasses += " dropdown-bottom";
-      }
-
-      // Horizontal positioning - prefer aligning with the trigger's edge
-      if (spaceRight >= dropdownWidth) {
-        positionClasses += " dropdown-end";
-      } else if (spaceLeft >= dropdownWidth) {
-        positionClasses += " dropdown-left";
-      } else {
-        // Default to end if neither has enough space
-        positionClasses += " dropdown-end";
-      }
-
-      return positionClasses;
-    }, []);
-
-    // Update position when dropdown opens or window resizes
-    React.useEffect(() => {
-      if (isOpen) {
-        const position = calculateDropdownPosition();
-        setDropdownPosition(position);
-      }
-    }, [isOpen, calculateDropdownPosition]);
-
-    // Recalculate position on window resize and scroll
-    React.useEffect(() => {
-      const handleResizeOrScroll = () => {
-        if (isOpen) {
-          const position = calculateDropdownPosition();
-          setDropdownPosition(position);
-        }
-      };
-
-      window.addEventListener("resize", handleResizeOrScroll);
-      window.addEventListener("scroll", handleResizeOrScroll, true); // Capture scroll events
-
-      return () => {
-        window.removeEventListener("resize", handleResizeOrScroll);
-        window.removeEventListener("scroll", handleResizeOrScroll, true);
-      };
-    }, [isOpen, calculateDropdownPosition]);
 
     // Close dropdown when clicking outside
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(event.target as Node)
+          triggerRef.current &&
+          contentRef.current &&
+          !triggerRef.current.contains(event.target as Node) &&
+          !contentRef.current.contains(event.target as Node)
         ) {
           setIsOpen(false);
+          setSelectedIndex(-1);
         }
       };
 
@@ -184,6 +131,12 @@ const Select = React.forwardRef<
       }
     }, [isOpen]);
 
+    // Update selected index when value changes
+    React.useEffect(() => {
+      const index = items.findIndex((item) => item.value === currentValue);
+      setSelectedIndex(index);
+    }, [currentValue, items]);
+
     return (
       <SelectContext.Provider
         value={{
@@ -193,16 +146,15 @@ const Select = React.forwardRef<
           setIsOpen,
           getLabelForValue: getLabelFromChildren,
           triggerRef,
+          contentRef,
+          selectedIndex,
+          setSelectedIndex,
+          items,
         }}
       >
         <div
-          ref={dropdownRef}
-          className={cn(
-            "dropdown relative",
-            dropdownPosition,
-            isOpen && "dropdown-open",
-            className,
-          )}
+          ref={ref}
+          className={cn("dropdown dropdown-bottom", isOpen && "dropdown-open", className)}
           {...props}
         >
           {name && <input type="hidden" name={name} value={currentValue} />}
@@ -251,24 +203,72 @@ const SelectValue = React.forwardRef<
 SelectValue.displayName = "SelectValue";
 
 const SelectTrigger = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, children, ...props }, ref) => {
-  const { setIsOpen, triggerRef } = React.useContext(SelectContext);
+  const { setIsOpen, isOpen, triggerRef, selectedIndex, setSelectedIndex, items, onValueChange } = React.useContext(SelectContext);
 
   const handleClick = () => {
     setIsOpen?.((prev) => !prev);
   };
 
-  // Use the triggerRef from context if available, otherwise use the passed ref
-  const triggerElementRef = triggerRef || ref;
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isOpen) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setIsOpen?.(true);
+          setSelectedIndex?.(0);
+        }
+      } else {
+        switch (e.key) {
+          case "ArrowDown":
+            e.preventDefault();
+            setSelectedIndex?.((prev) =>
+              prev < (items?.length ?? 0) - 1 ? prev + 1 : 0,
+            );
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            setSelectedIndex?.((prev) =>
+              prev > 0 ? prev - 1 : (items?.length ?? 0) - 1,
+            );
+            break;
+          case "Enter":
+            e.preventDefault();
+            if (selectedIndex !== undefined && selectedIndex >= 0 && items?.[selectedIndex]) {
+              onValueChange?.(items[selectedIndex].value);
+            }
+            break;
+          case "Escape":
+            e.preventDefault();
+            setIsOpen?.(false);
+            setSelectedIndex?.(-1);
+            break;
+        }
+      }
+    },
+    [isOpen, selectedIndex, setSelectedIndex, items, onValueChange, setIsOpen],
+  );
+
+  // Merge refs
+  const setRefs = React.useCallback((element: HTMLButtonElement | null) => {
+    if (triggerRef) triggerRef.current = element;
+    if (ref) {
+      if (typeof ref === 'function') ref(element);
+      else ref.current = element;
+    }
+  }, [triggerRef, ref]);
 
   return (
-    <div
-      ref={triggerElementRef}
-      tabIndex={0}
-      role="button"
+    <button
+      ref={setRefs}
+      type="button"
+      role="combobox"
+      aria-expanded={isOpen}
+      aria-haspopup="listbox"
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       className={cn(
         "input input-bordered w-full flex items-center justify-between cursor-pointer h-10 py-2 px-3 text-sm",
         className,
@@ -277,28 +277,42 @@ const SelectTrigger = React.forwardRef<
     >
       {children}
       <ChevronDown className="w-4 h-4 text-base-content/50 flex-shrink-0 ml-2" />
-    </div>
+    </button>
   );
 });
 SelectTrigger.displayName = "SelectTrigger";
 
 const SelectContent = React.forwardRef<
   HTMLUListElement,
-  React.HTMLAttributes<HTMLUListElement> & {
-    position?: string;
-  }
->(({ className, children, position: _position, ...props }, ref) => (
-  <ul
-    ref={ref}
-    className={cn(
-      "dropdown-content p-2 shadow bg-base-100 rounded-box z-[200] min-w-full w-max max-h-96 overflow-auto max-w-xs",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-  </ul>
-));
+  React.HTMLAttributes<HTMLUListElement>
+>(({ className, children, ...props }, ref) => {
+  const { isOpen, contentRef } = React.useContext(SelectContext);
+
+  // Merge refs - must be before any early returns
+  const setRefs = React.useCallback((element: HTMLUListElement | null) => {
+    if (contentRef) contentRef.current = element;
+    if (ref) {
+      if (typeof ref === 'function') ref(element);
+      else ref.current = element;
+    }
+  }, [contentRef, ref]);
+
+  if (!isOpen) return null;
+
+  return (
+    <ul
+      ref={setRefs}
+      role="listbox"
+      className={cn(
+        "dropdown-content z-[200] p-2 shadow bg-base-100 rounded-box border border-base-300 min-w-full max-h-96 overflow-auto",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </ul>
+  );
+});
 SelectContent.displayName = "SelectContent";
 
 const SelectLabel = React.forwardRef<
@@ -326,30 +340,41 @@ const SelectItem = React.forwardRef<
   const {
     onValueChange,
     value: selectedValue,
-    setIsOpen,
+    selectedIndex,
+    setSelectedIndex,
+    items,
   } = React.useContext(SelectContext);
   const isSelected = selectedValue === value;
+  const index = items?.findIndex((item) => item.value === value) ?? -1;
+  const isHighlighted = selectedIndex === index;
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     onValueChange?.(value);
-    setIsOpen?.(false); // Close dropdown after selection
+  };
+
+  const handleMouseEnter = () => {
+    setSelectedIndex?.(index);
   };
 
   return (
-    <li ref={ref} className={className} {...props}>
-      <a
-        onClick={handleClick}
-        className={cn(
-          "cursor-pointer whitespace-nowrap flex items-center h-10 px-3 leading-none",
-          isSelected && "active",
-        )}
-        data-select-value={value}
-      >
-        {children}
-      </a>
+    <li
+      ref={ref}
+      role="option"
+      aria-selected={isSelected}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      className={cn(
+        "cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis flex items-center h-10 px-3 leading-none rounded hover:bg-base-200",
+        isSelected && "bg-base-200",
+        isHighlighted && "bg-base-300",
+        className,
+      )}
+      data-select-value={value}
+      {...props}
+    >
+      {children}
     </li>
   );
 });

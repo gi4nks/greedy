@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { campaigns, quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { formatUIDate } from "@/lib/utils/date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -224,7 +225,7 @@ export default async function AdventureQuestsPage({
                   {quest.dueDate && (
                     <div className="flex items-center gap-1 text-xs text-base-content/70 mb-3">
                       <Clock className="w-3 h-3" />
-                      Due: {new Date(quest.dueDate).toLocaleDateString()}
+                      Due: {formatUIDate(quest.dueDate)}
                     </div>
                   )}
 

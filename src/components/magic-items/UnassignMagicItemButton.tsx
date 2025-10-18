@@ -56,7 +56,7 @@ export function UnassignMagicItemButton({
       <Button
         type="button"
         size="sm"
-        variant="destructive"
+        variant="neutral"
         className="gap-2"
         onClick={handleUnassign}
         disabled={isPending}

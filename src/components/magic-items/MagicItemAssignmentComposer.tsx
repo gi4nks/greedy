@@ -302,6 +302,7 @@ export function MagicItemAssignmentComposer({
         variant="primary"
         className="gap-2"
         onClick={handleOpen}
+        size="sm"
       >
         <Plus className="w-4 h-4" />
         Assign
@@ -469,16 +470,18 @@ export function MagicItemAssignmentComposer({
                 className="gap-2"
                 onClick={handleAssign}
                 disabled={isSubmitting || selected.length === 0}
+                size="sm"
               >
                 <Save className="w-4 h-4" />
                 {isSubmitting ? "Assigning…" : "Assign"}
               </Button>
               <Button
                 type="button"
-                variant="neutral"
+                variant="outline"
                 className="gap-2"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                size="sm"
               >
                 <EyeOff className="w-4 h-4" />
                 Cancel

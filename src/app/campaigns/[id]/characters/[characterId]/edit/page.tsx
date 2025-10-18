@@ -229,7 +229,7 @@ export default async function EditCharacterPage({
         </p>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardContent className="p-6">
           <CharacterForm
             character={character}
@@ -251,7 +251,7 @@ function EditCharacterSkeleton() {
         <Skeleton className="h-6 w-48" />
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardContent className="p-6">
           <div className="space-y-6">
             <div className="card bg-base-100 shadow-sm">

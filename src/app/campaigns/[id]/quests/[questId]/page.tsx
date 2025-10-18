@@ -82,6 +82,7 @@ async function getQuest(questId: number) {
       rawContent: wikiArticles.rawContent,
       parsedData: wikiArticles.parsedData,
       wikiUrl: wikiArticles.wikiUrl,
+      importedFrom: wikiArticles.importedFrom,
       relationshipType: wikiArticleEntities.relationshipType,
       relationshipData: wikiArticleEntities.relationshipData,
     })
@@ -105,6 +106,7 @@ async function getQuest(questId: number) {
     description: entity.rawContent || "", // Map rawContent to description
     parsedData: entity.parsedData,
     wikiUrl: entity.wikiUrl || undefined,
+    importedFrom: entity.importedFrom,
     relationshipType: entity.relationshipType || undefined,
     relationshipData: entity.relationshipData,
   }));

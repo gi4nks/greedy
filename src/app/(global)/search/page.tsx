@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { SearchResult } from "../../../lib/services/search";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { formatUIDate } from "../../../lib/utils/date";
 import {
   Search,
   Filter,
@@ -552,7 +553,7 @@ function SearchResultCard({
               {result.createdAt && (
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(result.createdAt).toLocaleDateString()}
+                  {formatUIDate(result.createdAt)}
                 </span>
               )}
 

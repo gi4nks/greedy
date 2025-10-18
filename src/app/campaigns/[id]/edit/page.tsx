@@ -5,7 +5,7 @@ import { campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import CampaignForm from "@/components/campaign/CampaignForm";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { BookOpen } from "lucide-react";
 
@@ -52,14 +52,12 @@ export default async function EditCampaignPage({
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
-        items={[
-          { label: "Campaigns", href: "/campaigns" },
-          { label: campaign.title, href: `/campaigns/${campaignId}` },
-          { label: "Edit" },
-        ]}
+        campaignId={campaignId}
+        campaignTitle={campaign.title}
+        sectionItems={[{ label: "Edit" }]}
       />
 
       <div className="mb-6">
@@ -72,7 +70,10 @@ export default async function EditCampaignPage({
         </div>
       </div>
 
-      <Card>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Campaign Details</CardTitle>
+        </CardHeader>
         <CardContent className="p-6">
           <CampaignForm campaign={campaign} />
         </CardContent>

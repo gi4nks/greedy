@@ -5,6 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 
 type CampaignCharacterRow = {
   id: number;
+  characterType: string | null;
   name: string;
   race: string | null;
   level: number | null;
@@ -43,6 +44,7 @@ export async function GET(
     const campaignCharacters = await db
       .select({
         id: characters.id,
+        characterType: characters.characterType,
         name: characters.name,
         race: characters.race,
         level: characters.level,

@@ -10,6 +10,7 @@ import {
   npcs,
   magicItems,
   magicItemAssignments,
+  relations,
 } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -38,12 +39,14 @@ type GraphEdge = {
 };
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const campaignId = Number(id);
+    const { searchParams } = new URL(request.url);
+    const includeRelationships = searchParams.get("includeRelationships") === "true";
 
     if (!Number.isInteger(campaignId)) {
       return NextResponse.json(
@@ -328,6 +331,47 @@ export async function GET(
         relation: "owns",
       });
     });
+
+    // Add relationships if includeRelationships is true
+    if (includeRelationships) {
+      const campaignRelations = await db
+        .select()
+        .from(relations)
+        .where(eq(relations.campaignId, campaignId));
+
+      campaignRelations.forEach((relation) => {
+        const sourceNodeId = `${relation.sourceEntityType}-${relation.sourceEntityId}`;
+        const targetNodeId = `${relation.targetEntityType}-${relation.targetEntityId}`;
+
+        // Only add edges if both nodes exist in our graph
+        if (nodeMap.has(sourceNodeId) && nodeMap.has(targetNodeId)) {
+          addEdge({
+            source: sourceNodeId,
+            target: targetNodeId,
+            relation: relation.relationType,
+            data: {
+              description: relation.description,
+              bidirectional: relation.bidirectional,
+              isRelationship: true,
+            },
+          });
+
+          // If bidirectional, add reverse edge
+          if (relation.bidirectional) {
+            addEdge({
+              source: targetNodeId,
+              target: sourceNodeId,
+              relation: relation.relationType,
+              data: {
+                description: relation.description,
+                bidirectional: true,
+                isRelationship: true,
+              },
+            });
+          }
+        }
+      });
+    }
 
     return NextResponse.json({ nodes, edges });
   } catch (error) {

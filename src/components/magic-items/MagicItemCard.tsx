@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Trash2, Images, View } from "lucide-react";
+import { Edit, Trash2, View } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,56 +47,10 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
       setIsDeleting(false);
     }
   };
-  const assignmentBadges =
-    item.assignments.length > 0
-      ? item.assignments.slice(0, 3).map((assignment) => (
-          <Badge
-            key={`${assignment.entityType}-${assignment.entityId}`}
-            variant="secondary"
-            className="capitalize"
-          >
-            {assignment.entityType} • {assignment.entityName ?? "Unnamed"}
-          </Badge>
-        ))
-      : null;
-
-  const sortedAssignments = [...item.assignments]
-    .sort((a, b) => {
-      const aTime = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
-      const bTime = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
-      return bTime - aTime;
-    })
-    .slice(0, 3);
-
-  const primaryImage = Array.isArray(item.images)
-    ? item.images[0]
-    : typeof item.images === "string"
-      ? (() => {
-          try {
-            const parsed = JSON.parse(item.images);
-            return Array.isArray(parsed) ? parsed[0] : null;
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+  const assignmentCount = item.assignments.length;
 
   return (
     <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-      {primaryImage && typeof primaryImage === "string" ? (
-        <div className="relative h-40 w-full overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={primaryImage}
-            alt={item.name}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      ) : (
-        <div className="flex h-40 items-center justify-center bg-base-200 text-base-content/50">
-          <Images className="h-10 w-10" />
-        </div>
-      )}
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold line-clamp-1">
@@ -131,41 +85,20 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
           </div>
 
           {item.description && (
-            <p className="text-base-content/70 line-clamp-3">
-              {item.description}
-            </p>
+            <div className="text-base-content/70 line-clamp-3 prose prose-sm max-w-none dark:prose-invert">
+              <MarkdownRenderer content={item.description} />
+            </div>
           )}
 
           <div className="flex flex-wrap gap-2">
-            {assignmentBadges ?? (
+            {assignmentCount > 0 ? (
+              <Badge variant="secondary">
+                Assigned: {assignmentCount}
+              </Badge>
+            ) : (
               <span className="text-base-content/60">No assignments yet</span>
             )}
           </div>
-
-          {sortedAssignments.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-                Recent assignments
-              </p>
-              <ul className="space-y-1 text-sm">
-                {sortedAssignments.map((assignment) => (
-                  <li
-                    key={assignment.id}
-                    className="flex items-center justify-between gap-2"
-                  >
-                    <span className="truncate capitalize">
-                      {assignment.entityType}: {assignment.entityName}
-                    </span>
-                    {assignment.campaignTitle && (
-                      <span className="truncate text-xs text-base-content/60">
-                        {assignment.campaignTitle}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
         <div className="flex gap-2 pt-4 mt-auto">

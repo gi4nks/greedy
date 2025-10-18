@@ -7,7 +7,6 @@ import EquipmentDisplay from "@/components/ui/equipment-display";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
-import { formatDate } from "@/lib/utils/date";
 
 interface MagicItem {
   assignmentId?: number;

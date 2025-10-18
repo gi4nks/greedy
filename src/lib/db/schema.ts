@@ -235,8 +235,47 @@ export const quests = sqliteTable("quests", {
   updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
 
+// Relations table - defines relationships between entities
+export const relations = sqliteTable(
+  "relations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    campaignId: integer("campaign_id")
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    sourceEntityType: text("source_entity_type").notNull(), // 'character', 'location', 'quest', 'adventure', 'session'
+    sourceEntityId: integer("source_entity_id").notNull(),
+    targetEntityType: text("target_entity_type").notNull(), // 'character', 'location', 'quest', 'adventure', 'session'
+    targetEntityId: integer("target_entity_id").notNull(),
+    relationType: text("relation_type").notNull(), // 'ally', 'enemy', 'parent', 'child', 'belongs-to', 'located-at', 'member-of', etc.
+    description: text("description"),
+    bidirectional: integer("bidirectional", { mode: "boolean" }).default(false),
+    metadata: text("metadata", { mode: "json" }),
+    createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+    updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
+  },
+  (table) => ({
+    campaignIndex: index("idx_relations_campaign").on(table.campaignId),
+    sourceIndex: index("idx_relations_source").on(
+      table.sourceEntityType,
+      table.sourceEntityId,
+    ),
+    targetIndex: index("idx_relations_target").on(
+      table.targetEntityType,
+      table.targetEntityId,
+    ),
+    uniqueRelation: uniqueIndex("uniq_relation").on(
+      table.campaignId,
+      table.sourceEntityType,
+      table.sourceEntityId,
+      table.targetEntityType,
+      table.targetEntityId,
+      table.relationType,
+    ),
+  }),
+);
+
 // Additional tables will be added as needed
-// Relations will be added in a separate step
 
 // Type exports for components
 export type Campaign = {
@@ -376,4 +415,19 @@ export type MagicItemAssignment = {
   notes: string | null;
   metadata: unknown;
   assignedAt: string | null;
+};
+
+export type Relation = {
+  id: number;
+  campaignId: number;
+  sourceEntityType: string;
+  sourceEntityId: number;
+  targetEntityType: string;
+  targetEntityId: number;
+  relationType: string;
+  description: string | null;
+  bidirectional: boolean | null;
+  metadata: unknown;
+  createdAt: string | null;
+  updatedAt: string | null;
 };

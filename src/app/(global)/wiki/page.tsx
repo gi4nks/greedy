@@ -42,7 +42,8 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../components/ui/tabs";
 import { Label } from "../../../components/ui/label";
-import MarkdownRenderer from "../../../components/ui/markdown-renderer";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import WikiContent from "@/components/ui/wiki-content";
 
 interface FeedbackMessage {
   type: "success" | "error" | "info";
@@ -74,6 +75,33 @@ function ImportedArticlesTab() {
   const [feedbackMessage, setFeedbackMessage] = useState<FeedbackMessage | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<Set<number>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
+
+  // Filter articles based on search query
+  const filteredArticles = articles.filter((article) => {
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      article.title.toLowerCase().includes(query) ||
+      article.contentType.toLowerCase().includes(query) ||
+      (article.rawContent && article.rawContent.toLowerCase().includes(query)) ||
+      (article.importedFrom && article.importedFrom.toLowerCase().includes(query))
+    );
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedArticles = filteredArticles.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Load articles and campaigns on component mount
   useEffect(() => {
@@ -137,6 +165,22 @@ function ImportedArticlesTab() {
           type: "success",
           message: `Successfully deleted "${title}"`,
         });
+        // Reset to first page if current page becomes empty
+        const remainingArticles = articles.filter((article) => article.id !== articleId);
+        const newFilteredCount = remainingArticles.filter((article) => {
+          if (!searchQuery.trim()) return true;
+          const query = searchQuery.toLowerCase();
+          return (
+            article.title.toLowerCase().includes(query) ||
+            article.contentType.toLowerCase().includes(query) ||
+            (article.rawContent && article.rawContent.toLowerCase().includes(query)) ||
+            (article.importedFrom && article.importedFrom.toLowerCase().includes(query))
+          );
+        }).length;
+        const newTotalPages = Math.ceil(newFilteredCount / itemsPerPage);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        }
       } else {
         throw new Error("Failed to delete article");
       }
@@ -151,9 +195,16 @@ function ImportedArticlesTab() {
 
   const renderArticleContent = (article: ImportedArticle): string => {
     if (article.rawContent) {
-      // For imported articles, the rawContent should already be formatted
-      // If it's from 5e.tools, it might be markdown-like
-      return article.rawContent;
+      // For adnd2e-wiki articles, rawContent should already be valid HTML
+      if (article.importedFrom === "adnd2e-wiki") {
+        return article.rawContent;
+      } else if (article.importedFrom === "dnd5e-tools") {
+        // 5e.tools content is already formatted as markdown/HTML
+        return article.rawContent;
+      } else {
+        // Unknown source, try to detect format or return as-is
+        return article.rawContent;
+      }
     }
     return "No content available";
   };
@@ -213,140 +264,184 @@ function ImportedArticlesTab() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Imported Articles ({articles.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {articles.map((article) => {
-              const categoryInfo = getCategoryDisplayInfo(article.contentType as WikiItemCategory);
+        <div className="space-y-4">
+          {/* Search Input */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    placeholder="Search articles by title, type, or content..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="text-sm py-3"
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <Search className="w-4 h-4" />
+                  {filteredArticles.length} of {articles.length} articles
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              return (
-                <Card key={article.id} className="overflow-hidden">
-                  <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div
-                          className="cursor-pointer hover:bg-base-200 transition-colors -m-2 p-2 rounded flex justify-between items-start"
-                          onClick={() => handleToggleExpand(article.id)}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              {expandedArticles.has(article.id) ? (
-                                <ChevronDown className="w-5 h-5 text-base-content/70 flex-shrink-0" />
-                              ) : (
-                                <ChevronRight className="w-5 h-5 text-base-content/70 flex-shrink-0" />
-                              )}
-                              <h3 className="font-semibold text-lg">{article.title}</h3>
-                            </div>
-                            <div className="flex gap-2 mt-2 flex-wrap ml-7">
-                              <Badge variant="outline">
-                                {article.importedFrom === "dnd5e-tools"
-                                  ? "D&D 5e (5e.tools)"
-                                  : article.importedFrom === "adnd2e-wiki"
-                                    ? "AD&D 2e (Fandom Wiki)"
-                                    : "Unknown Source"}
-                              </Badge>
-                              <Badge className={`${categoryInfo.color} text-white`}>
-                                {categoryInfo.icon} {categoryInfo.label}
-                              </Badge>
-                              {article.entityRelationships.length > 0 && (
-                                <Badge variant="secondary">
-                                  {article.entityRelationships.length} assignment{article.entityRelationships.length !== 1 ? 's' : ''}
+          {/* Articles List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Imported Articles ({filteredArticles.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {paginatedArticles.map((article) => {
+                const categoryInfo = getCategoryDisplayInfo(article.contentType as WikiItemCategory);
+
+                return (
+                  <Card key={article.id} className="overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div
+                            className="cursor-pointer hover:bg-base-200 transition-colors -m-2 p-2 rounded flex justify-between items-start"
+                            onClick={() => handleToggleExpand(article.id)}
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {expandedArticles.has(article.id) ? (
+                                  <ChevronDown className="w-5 h-5 text-base-content/70 flex-shrink-0" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-base-content/70 flex-shrink-0" />
+                                )}
+                                <h3 className="font-semibold text-lg">{article.title}</h3>
+                              </div>
+                              <div className="flex gap-2 mt-2 flex-wrap ml-7">
+                                <Badge variant="outline">
+                                  {article.importedFrom === "dnd5e-tools"
+                                    ? "D&D 5e (5e.tools)"
+                                    : article.importedFrom === "adnd2e-wiki"
+                                      ? "AD&D 2e (Fandom Wiki)"
+                                      : "Unknown Source"}
                                 </Badge>
-                              )}
+                                <Badge className={`${categoryInfo.color} text-white`}>
+                                  {categoryInfo.icon} {categoryInfo.label}
+                                </Badge>
+                                {article.entityRelationships.length > 0 && (
+                                  <Badge variant="secondary">
+                                    {article.entityRelationships.length} assignment{article.entityRelationships.length !== 1 ? 's' : ''}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            {article.createdAt && (
-                              <p className="text-sm text-base-content/70 mt-1 ml-7">
-                                Imported: {new Date(article.createdAt).toLocaleDateString()}
-                              </p>
-                            )}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        {selectedCampaignId && (
-                          <WikiItemAssignmentDialog
-                            itemId={article.id}
-                            itemTitle={article.title}
-                            itemCategory={article.contentType as WikiItemCategory}
-                            campaignId={selectedCampaignId}
-                            onAssign={async (assignment) => {
-                              try {
-                                // Create the entity relationship
-                                const relationshipResponse = await fetch(
-                                  `/api/wiki-articles/${article.id}/entities`,
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
+                        <div className="flex gap-2 ml-4">
+                          {selectedCampaignId && (
+                            <WikiItemAssignmentDialog
+                              itemId={article.id}
+                              itemTitle={article.title}
+                              itemCategory={article.contentType as WikiItemCategory}
+                              campaignId={selectedCampaignId}
+                              onAssign={async (assignment) => {
+                                try {
+                                  // Create the entity relationship
+                                  const relationshipResponse = await fetch(
+                                    `/api/wiki-articles/${article.id}/entities`,
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        entityType: assignment.entityType,
+                                        entityId: assignment.entityId,
+                                        relationshipType: "referenced",
+                                        relationshipData: assignment.notes
+                                          ? { notes: assignment.notes }
+                                          : {},
+                                      }),
                                     },
-                                    body: JSON.stringify({
-                                      entityType: assignment.entityType,
-                                      entityId: assignment.entityId,
-                                      relationshipType: "referenced",
-                                      relationshipData: assignment.notes
-                                        ? { notes: assignment.notes }
-                                        : {},
-                                    }),
-                                  },
-                                );
-
-                                if (!relationshipResponse.ok) {
-                                  throw new Error(
-                                    "Failed to create entity relationship",
                                   );
-                                }
 
-                                // Refresh articles to show updated relationships
-                                const refreshResponse = await fetch("/api/wiki-articles");
-                                if (refreshResponse.ok) {
-                                  const refreshedData = await refreshResponse.json();
-                                  setArticles(refreshedData);
-                                }
+                                  if (!relationshipResponse.ok) {
+                                    throw new Error(
+                                      "Failed to create entity relationship",
+                                    );
+                                  }
 
-                                setFeedbackMessage({
-                                  type: "success",
-                                  message: `Successfully assigned "${article.title}" to ${assignment.entityType} "${assignment.entityName}"`,
-                                });
-                              } catch (error) {
-                                console.error("Assignment error:", error);
-                                setFeedbackMessage({
-                                  type: "error",
-                                  message: `Failed to assign "${article.title}": ${error instanceof Error ? error.message : "Unknown error"}`,
-                                });
-                              }
-                            }}
+                                  // Refresh articles to show updated relationships
+                                  const refreshResponse = await fetch("/api/wiki-articles");
+                                  if (refreshResponse.ok) {
+                                    const refreshedData = await refreshResponse.json();
+                                    setArticles(refreshedData);
+                                  }
+
+                                  setFeedbackMessage({
+                                    type: "success",
+                                    message: `Successfully assigned "${article.title}" to ${assignment.entityType} "${assignment.entityName}"`,
+                                  });
+                                } catch (error) {
+                                  console.error("Assignment error:", error);
+                                  setFeedbackMessage({
+                                    type: "error",
+                                    message: `Failed to assign "${article.title}": ${error instanceof Error ? error.message : "Unknown error"}`,
+                                  });
+                                }
+                              }}
+                            />
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(article.id, article.title)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {expandedArticles.has(article.id) && (
+                      <div className="bg-base-200 border-t">
+                        <div className="p-4">
+                          <WikiContent
+                            content={article.rawContent || ""}
+                            importedFrom={article.importedFrom}
+                            className="prose-sm"
                           />
-                        )}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(article.id, article.title)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
 
-                  {expandedArticles.has(article.id) && (
-                    <div className="bg-base-200 border-t">
-                      <div className="p-4">
-                        <MarkdownRenderer
-                          content={renderArticleContent(article)}
-                          className="prose-sm"
-                          allowHtml
-                        />
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </CardContent>
-        </Card>
+          {/* Simple Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="flex items-center px-3 text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -842,10 +937,10 @@ export default function WikiImport() {
                         {expandedArticles.has(article.id) && (
                           <div className="bg-base-200 border-t">
                             <div className="p-4">
-                              <MarkdownRenderer
+                              <WikiContent
                                 content={renderArticleContent(article)}
+                                importedFrom={article.id >= 5000000 ? "dnd5e-tools" : "adnd2e-wiki"}
                                 className="prose-sm"
-                                allowHtml
                               />
                             </div>
                           </div>

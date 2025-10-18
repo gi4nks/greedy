@@ -97,10 +97,26 @@ export function formatDisplayDate(
     }
 
     if (isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString();
+
+    // Use consistent format regardless of locale to prevent hydration mismatches
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = date.getMonth() + 1; // getMonth() returns 0-based month
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   } catch {
     return "—";
   }
+}
+
+/**
+ * Formats a date consistently for UI display (DD/MM/YYYY format)
+ * This is a simple wrapper around formatDisplayDate for clarity
+ */
+export function formatUIDate(
+  dateString: string | Date | null | undefined,
+): string {
+  return formatDisplayDate(dateString);
 }
 
 /**

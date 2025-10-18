@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import WikiContent from "@/components/ui/wiki-content";
 import { WikiEntitiesDisplayProps } from "@/lib/types/wiki";
 import {
   groupWikiEntities,
@@ -140,8 +140,9 @@ export default function WikiEntitiesDisplay({
                   </div>
                   {isExpanded && getEntityDescription(entity) && (
                     <div className="px-3 pb-3">
-                      <MarkdownRenderer
+                      <WikiContent
                         content={getEntityDescription(entity)!}
+                        importedFrom={entity.importedFrom}
                         className="prose-sm"
                       />
                     </div>

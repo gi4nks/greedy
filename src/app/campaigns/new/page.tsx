@@ -73,7 +73,7 @@ export default function NewCampaignPage() {
   }, [state, router]);
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         items={[
@@ -92,7 +92,7 @@ export default function NewCampaignPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Campaign Details</CardTitle>
         </CardHeader>
@@ -165,7 +165,7 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-6">
+            <div className="flex gap-3 pt-6 justify-end">
               <Button type="submit" className="flex-1" size="sm" disabled={isPending}>
                 {isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

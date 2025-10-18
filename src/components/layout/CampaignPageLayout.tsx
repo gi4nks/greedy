@@ -27,28 +27,25 @@ export function CampaignPageLayout({
 }: CampaignPageLayoutProps) {
   return (
     <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaign.id}
         campaignTitle={campaign.title}
         sectionItems={sectionItems}
       />
 
-      <div className="mb-6">
-                <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{title}</h1>
-            <p className="text-base-content/70">{description}</p>
-          </div>
-          {createButton && (
-            <Link href={createButton.href}>
-              <Button className="gap-2" variant="primary" size="sm">
-                {createButton.icon}
-                {createButton.label}
-              </Button>
-            </Link>
-          )}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">{title}</h1>
+          <p className="text-base-content/70 mt-2">{description}</p>
         </div>
+        {createButton && (
+          <Link href={createButton.href}>
+            <Button className="gap-2" variant="primary" size="sm">
+              {createButton.icon}
+              {createButton.label}
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="space-y-4">{children}</div>

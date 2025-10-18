@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { CampaignNetwork } from "@/components/campaign/CampaignNetwork";
-import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
+import { CampaignNetworkPageClient } from "@/components/campaign/CampaignNetworkPageClient";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
 
 interface CampaignNetworkPageProps {
@@ -23,14 +22,5 @@ export default async function CampaignNetworkPage({
     notFound();
   }
 
-  return (
-    <CampaignPageLayout
-      campaign={campaign}
-      title="Campaign Network"
-      description="Interactive relationship graph"
-      sectionItems={[{ label: "Network" }]}
-    >
-      <CampaignNetwork campaignId={campaignId} />
-    </CampaignPageLayout>
-  );
+  return <CampaignNetworkPageClient campaign={campaign} campaignId={campaignId} />;
 }

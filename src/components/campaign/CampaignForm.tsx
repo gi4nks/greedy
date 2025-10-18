@@ -168,7 +168,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
               </div>
             )}
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-4 pt-4 justify-end">
               <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
                 <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? "Updating..." : "Update"}

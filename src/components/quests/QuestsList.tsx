@@ -17,6 +17,7 @@ import {
   View,
 } from "lucide-react";
 import { deleteQuestAction } from "@/lib/actions/quests";
+import { formatUIDate } from "@/lib/utils/date";
 import type { Adventure } from "@/lib/db/schema";
 
 type Quest = {
@@ -150,7 +151,7 @@ export function QuestsList({ questsData, campaignId }: QuestsListProps) {
             {quest.dueDate && (
               <div className="flex items-center gap-1 text-xs text-base-content/70 mb-3">
                 <Clock className="w-3 h-3" />
-                Due: {new Date(quest.dueDate).toLocaleDateString()}
+                Due: {formatUIDate(quest.dueDate)}
               </div>
             )}
 

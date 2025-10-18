@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import CampaignPageClient from "./campaign-page-client";
+import RelationsPageClient from "./relations-page-client";
 
 interface CampaignData {
   id: number;
@@ -36,7 +36,7 @@ async function getCampaign(campaignId: number): Promise<CampaignData | null> {
   return campaign || null;
 }
 
-export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RelationsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const campaignId = parseInt(resolvedParams.id);
   const campaign = await getCampaign(campaignId);
@@ -45,5 +45,5 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     notFound();
   }
 
-  return <CampaignPageClient campaign={campaign} campaignId={campaignId} />;
+  return <RelationsPageClient campaign={campaign} campaignId={campaignId} />;
 }

@@ -46,6 +46,8 @@ type GraphResponse = {
 
 type CampaignNetworkProps = {
   campaignId: number;
+  showRelationships?: boolean;
+  onToggleRelationships?: (show: boolean) => void;
 };
 
 type GraphNodeWithVisuals = GraphNode & {
@@ -55,6 +57,11 @@ type GraphNodeWithVisuals = GraphNode & {
 
 type GraphEdgeWithLabel = GraphEdge & {
   label: string;
+  data?: {
+    description?: string | null;
+    bidirectional?: boolean | null;
+    isRelationship?: boolean;
+  };
 };
 
 type ForceGraphNode = NodeObject & GraphNodeWithVisuals;
@@ -86,6 +93,17 @@ const NODE_COLORS: Record<GraphNode["type"], string> = {
   magicItem: "#f472b6",
 };
 
+const NODE_COLOR_CLASSES: Record<GraphNode["type"], string> = {
+  campaign: "bg-indigo-500",
+  adventure: "bg-sky-500",
+  session: "bg-orange-500",
+  quest: "bg-yellow-500",
+  character: "bg-green-500",
+  location: "bg-rose-500",
+  npc: "bg-purple-500",
+  magicItem: "bg-pink-500",
+};
+
 const NODE_SIZES: Record<GraphNode["type"], number> = {
   campaign: 14,
   adventure: 10,
@@ -97,59 +115,78 @@ const NODE_SIZES: Record<GraphNode["type"], number> = {
   magicItem: 7,
 };
 
-const NODE_COLOR_CLASSES: Record<GraphNode["type"], string> = {
-  campaign: "bg-indigo-500",
-  adventure: "bg-sky-400",
-  session: "bg-orange-400",
-  quest: "bg-amber-300",
-  character: "bg-emerald-500",
-  location: "bg-rose-400",
-  npc: "bg-violet-500",
-  magicItem: "bg-pink-400",
+const RELATIONSHIP_COLORS: Record<string, string> = {
+  ally: "#22c55e",
+  enemy: "#ef4444",
+  mentor: "#3b82f6",
+  family: "#eab308",
+  parent: "#eab308",
+  child: "#eab308",
+  friend: "#22c55e",
+  rival: "#ef4444",
+  companion: "#8b5cf6",
+  guardian: "#8b5cf6",
+  ward: "#8b5cf6",
+  leader: "#f59e0b",
+  follower: "#f59e0b",
+  owner: "#6b7280",
+  property: "#6b7280",
+  creator: "#ec4899",
+  creation: "#ec4899",
+  teacher: "#3b82f6",
+  lover: "#ec4899",
+  spouse: "#ec4899",
+  "belongs-to": "#6b7280",
+  "located-at": "#6b7280",
+  "member-of": "#6b7280",
 };
 
-export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
+export function CampaignNetwork({
+  campaignId,
+  showRelationships = false,
+  onToggleRelationships,
+}: CampaignNetworkProps) {
   const router = useRouter();
   const graphRef = useRef<ForceGraphInstance | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const storageKey = `campaign-network-layout-${campaignId}`;
+
   const [graphData, setGraphData] = useState<GraphResponse | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [simulationPaused, setSimulationPaused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    isDraggingRef.current = isDragging;
+  }, [isDragging]);
+
   const [fixedPositions, setFixedPositions] = useState<
     Record<string, { x: number; y: number }>
   >(() => {
-    if (typeof window === "undefined") {
-      return {};
-    }
-
+    if (typeof window === "undefined") return {};
     try {
       const stored = window.localStorage.getItem(storageKey);
       return stored
         ? (JSON.parse(stored) as Record<string, { x: number; y: number }>)
         : {};
-    } catch (err) {
-      console.warn("Failed to read stored network layout", err);
+    } catch {
       return {};
     }
   });
-  const [simulationPaused, setSimulationPaused] = useState(false);
-  const [canvasSize, setCanvasSize] = useState<{
-    width: number;
-    height: number;
-  }>(() => ({ width: 0, height: 0 }));
+
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const persistPositions = useCallback(
     (positions: Record<string, { x: number; y: number }>) => {
-      if (typeof window === "undefined") {
-        return;
-      }
-
+      if (typeof window === "undefined") return;
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(positions));
-      } catch (err) {
-        console.warn("Unable to persist network layout", err);
+      } catch {
+        console.warn("Unable to persist network layout");
       }
     },
     [storageKey],
@@ -160,9 +197,10 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/campaigns/${campaignId}/network`, {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `/api/campaigns/${campaignId}/network?includeRelationships=true`,
+        { cache: "no-store" },
+      );
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
@@ -172,11 +210,10 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
       const payload = (await response.json()) as GraphResponse;
       setGraphData(payload);
 
-      // Prefer a non-campaign node as initial selection when available
       const preferredNode = payload.nodes.find((n) => n.type !== "campaign");
       setSelectedNode(preferredNode ?? payload.nodes[0] ?? null);
     } catch (err) {
-      console.error("Failed to fetch campaign network:", err);
+      console.error(err);
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setIsLoading(false);
@@ -185,97 +222,69 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
 
   useEffect(() => {
     void fetchNetwork();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
     const container = canvasContainerRef.current;
+    if (!container) return;
 
-    if (!container) {
-      return;
-    }
-
-    const updateSize = () => {
+    const updateSize = () =>
       setCanvasSize({
         width: container.clientWidth,
         height: container.clientHeight,
       });
-    };
 
     updateSize();
-
-    const observer = new ResizeObserver(() => {
-      updateSize();
-    });
-
+    const observer = new ResizeObserver(updateSize);
     observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   const processedData: ForceGraphGraphData = useMemo(() => {
-    if (!graphData) {
-      return { nodes: [], links: [] };
-    }
+    if (!graphData) return { nodes: [], links: [] };
 
     const nodes = graphData.nodes.map<ForceGraphNode>((node) => {
       const stored = fixedPositions[node.id];
-      const storedX = stored?.x;
-      const storedY = stored?.y;
-
       return {
         ...node,
         color: NODE_COLORS[node.type],
         val: NODE_SIZES[node.type],
-        ...(storedX !== undefined && storedY !== undefined
-          ? { fx: storedX, fy: storedY, x: storedX, y: storedY }
-          : {}),
+        ...(stored ? { fx: stored.x, fy: stored.y, x: stored.x, y: stored.y } : {}),
       };
     });
 
-    const links = graphData.edges.map<ForceGraphLink>((edge) => ({
-      ...edge,
-      label: edge.relation,
-    }));
+    const links = graphData.edges
+      .filter(
+        (edge) => !edge.data?.isRelationship || (edge.data?.isRelationship && showRelationships),
+      )
+      .map<ForceGraphLink>((edge) => ({ ...edge, label: edge.relation }));
 
     return { nodes, links };
-  }, [graphData, fixedPositions]);
+  }, [graphData, fixedPositions, showRelationships]);
 
-  // Memoize expensive callback functions
   const nodeCanvasObject = useCallback(
-    (
-      node: ForceGraphNode,
-      ctx: CanvasRenderingContext2D,
-      globalScale: number,
-    ) => {
+    (node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const label = node.name;
       const fontSize = 12 / globalScale;
       const radius = Math.max(4, node.val);
       const isSelected = selectedNode?.id === node.id;
 
-      // Draw selection ring if selected
       if (isSelected) {
         ctx.beginPath();
-        ctx.arc(node.x ?? 0, node.y ?? 0, radius + 3, 0, 2 * Math.PI, false);
+        ctx.arc(node.x ?? 0, node.y ?? 0, radius + 3, 0, 2 * Math.PI);
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(node.x ?? 0, node.y ?? 0, radius + 3, 0, 2 * Math.PI, false);
+        ctx.arc(node.x ?? 0, node.y ?? 0, radius + 3, 0, 2 * Math.PI);
         ctx.strokeStyle = node.color;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
       ctx.beginPath();
-      ctx.arc(node.x ?? 0, node.y ?? 0, radius, 0, 2 * Math.PI, false);
+      ctx.arc(node.x ?? 0, node.y ?? 0, radius, 0, 2 * Math.PI);
       ctx.fillStyle = node.color;
       ctx.fill();
 
@@ -288,93 +297,60 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
     [selectedNode],
   );
 
-  const onNodeClick = useCallback(
-    (node: ForceGraphNode) => {
-      if (graphData) {
-        const canonicalNode =
-          graphData.nodes.find((n) => n.id === node.id) ?? null;
-        setSelectedNode(canonicalNode);
-      }
-    },
-    [graphData],
-  );
-
-  const onNodeHover = useCallback(
-    (node: ForceGraphNode | null) => {
-      document.body.style.cursor = node ? "pointer" : "default";
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
+  // ✅ fixed: clicking always updates details
+  const onNodeClick = useCallback((node: ForceGraphNode) => {
+    // Only skip if currently dragging, not if in cooldown
+    if (isDraggingRef.current) {
       return;
     }
+    setSelectedNode(node as GraphNode);
+  }, []);
 
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) {
-        setFixedPositions(
-          JSON.parse(stored) as Record<string, { x: number; y: number }>,
-        );
-      } else {
-        setFixedPositions({});
-      }
-    } catch (err) {
-      console.warn("Failed to refresh stored network layout", err);
-      setFixedPositions({});
-    }
-  }, [storageKey]);
+  const onNodeHover = useCallback((node: ForceGraphNode | null) => {
+    document.body.style.cursor = node ? "pointer" : "default";
+  }, []);
 
   const handleEngineStop = useCallback(() => {
     const nodes = processedData.nodes;
-
-    if (!nodes.length) {
-      return;
-    }
+    if (!nodes.length) return;
 
     const nextPositions: Record<string, { x: number; y: number }> = {};
-
     nodes.forEach((node) => {
-      const x = typeof node.x === "number" ? node.x : 0;
-      const y = typeof node.y === "number" ? node.y : 0;
-
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
       node.fx = x;
       node.fy = y;
-      node.vx = 0;
-      node.vy = 0;
-
       nextPositions[node.id] = { x, y };
     });
 
     graphRef.current?.pauseAnimation();
     setSimulationPaused(true);
-
     setFixedPositions(() => {
       persistPositions(nextPositions);
       return nextPositions;
     });
   }, [persistPositions, processedData]);
 
-  const handleNodeDrag = useCallback((node: ForceGraphNode) => {
-    // Allow continuous dragging by unfixing at the start of drag.
-    delete node.fx;
-    delete node.fy;
-    graphRef.current?.resumeAnimation();
-
-    node.fx = node.x;
-    node.fy = node.y;
-  }, []);
+  const handleNodeDrag = useCallback(
+    (node: ForceGraphNode) => {
+      setIsDragging(true);
+      // Update selection to the node being dragged
+      setSelectedNode(node as GraphNode);
+    },
+    [],
+  );
 
   const handleNodeDragEnd = useCallback(
     (node: ForceGraphNode) => {
+      setIsDragging(false);
+
       node.fx = node.x;
       node.fy = node.y;
       node.vx = 0;
       node.vy = 0;
 
-      const x = typeof node.x === "number" ? node.x : 0;
-      const y = typeof node.y === "number" ? node.y : 0;
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
 
       setFixedPositions((prev) => {
         const next = { ...prev, [node.id]: { x, y } };
@@ -389,15 +365,12 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
 
   const handleResetLayout = useCallback(() => {
     const nodes = processedData.nodes;
-
-    if (nodes.length) {
-      nodes.forEach((node) => {
-        delete node.fx;
-        delete node.fy;
-        delete node.vx;
-        delete node.vy;
-      });
-    }
+    nodes.forEach((node) => {
+      delete node.fx;
+      delete node.fy;
+      delete node.vx;
+      delete node.vy;
+    });
 
     setFixedPositions(() => {
       persistPositions({});
@@ -411,35 +384,18 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
 
   const handleZoom = useCallback((multiplier: number) => {
     const instance = graphRef.current;
-
-    if (!instance) {
-      return;
-    }
-
+    if (!instance) return;
     const currentZoom = instance.zoom() ?? 1;
-    const nextZoom = currentZoom * multiplier;
-    instance.zoom(nextZoom, 300);
+    instance.zoom(currentZoom * multiplier, 300);
   }, []);
 
-  const handleZoomIn = useCallback(() => {
-    handleZoom(1.2);
-  }, [handleZoom]);
-
-  const handleZoomOut = useCallback(() => {
-    handleZoom(1 / 1.2);
-  }, [handleZoom]);
-
-  const handleCenterView = useCallback(() => {
-    graphRef.current?.zoomToFit(400, 40);
-  }, []);
+  const handleZoomIn = useCallback(() => handleZoom(1.2), [handleZoom]);
+  const handleZoomOut = useCallback(() => handleZoom(1 / 1.2), [handleZoom]);
+  const handleCenterView = useCallback(() => graphRef.current?.zoomToFit(400, 40), []);
 
   const renderSelectedNodeDetails = () => {
     if (!selectedNode) {
-      return (
-        <p className="text-sm text-base-content/70">
-          Select a node to see details.
-        </p>
-      );
+      return <p className="text-sm text-base-content/70">Select a node to see details.</p>;
     }
 
     return (
@@ -447,15 +403,12 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <span
-              className={cn(
-                "inline-flex h-3 w-3 rounded-full",
-                NODE_COLOR_CLASSES[selectedNode.type],
-              )}
+              className={cn("inline-flex h-3 w-3 rounded-full", NODE_COLOR_CLASSES[selectedNode.type])}
             />
             {selectedNode.name}
           </h3>
           <Badge variant="outline" className="capitalize mt-2">
-            {selectedNode.type.replace(/([A-Z])/g, " $1")}
+            {selectedNode.type}
           </Badge>
         </div>
 
@@ -467,15 +420,11 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
 
         {selectedNode.data && Object.keys(selectedNode.data).length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-base-content/80">
-              Metadata
-            </h4>
+            <h4 className="text-sm font-medium text-base-content/80">Metadata</h4>
             <dl className="grid grid-cols-1 gap-2 text-sm">
               {Object.entries(selectedNode.data).map(([key, value]) => (
                 <div key={key} className="flex flex-col">
-                  <span className="text-xs uppercase text-base-content/60">
-                    {key}
-                  </span>
+                  <span className="text-xs uppercase text-base-content/60">{key}</span>
                   <span className="text-base-content/80">
                     {typeof value === "string" || typeof value === "number"
                       ? value
@@ -491,14 +440,29 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="space-y-6 relative">
+      {showRelationships && (
+        <div className="absolute top-4 right-4 bg-base-100/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-base-200 z-10 max-w-xs">
+          <h3 className="text-sm font-semibold mb-2">Relationship Legend</h3>
+          <div className="grid grid-cols-1 gap-1 text-xs max-h-48 overflow-y-auto">
+            {Object.entries(RELATIONSHIP_COLORS).map(([type, color]) => (
+              <div key={type} className="flex items-center gap-2">
+                <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: color }}></div>
+                <span className="capitalize text-base-content/80">
+                  {type.replace("-", " ")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <section className="rounded-2xl border border-base-200 bg-base-100 p-6 shadow-sm">
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">Campaign Network Map</h2>
           <p className="text-base-content/70">
-            Explore the relationships between adventures, sessions, characters,
-            and more. Drag nodes to rearrange the map and use the tools to
-            refine the layout.
+            Explore the relationships between adventures, sessions, characters, and more. Drag nodes
+            to rearrange the map and use the tools to refine the layout.
           </p>
         </div>
       </section>
@@ -510,26 +474,23 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
               <div className="space-y-1">
                 <CardTitle className="text-xl">Network Overview</CardTitle>
                 <p className="text-sm text-base-content/70">
-                  Keep nodes in place with the layout tools or reset the
-                  simulation for a fresh view.
+                  Keep nodes in place with the layout tools or reset the simulation for a fresh view.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <Button
-                  variant="outline"
+                  variant={showRelationships ? "default" : "outline"}
                   size="sm"
-                  onClick={handleZoomOut}
+                  onClick={() => onToggleRelationships?.(!showRelationships)}
                   disabled={isLoading}
                 >
+                  {showRelationships ? "Hide" : "Show"} Relationships
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={isLoading}>
                   <ZoomOut className="mr-2 h-4 w-4" />
                   Zoom Out
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleZoomIn}
-                  disabled={isLoading}
-                >
+                <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={isLoading}>
                   <ZoomIn className="mr-2 h-4 w-4" />
                   Zoom In
                 </Button>
@@ -556,80 +517,66 @@ export function CampaignNetwork({ campaignId }: CampaignNetworkProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => void fetchNetwork()}
+                  title="Reload network data"
                   disabled={isLoading}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw
+                    className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")}
+                  />
                   Refresh
                 </Button>
               </div>
             </div>
-            {error && (
-              <div className="rounded-lg bg-error/10 p-4 text-sm text-error">
-                {error}
-              </div>
-            )}
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-base-200 p-4 shadow-lg">
-              <div
-                ref={canvasContainerRef}
-                className="relative h-[400px] w-full rounded-xl bg-base-100 sm:h-[500px] lg:h-[600px]"
-              >
+
+          <CardContent className="flex-1 min-h-[600px]">
+            <div ref={canvasContainerRef} className="relative h-[600px] w-full">
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-base-100/80">
+                  <div className="flex flex-col items-center gap-2">
+                    <RefreshCw className="h-6 w-6 animate-spin text-base-content/60" />
+                    <p className="text-sm text-base-content/70">Loading network...</p>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-red-500 text-sm">{error}</p>
+                </div>
+              )}
+
+              {!isLoading && !error && processedData && (
                 <ForceGraph2D
                   ref={graphRef}
-                  width={canvasSize.width || undefined}
-                  height={canvasSize.height || 600}
+                  width={canvasSize.width}
+                  height={canvasSize.height}
                   graphData={processedData}
-                  backgroundColor="transparent"
-                  nodeLabel={(node: ForceGraphNode) =>
-                    `${node.name} (${node.type})`
-                  }
+                  nodeLabel="name"
                   nodeCanvasObject={nodeCanvasObject}
-                  linkColor={() => "rgba(148, 163, 184, 0.7)"}
-                  linkLabel={(link: ForceGraphLink) => link.label}
-                  linkDirectionalArrowLength={4}
-                  linkDirectionalArrowRelPos={1}
-                  linkDirectionalParticles={1}
-                  linkDirectionalParticleSpeed={0.005}
-                  cooldownTicks={100}
-                  d3AlphaDecay={0.02}
-                  d3VelocityDecay={0.3}
                   onNodeClick={onNodeClick}
                   onNodeHover={onNodeHover}
                   onNodeDrag={handleNodeDrag}
                   onNodeDragEnd={handleNodeDragEnd}
                   onEngineStop={handleEngineStop}
+                  linkWidth={0.8}
+                  linkDirectionalParticles={0}
+                  linkDirectionalParticleWidth={0}
+                  linkColor={(link) =>
+                    RELATIONSHIP_COLORS[link.relation] || "#6b7280"
+                  }
+                  enableNodeDrag
                 />
-
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-base-100/80">
-                    <span className="loading loading-spinner loading-lg text-primary" />
-                  </div>
-                )}
-
-                {!isLoading && processedData.nodes.length === 0 && !error && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-base-100/80 text-center text-base-content/70">
-                    <p className="text-lg font-semibold text-base-content">
-                      No entities connected yet
-                    </p>
-                    <p className="text-sm">
-                      Add adventures, characters, or sessions to see them mapped
-                      here.
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="h-full border border-base-200 bg-base-100">
-          <CardHeader className="border-b border-base-200 pb-4">
+        <Card className="border border-base-200 bg-base-100">
+          <CardHeader>
             <CardTitle>Node Details</CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            {renderSelectedNodeDetails()}
-          </CardContent>
+          <CardContent>{renderSelectedNodeDetails()}</CardContent>
         </Card>
       </div>
     </div>

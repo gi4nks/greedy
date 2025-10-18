@@ -24,7 +24,7 @@ import { WikiEntity } from "@/lib/types/wiki";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
-import { formatDate } from "@/lib/utils/date";
+import { formatDate, formatUIDate } from "@/lib/utils/date";
 
 interface LocationPageProps {
   params: Promise<{ id: string; locationId: string }>;
@@ -115,6 +115,7 @@ async function getLocation(locationId: number) {
       rawContent: wikiArticles.rawContent,
       parsedData: wikiArticles.parsedData,
       wikiUrl: wikiArticles.wikiUrl,
+      importedFrom: wikiArticles.importedFrom,
       relationshipType: wikiArticleEntities.relationshipType,
       relationshipData: wikiArticleEntities.relationshipData,
     })
@@ -138,6 +139,7 @@ async function getLocation(locationId: number) {
     description: entity.rawContent || "", // Map rawContent to description
     parsedData: entity.parsedData,
     wikiUrl: entity.wikiUrl || undefined,
+    importedFrom: entity.importedFrom,
     relationshipType: entity.relationshipType || undefined,
     relationshipData: entity.relationshipData,
   }));
@@ -357,9 +359,9 @@ function LocationDetail({ location }: { location: LocationData }) {
                 </div>
 
                 {item.description && (
-                  <p className="mt-3 text-sm text-base-content/80 whitespace-pre-wrap">
-                    {item.description}
-                  </p>
+                  <div className="mt-3 text-sm text-base-content/80 prose prose-sm max-w-none dark:prose-invert">
+                    <MarkdownRenderer content={item.description} />
+                  </div>
                 )}
 
                 {(item.source || item.notes) && (
@@ -468,7 +470,7 @@ function LocationInfo({ location }: { location: LocationData }) {
                 Created
               </div>
               <div className="text-sm">
-                {new Date(location.createdAt).toLocaleDateString()}
+                {formatUIDate(location.createdAt)}
               </div>
             </div>
           )}
@@ -479,7 +481,7 @@ function LocationInfo({ location }: { location: LocationData }) {
                 Last Updated
               </div>
               <div className="text-sm">
-                {new Date(location.updatedAt).toLocaleDateString()}
+                {formatUIDate(location.updatedAt)}
               </div>
             </div>
           )}

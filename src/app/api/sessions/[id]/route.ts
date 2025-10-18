@@ -30,6 +30,7 @@ export async function GET(
         contentType: wikiArticles.contentType,
         wikiUrl: wikiArticles.wikiUrl,
         description: wikiArticles.rawContent, // Map rawContent to description for frontend compatibility
+        importedFrom: wikiArticles.importedFrom,
         parsedData: wikiArticles.parsedData,
         relationshipType: wikiArticleEntities.relationshipType,
         relationshipData: wikiArticleEntities.relationshipData,

@@ -50,7 +50,7 @@ export default async function CreateCharacterPage({
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
@@ -68,7 +68,7 @@ export default async function CreateCharacterPage({
         </p>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardContent className="p-6">
           <CharacterForm campaignId={campaignId} mode="create" />
         </CardContent>
@@ -79,13 +79,13 @@ export default async function CreateCharacterPage({
 
 function CreateCharacterSkeleton() {
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto p-6">
       <div className="mb-6">
         <Skeleton className="h-8 w-64 mb-4" />
         <Skeleton className="h-6 w-48" />
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardContent className="p-6">
           <div className="space-y-6">
             <div className="card bg-base-100 shadow-sm">

@@ -200,9 +200,9 @@ export default async function AdventurePage({ params }: AdventurePageProps) {
                 </div>
 
                 {item.description && (
-                  <p className="mt-3 text-sm text-base-content/80 whitespace-pre-wrap">
-                    {item.description}
-                  </p>
+                  <div className="mt-3 text-sm text-base-content/80 prose prose-sm max-w-none dark:prose-invert">
+                    <MarkdownRenderer content={item.description} />
+                  </div>
                 )}
 
                 {(item.source || item.notes) && (
