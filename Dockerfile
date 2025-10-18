@@ -47,9 +47,12 @@ RUN addgroup -g 1001 nodejs && adduser -D -u 1001 -G nodejs nextjs && \
     chown -R nextjs:nodejs /app
 
 # Copy the standalone output preserving the structure Next.js creates
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# Copy public assets
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
 USER nextjs
 EXPOSE 3000
-# Start app
-CMD ["npm", "run", "start"]
+ENV PORT=3000
+CMD ["node", "server.js"]
