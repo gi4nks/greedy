@@ -32,6 +32,7 @@ import { ImageManager } from "@/components/ui/image-manager";
 import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import WikiContent from "@/components/ui/wiki-content";
 import { formatUIDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 
@@ -64,6 +65,7 @@ interface CharacterFormProps {
       wikiUrl?: string;
       description?: string; // Added description field mapped from rawContent
       parsedData?: unknown;
+      importedFrom?: string;
       relationshipType?: string;
       relationshipData?: unknown;
     }>;
@@ -362,7 +364,7 @@ export default function CharacterForm({
       .map((monster) => ({
         id: monster.id,
         name: monster.title,
-        type: (monster.parsedData as { type?: string })?.type || "monster",
+        type: monster.contentType,
         challengeRating:
           (monster.parsedData as { challengeRating?: string })
             ?.challengeRating || "",
@@ -378,6 +380,7 @@ export default function CharacterForm({
       rarity: string;
       type: string;
       description: string;
+      importedFrom?: string;
     }>
   >(
     character?.wikiEntities
@@ -386,8 +389,9 @@ export default function CharacterForm({
         id: item.id,
         name: item.title,
         rarity: (item.parsedData as { rarity?: string })?.rarity || "",
-        type: (item.parsedData as { type?: string })?.type || "",
-        description: item.description || "", // Use description field (mapped from rawContent)
+        type: item.contentType,
+        description: item.description || "",
+        importedFrom: item.importedFrom,
       })) || [],
   );
 
@@ -1431,8 +1435,9 @@ export default function CharacterForm({
                           </div>
                           {isExpanded && item.description && (
                             <div className="px-3 pb-3">
-                              <MarkdownRenderer
+                              <WikiContent
                                 content={item.description}
+                                importedFrom={item.importedFrom}
                                 className="prose-sm"
                               />
                             </div>

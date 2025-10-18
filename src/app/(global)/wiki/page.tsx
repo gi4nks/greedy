@@ -839,8 +839,26 @@ export default function WikiImport() {
                                     );
                                     let parsedData = {};
 
-                                    // Parse the content based on category
-                                    if (fullContent?.content) {
+                                    // For 5e.tools items, use the already parsed data from load5eToolsContent
+                                    if (article.id >= 5000000 && fullContent) {
+                                      // The parsedData is already available from load5eToolsContent
+                                      // We need to extract it from the formatted content or store it properly
+                                      const is5eTools = article.id >= 5000000;
+                                      if (is5eTools) {
+                                        // For 5e.tools items, we need to re-parse using the correct service
+                                        let searchResults: any[] = [];
+                                        if (article.url.includes("/items/")) {
+                                          searchResults = await DnD5eToolsService.searchMagicItems();
+                                        }
+                                        const item = searchResults.find(
+                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                        );
+                                        if (item) {
+                                          parsedData = DnD5eToolsService.parseMagicItemForImport(item);
+                                        }
+                                      }
+                                    } else if (fullContent?.content) {
+                                      // Parse the content based on category for AD&D 2e wiki
                                       if (category === "spell") {
                                         parsedData = WikiDataService.parseSpellData(
                                           fullContent.content,

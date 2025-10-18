@@ -78,6 +78,7 @@ async function getCharacter(characterId: number) {
             'wikiUrl', ${wikiArticles.wikiUrl},
             'description', ${wikiArticles.rawContent},
             'parsedData', ${wikiArticles.parsedData},
+            'importedFrom', ${wikiArticles.importedFrom},
             'relationshipType', ${wikiArticleEntities.relationshipType},
             'relationshipData', ${wikiArticleEntities.relationshipData}
           )
