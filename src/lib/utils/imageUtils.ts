@@ -29,7 +29,7 @@ const ALLOWED_TYPES = [
   "image/gif",
 ];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const IMAGES_DIR = "/public/images";
+const IMAGES_DIR = "public/images";
 
 // Optimization settings
 const OPTIMIZATION_CONFIG = {
