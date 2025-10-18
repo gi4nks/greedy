@@ -29,7 +29,7 @@ COPY public/ ./public/
 COPY package*.json ./
 COPY next.config.mjs ./
 COPY postcss.config.cjs ./
-COPY tailwind.config.js ./
+COPY tailwind.config.mjs ./
 COPY tsconfig.json ./
 COPY --from=deps /app/node_modules ./node_modules
 
