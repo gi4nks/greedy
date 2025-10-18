@@ -49,6 +49,9 @@ RUN addgroup -g 1001 nodejs && adduser -D -u 1001 -G nodejs nextjs && \
 # Copy the standalone output preserving the structure Next.js creates
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
+# Copy static assets
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
 # Copy public assets
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
