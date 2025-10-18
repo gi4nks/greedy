@@ -64,6 +64,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
       role: characters.role,
       npcRelationships: characters.npcRelationships,
       classes: characters.classes,
+      items: characters.items,
       description: characters.description,
       tags: characters.tags,
       images: characters.images,
@@ -71,6 +72,8 @@ export async function getCharacterWithAllEntities(characterId: number) {
       updatedAt: characters.updatedAt,
       // Adventure fields
       adventure_id: adventures.id,
+      adventure_campaignId: adventures.campaignId,
+      adventure_slug: adventures.slug,
       adventure_title: adventures.title,
       adventure_description: adventures.description,
       adventure_startDate: adventures.startDate,
@@ -117,7 +120,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
       rarity: magicItems.rarity,
       type: magicItems.type,
       description: magicItems.description,
-      source: magicItemAssignments.source,
+      source: sql<string>`COALESCE(${magicItemAssignments.source}, 'manual')`.as('source'), // Ensure non-null with default
       notes: magicItemAssignments.notes,
       metadata: magicItemAssignments.metadata,
       assignedAt: magicItemAssignments.assignedAt,
@@ -131,6 +134,12 @@ export async function getCharacterWithAllEntities(characterId: number) {
         eq(magicItemAssignments.entityId, characterId),
       ),
     );
+
+  // Cast source to the expected union type
+  const typedMagicItems = magicItemsResult.map(item => ({
+    ...item,
+    source: item.source as "manual" | "wiki"
+  }));
 
   // Get wiki entities in a single query
   const wikiEntitiesResult = await db
@@ -152,6 +161,14 @@ export async function getCharacterWithAllEntities(characterId: number) {
     .where(
       sql`${wikiArticleEntities.entityType} = 'character' AND ${wikiArticleEntities.entityId} = ${characterId}`,
     );
+
+  // Convert null wikiUrl to undefined to match WikiEntity type
+  const typedWikiEntities = wikiEntitiesResult.map(entity => ({
+    ...entity,
+    wikiUrl: entity.wikiUrl || undefined,
+    description: entity.description || undefined,
+    relationshipType: entity.relationshipType || undefined,
+  }));
 
   // Transform the flat result into the expected nested structure
   const character = {
@@ -193,6 +210,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
     role: characterData.role,
     npcRelationships: characterData.npcRelationships,
     classes: characterData.classes,
+    items: characterData.items,
     description: characterData.description,
     tags: characterData.tags,
     images: characterData.images,
@@ -202,7 +220,9 @@ export async function getCharacterWithAllEntities(characterId: number) {
     adventure: characterData.adventure_id
       ? {
           id: characterData.adventure_id,
-          title: characterData.adventure_title,
+          campaignId: characterData.adventure_campaignId,
+          slug: characterData.adventure_slug,
+          title: characterData.adventure_title!, // Assert non-null since database field is NOT NULL
           description: characterData.adventure_description,
           startDate: characterData.adventure_startDate,
           endDate: characterData.adventure_endDate,
@@ -218,7 +238,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
           gameEditionId: characterData.campaign_gameEditionId,
           gameEditionName: characterData.gameEdition_name,
           gameEditionVersion: characterData.gameEdition_version,
-          title: characterData.campaign_title,
+          title: characterData.campaign_title!, // Assert non-null since database field is NOT NULL
           description: characterData.campaign_description,
           status: characterData.campaign_status,
           startDate: characterData.campaign_startDate,
@@ -228,8 +248,8 @@ export async function getCharacterWithAllEntities(characterId: number) {
           updatedAt: characterData.campaign_updatedAt,
         }
       : null,
-    magicItems: magicItemsResult,
-    wikiEntities: wikiEntitiesResult,
+    magicItems: typedMagicItems,
+    wikiEntities: typedWikiEntities,
   };
 
   return character;

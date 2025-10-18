@@ -15,19 +15,8 @@ interface CharacterPageProps {
 }
 
 async function getCharacterWithEntities(characterId: number) {
-  // Use the API to get character with all assigned entities
-  const response = await fetch(
-    `/api/characters/${characterId}`,
-    {
-      cache: "no-store", // Ensure fresh data
-    },
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return response.json();
+  // Use the database function directly instead of API call
+  return await getCharacterWithAllEntities(characterId);
 }
 
 async function getCharacter(characterId: number) {
@@ -56,10 +45,9 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
 
   return (
     <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
-        campaignTitle={character.campaign?.title}
+        campaignTitle={character.campaign?.title || undefined}
         sectionItems={[
           { label: "Characters", href: `/campaigns/${campaignId}/characters` },
           { label: character.name },
