@@ -82,69 +82,76 @@ status:
 # Docker Commands
 
 # Build Docker images for production
-docker-build:
-	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
-	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
-	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
-	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
+# Docker targets
+docker-build-lnx: ## Build and push multi-arch Docker image
+	@echo "$(BLUE)Building multi-arch Docker image for ARM & AMD64...$(NC)"
+	@docker buildx build --platform linux/amd64,linux/arm64 \
+		-t 192.168.1.150:5000/greedy:latest \
+		--push .
+	@echo "$(GREEN)Docker image built and pushed successfully!$(NC)"
+# docker-build:
+# 	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
+# 	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
+# 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🐳 Building Docker image using docker-compose...$(NC)"
-	@docker compose -f docker-compose.app.yml build --no-cache 2>&1 || (echo "$(RED)❌ Build failed.$(NC)" && exit 1)
-	@echo "$(BLUE)🏷️  Tagging image for registry...$(NC)"
-	@docker tag greedy-greedy:latest $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Tagging failed.$(NC)" && exit 1)
-	@echo "$(BLUE)🐳 Pushing Docker image...$(NC)"
-	@docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Push failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🐳 Building Docker image using docker-compose...$(NC)"
+# 	@docker compose -f docker-compose.app.yml build --no-cache 2>&1 || (echo "$(RED)❌ Build failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🏷️  Tagging image for registry...$(NC)"
+# 	@docker tag greedy-greedy:latest $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Tagging failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🐳 Pushing Docker image...$(NC)"
+# 	@docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG) 2>&1 || (echo "$(RED)❌ Push failed.$(NC)" && exit 1)
 
-	@echo "$(GREEN)✅ Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
+# 	@echo "$(GREEN)✅ Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
 
 # Build multi-platform Docker images (ARM64 + AMD64)
-docker-build-multi: ## Build and push multi-platform Docker image
-	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
-	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
-	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
-	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
+# docker-build-multi: ## Build and push multi-platform Docker image
+# 	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
+# 	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
+# 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🔧 Checking Docker Buildx...$(NC)"
-	@docker buildx version >/dev/null 2>&1 || (echo "$(RED)❌ Docker Buildx not available. Please enable Docker Desktop experimental features.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker Buildx...$(NC)"
+# 	@docker buildx version >/dev/null 2>&1 || (echo "$(RED)❌ Docker Buildx not available. Please enable Docker Desktop experimental features.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🏗️  Creating buildx builder...$(NC)"
-	@docker buildx create --use --name multi-platform-builder 2>/dev/null || docker buildx use multi-platform-builder 2>/dev/null || true
+# 	@echo "$(BLUE)🏗️  Creating buildx builder...$(NC)"
+# 	@docker buildx create --use --name multi-platform-builder 2>/dev/null || docker buildx use multi-platform-builder 2>/dev/null || true
 
-	@echo "$(BLUE)🐳 Building and pushing multi-platform Docker image ($(PLATFORMS))...$(NC)"
-	@docker buildx build --platform $(PLATFORMS) --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ Multi-platform build failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🐳 Building and pushing multi-platform Docker image ($(PLATFORMS))...$(NC)"
+# 	@docker buildx build --platform $(PLATFORMS) --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ Multi-platform build failed.$(NC)" && exit 1)
 
-	@echo "$(GREEN)✅ Multi-platform Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
-	@echo "$(BLUE)ℹ️  Image supports: $(PLATFORMS)$(NC)"
+# 	@echo "$(GREEN)✅ Multi-platform Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
+# 	@echo "$(BLUE)ℹ️  Image supports: $(PLATFORMS)$(NC)"
 
-# Build Docker image for AMD64 platform specifically
-docker-build-amd64: ## Build and push Docker image for AMD64 platform
-	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
-	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
-	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
-	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
+# # Build Docker image for AMD64 platform specifically
+# docker-build-amd64: ## Build and push Docker image for AMD64 platform
+# 	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
+# 	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
+# 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🔧 Checking Docker Buildx...$(NC)"
-	@docker buildx version >/dev/null 2>&1 || (echo "$(RED)❌ Docker Buildx not available. Please enable Docker Desktop experimental features.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker Buildx...$(NC)"
+# 	@docker buildx version >/dev/null 2>&1 || (echo "$(RED)❌ Docker Buildx not available. Please enable Docker Desktop experimental features.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🏗️  Creating buildx builder...$(NC)"
-	@docker buildx create --use --name amd64-builder 2>/dev/null || docker buildx use amd64-builder 2>/dev/null || true
+# 	@echo "$(BLUE)🏗️  Creating buildx builder...$(NC)"
+# 	@docker buildx create --use --name amd64-builder 2>/dev/null || docker buildx use amd64-builder 2>/dev/null || true
 
-	@echo "$(BLUE)🐳 Building and pushing AMD64 Docker image...$(NC)"
-	@docker buildx build --platform linux/amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🐳 Building and pushing AMD64 Docker image...$(NC)"
+# 	@docker buildx build --platform linux/amd64 --push -t $(REGISTRY)/$(IMAGE_NAME):$(TAG) -f Dockerfile . 2>&1 || (echo "$(RED)❌ AMD64 build failed.$(NC)" && exit 1)
 
-	@echo "$(GREEN)✅ AMD64 Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
+# 	@echo "$(GREEN)✅ AMD64 Docker image built and pushed successfully to $(REGISTRY)/$(IMAGE_NAME):$(TAG)!$(NC)"
 
-# Build local Docker image (for testing)
-docker-build-local: ## Build Docker image locally without pushing
-	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
-	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
-	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
-	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
+# # Build local Docker image (for testing)
+# docker-build-local: ## Build Docker image locally without pushing
+# 	@echo "$(BLUE)🔧 Checking Docker availability...$(NC)"
+# 	@docker --version >/dev/null 2>&1 || (echo "$(RED)❌ Docker CLI not found. Please install Docker.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🔧 Checking Docker daemon...$(NC)"
+# 	@(docker ps >/dev/null 2>&1 && echo "$(GREEN)✅ Docker daemon is running$(NC)") || (echo "$(RED)❌ Docker daemon not responding. Please ensure Docker Desktop is fully started.$(NC)" && exit 1)
 
-	@echo "$(BLUE)🐳 Building local Docker image...$(NC)"
-	@docker build -f Dockerfile -t $(IMAGE_NAME):local . 2>&1 || (echo "$(RED)❌ Local build failed.$(NC)" && exit 1)
+# 	@echo "$(BLUE)🐳 Building local Docker image...$(NC)"
+# 	@docker build -f Dockerfile -t $(IMAGE_NAME):local . 2>&1 || (echo "$(RED)❌ Local build failed.$(NC)" && exit 1)
 
-	@echo "$(GREEN)✅ Local Docker image built successfully as $(IMAGE_NAME):local!$(NC)"
+# 	@echo "$(GREEN)✅ Local Docker image built successfully as $(IMAGE_NAME):local!$(NC)"
 
 
 # Start Docker development environment
