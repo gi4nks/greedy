@@ -169,8 +169,10 @@ async function generateThumbnail(
     const thumbnailDir = join(process.cwd(), IMAGES_DIR, entityType);
     if (!existsSync(thumbnailDir)) {
       await mkdir(thumbnailDir, { recursive: true });
+      logger.info(`Created thumbnail directory: ${thumbnailDir}`);
     }
 
+    logger.info(`Generating thumbnail: ${thumbnailPath}`);
     await sharp(buffer)
       .resize(
         OPTIMIZATION_CONFIG.thumbnail.width,
@@ -183,6 +185,7 @@ async function generateThumbnail(
       .jpeg(OPTIMIZATION_CONFIG.thumbnail)
       .toFile(thumbnailPath);
 
+    logger.info(`Thumbnail generated successfully: ${thumbnailFilename}`);
     return thumbnailFilename;
   } catch (error) {
     logger.error("Thumbnail generation failed", { error, filename, entityType });
@@ -246,16 +249,16 @@ export async function uploadImage(
     return {
       success: true,
       filename,
-      url: `/images/${entityType}/${filename}`,
+      url: `/api/images/serve/${entityType}/${filename}`,
       thumbnailUrl: thumbnailFilename
-        ? `/images/${entityType}/${thumbnailFilename}`
+        ? `/api/images/serve/${entityType}/${thumbnailFilename}`
         : undefined,
     };
   } catch (error) {
     logger.error("Error uploading image", error);
     return {
       success: false,
-      error: "Failed to upload image",
+      error: `Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

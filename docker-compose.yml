@@ -6,6 +6,7 @@ services:
     image: greedy:amd64
     pull_policy: never
     restart: unless-stopped
+    user: "0:0"
     ports:
       - "3001:3000"
     environment:
