@@ -11,8 +11,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATA_DIR: /home/gianluca/projects/greedy/data
-      IMAGES_DIR: /home/gianluca/projects/greedy/data/images
+      DATA_DIR: database
+      IMAGES_DIR: public/images
     volumes:
       - /home/gianluca/projects/greedy/data:/app/database
       - /home/gianluca/projects/greedy/data/images:/app/public/images
