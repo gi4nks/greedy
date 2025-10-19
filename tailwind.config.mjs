@@ -5,6 +5,6 @@ export default {
   },
   plugins: ['daisyui'],
   daisyui: {
-    themes: ['emerald'],
+    themes: ['corporate'],
   },
 }

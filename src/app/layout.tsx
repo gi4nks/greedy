@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="emerald" data-scroll-behavior="smooth">
+    <html lang="en" data-theme="corporate" data-scroll-behavior="smooth">
       <body className="min-h-screen bg-base-200">
         <Navigation />
         <main>{children}</main>
