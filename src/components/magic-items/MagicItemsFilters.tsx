@@ -74,12 +74,12 @@ export function MagicItemsFilters({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded-lg border border-base-200 bg-base-100 p-4 shadow-sm"
+      className="rounded-lg border border-base-200 bg-base-100 p-2 shadow-sm text-sm"
     >
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
         <div className="md:col-span-2">
           <label
-            className="text-sm font-medium text-base-content/70"
+            className="text-xs font-medium text-base-content/70"
             htmlFor="magic-item-search"
           >
             Search
@@ -87,16 +87,17 @@ export function MagicItemsFilters({
           <Input
             id="magic-item-search"
             value={search}
-            placeholder="Search by name or description"
+            placeholder="Search by name..."
             onChange={(event) => setSearch(event.target.value)}
+            className="h-8 text-sm"
           />
         </div>
 
         <div>
-          <Label htmlFor="magic-item-type">Type</Label>
+          <Label htmlFor="magic-item-type" className="text-xs">Type</Label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger id="magic-item-type" className="w-full">
-              <SelectValue placeholder="All types" />
+            <SelectTrigger id="magic-item-type" className="w-full h-8 text-sm">
+              <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All types</SelectItem>
@@ -110,10 +111,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <Label htmlFor="magic-item-rarity">Rarity</Label>
+          <Label htmlFor="magic-item-rarity" className="text-xs">Rarity</Label>
           <Select value={rarity} onValueChange={setRarity}>
-            <SelectTrigger id="magic-item-rarity" className="w-full">
-              <SelectValue placeholder="All rarities" />
+            <SelectTrigger id="magic-item-rarity" className="w-full h-8 text-sm">
+              <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All rarities</SelectItem>
@@ -127,9 +128,9 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <Label htmlFor="magic-item-entity-type">Entity type</Label>
+          <Label htmlFor="magic-item-entity-type" className="text-xs">Entity</Label>
           <Select value={entityType} onValueChange={setEntityType}>
-            <SelectTrigger id="magic-item-entity-type" className="w-full">
+            <SelectTrigger id="magic-item-entity-type" className="w-full h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -143,10 +144,10 @@ export function MagicItemsFilters({
         </div>
 
         <div>
-          <Label htmlFor="magic-item-campaign">Campaign</Label>
+          <Label htmlFor="magic-item-campaign" className="text-xs">Campaign</Label>
           <Select value={campaignId} onValueChange={setCampaignId}>
-            <SelectTrigger id="magic-item-campaign" className="w-full">
-              <SelectValue placeholder="All campaigns" />
+            <SelectTrigger id="magic-item-campaign" className="w-full h-8 text-sm">
+              <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All campaigns</SelectItem>
@@ -160,16 +161,16 @@ export function MagicItemsFilters({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button type="submit" variant="primary" className="gap-2" size="sm">
-          Apply filters
+      <div className="mt-2 flex flex-wrap gap-1">
+        <Button type="submit" variant="primary" className="gap-1" size="xs">
+          Apply
         </Button>
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="xs"
           onClick={handleReset}
-          className="gap-2"
+          className="gap-1"
         >
           Reset
         </Button>

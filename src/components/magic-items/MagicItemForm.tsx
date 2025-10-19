@@ -100,10 +100,10 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create New Magic Item</CardTitle>
+        <CardTitle>Magic Item Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form action={handleSubmit} className="space-y-6">
+        <form action={handleSubmit} className="space-y-4">
           <input type="hidden" name="images" value={JSON.stringify(images)} />
           {mode === "edit" && magicItem && (
             <input type="hidden" name="id" value={magicItem.id} />
@@ -130,7 +130,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
                 id="magic-item-type"
                 name="type"
                 defaultValue={magicItem?.type ?? ""}
-                placeholder="e.g. Weapon, Wondrous Item"
+                placeholder="e.g. Weapon"
               />
               {errors?.type && (
                 <span className="text-sm text-error">{errors.type[0]}</span>
@@ -144,7 +144,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
                 name="rarity"
                 list="magic-item-rarity-options"
                 defaultValue={magicItem?.rarity ?? ""}
-                placeholder="Select or enter rarity"
+                placeholder="Select rarity"
               />
               <datalist id="magic-item-rarity-options">
                 {RARITY_OPTIONS.map((rarity) => (
@@ -163,7 +163,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
               id="magic-item-description"
               name="description"
               defaultValue={magicItem?.description ?? ""}
-              placeholder="Describe the item's appearance, abilities, and lore."
+              placeholder="Describe the item..."
               rows={6}
             />
             {errors?.description && (
@@ -179,12 +179,11 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
               id="magic-item-properties"
               name="properties"
               defaultValue={magicItem?.properties ?? ""}
-              placeholder='{"charges": 3, "damage": "1d8 radiant"}'
+              placeholder='{"charges": 3}'
               rows={6}
             />
             <p className="text-xs text-base-content/60">
-              Provide structured data to power future automations. Leave blank
-              if not needed.
+              Structured data for automations (optional)
             </p>
             {errors?.properties && (
               <span className="text-sm text-error">{errors.properties[0]}</span>
@@ -202,7 +201,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
             </Label>
           </div>
 
-          <Card>
+          <Card className="mt-4">
             <CardHeader>
               <CardTitle>Images</CardTitle>
             </CardHeader>
@@ -217,8 +216,8 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
           </Card>
         </form>
       </CardContent>
-      <CardFooter>
-        <div className="flex justify-end gap-4">
+      <CardFooter className="pt-3">
+        <div className="flex justify-end gap-2 w-full">
           <Button
             type="button"
             variant="outline"

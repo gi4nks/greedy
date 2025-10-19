@@ -199,7 +199,7 @@ export default async function MagicItemDetailPage({
   const images = parseImages(item.images);
 
   return (
-    <>
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <DynamicBreadcrumb
         items={[
           { label: "Magic Items", href: "/magic-items" },
@@ -208,7 +208,7 @@ export default async function MagicItemDetailPage({
       />
 
       {/* Magic Item Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold">{item.name}</h1>
@@ -252,13 +252,13 @@ export default async function MagicItemDetailPage({
 
       {/* Images */}
       {images.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-6">
           <EntityImageCarousel images={images} entityType="magic-item" className="max-w-2xl mx-auto" />
         </div>
       )}
 
       {/* Description */}
-      <div className="mb-8">
+      <div className="mb-6">
         <Card className="border-base-200">
           <CardHeader>
             <CardTitle>Description</CardTitle>
@@ -363,6 +363,6 @@ export default async function MagicItemDetailPage({
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

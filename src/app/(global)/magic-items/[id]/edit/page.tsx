@@ -139,14 +139,15 @@ export default async function EditMagicItemPage({
   // Only allow editing of manual items, not wiki items
   if (item.source === "wiki") {
     return (
-      <>
-      <DynamicBreadcrumb
-        items={[
-          { label: "Magic Items", href: "/magic-items" },
-          { label: item.name, href: `/magic-items/${itemId}` },
-          { label: "Edit" },
-        ]}
-      />        <div className="flex justify-between items-center mb-6">
+      <div className="container mx-auto px-4 py-6 md:p-6">
+        <DynamicBreadcrumb
+          items={[
+            { label: "Magic Items", href: "/magic-items" },
+            { label: item.name, href: `/magic-items/${itemId}` },
+            { label: "Edit" },
+          ]}
+        />
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Edit Magic Item</h1>
             <p className="text-base-content/70 mt-2">
@@ -173,7 +174,7 @@ export default async function EditMagicItemPage({
             </div>
           </CardContent>
         </Card>
-      </>
+      </div>
     );
   }
 
@@ -183,19 +184,21 @@ export default async function EditMagicItemPage({
   const properties = serializeProperties(item.properties);
 
   return (
-    <>
-        <DynamicBreadcrumb
-          items={[
-            { label: "Magic Items", href: "/magic-items" },
-            { label: item.name, href: `/magic-items/${itemId}` },
-            { label: "Edit" },
-          ]}
-        />      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Edit Magic Item</h1>
-          <p className="text-base-content/70 mt-2">
-            Update the metadata, description, and properties for {item.name}.
-          </p>
+    <div className="container mx-auto px-4 py-6 md:p-6">
+      <DynamicBreadcrumb
+        items={[
+          { label: "Magic Items", href: "/magic-items" },
+          { label: item.name, href: `/magic-items/${itemId}` },
+          { label: "Edit" },
+        ]}
+      />
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-8 h-8" />
+          <div>
+            <h1 className="text-3xl font-bold">Edit: {item.name}</h1>
+            <p className="text-base-content/70 mt-2">Update item details</p>
+          </div>
         </div>
       </div>
 
@@ -220,8 +223,8 @@ export default async function EditMagicItemPage({
           {/* Assignment Management */}
           <div className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Assignment Management</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle>Assignments</CardTitle>
               </CardHeader>
               <CardContent>
                 <MagicItemAssignmentComposer
@@ -234,7 +237,7 @@ export default async function EditMagicItemPage({
 
             {/* Current Assignments */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle>Current Assignments</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -299,9 +302,9 @@ export default async function EditMagicItemPage({
                   View Item
                 </Button>
               </Link>
-            </div>
           </div>
         </div>
-      </>
-    );
-  }
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { MagicItemsFilters } from "@/components/magic-items/MagicItemsFilters";
 import { MagicItemsList } from "@/components/magic-items/MagicItemsList";
 import { Button } from "@/components/ui/button";
@@ -166,16 +169,19 @@ export default async function MagicItemsPage({
   ]);
 
   return (
-    <>
+    <div className="container mx-auto px-4 py-6 md:p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Magic Items" }]} />
 
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Magic Items</h1>
-          <p className="text-base-content/70 mt-2">
-            Manage and track magical gear across your campaigns
-          </p>
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-8 h-8" />
+          <div>
+            <h1 className="text-3xl font-bold">Magic Items</h1>
+            <p className="text-base-content/70 mt-2">
+              Manage and track magical gear across your campaigns
+            </p>
+          </div>
         </div>
         <Link href="/magic-items/new">
           <Button className="gap-2" variant="primary" size="sm">
@@ -185,7 +191,7 @@ export default async function MagicItemsPage({
         </Link>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-3">
         <Suspense fallback={null}>
           <MagicItemsFilters
             initialFilters={initialFilters}
@@ -197,6 +203,6 @@ export default async function MagicItemsPage({
       </div>
 
       <MagicItemsList items={items} />
-    </>
+    </div>
   );
 }

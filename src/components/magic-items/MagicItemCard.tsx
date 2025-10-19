@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Edit, Trash2, View } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
@@ -51,57 +51,53 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
 
   return (
     <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold line-clamp-1">
+      <div className="p-5 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="card-title text-lg font-bold line-clamp-2">
             {item.name}
-          </CardTitle>
+          </h3>
           <Badge
             variant={item.source === "wiki" ? "default" : "outline"}
-            className={`capitalize ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
+            className={`capitalize text-xs whitespace-nowrap ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
           >
             {item.source}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        <div className="space-y-4 flex-1">
-          <div className="flex flex-wrap gap-2 text-xs text-base-content/70">
+      </div>
+      <CardContent className="flex-1 flex flex-col p-5 pt-0">
+        <div className="space-y-2 flex-1">
+          <div className="flex flex-wrap gap-1 text-xs">
             {item.rarity && (
-              <Badge variant="outline" className="capitalize">
+              <Badge variant="outline" className="capitalize text-xs">
                 {item.rarity}
               </Badge>
             )}
             {item.type && (
-              <Badge variant="secondary" className="capitalize">
+              <Badge variant="secondary" className="capitalize text-xs">
                 {item.type}
               </Badge>
             )}
             {item.attunementRequired && (
-              <Badge variant="secondary" className="bg-emerald-500 text-white">
-                Attunement required
+              <Badge variant="secondary" className="bg-emerald-500 text-white text-xs">
+                Attuned
               </Badge>
             )}
           </div>
 
           {item.description && (
-            <div className="text-base-content/70 line-clamp-3 prose prose-sm max-w-none dark:prose-invert">
-              <MarkdownRenderer content={item.description} />
+            <div className="text-base-content/70 line-clamp-2 max-h-10 text-sm [&>div]:m-0 [&>p]:m-0">
+              <MarkdownRenderer content={item.description} className="!prose-sm [&>*]:!m-0 [&>*]:!p-0" />
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            {assignmentCount > 0 ? (
-              <Badge variant="secondary">
-                Assigned: {assignmentCount}
-              </Badge>
-            ) : (
-              <span className="text-base-content/60">No assignments yet</span>
-            )}
-          </div>
+          {assignmentCount > 0 && (
+            <div className="text-xs text-base-content/60 pt-1">
+              {assignmentCount} assignment{assignmentCount !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
 
-        <div className="flex gap-2 pt-4 mt-auto">
+        <div className="flex gap-2 pt-3 mt-auto">
           <Link href={`/magic-items/${item.id}`} className="flex-1">
             <Button variant="warning" className="gap-2 w-full" size="sm">
               <View className="w-4 h-4" />
