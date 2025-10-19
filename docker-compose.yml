@@ -1,51 +1,29 @@
-services:
-  frontend:
-    build:
-      context: ./frontend
-      target: ${FRONTEND_TARGET:-development}
-      dockerfile: ${FRONTEND_DOCKERFILE:-Dockerfile}
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app:delegated
-      - frontend_node_modules:/app/node_modules
-    environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - VITE_API_URL=${VITE_API_URL:-http://backend:3001}
-    command: sh -c "npm ci --prefer-offline --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
-    profiles:
-      - dev
-    networks:
-      - app-network
+version: "3.9"
 
-  backend:
-    build:
-      context: ./backend
-      target: ${BACKEND_TARGET:-development}
-      dockerfile: ${BACKEND_DOCKERFILE:-Dockerfile}
+services:
+  greedy:
+    container_name: greedy_app
+    image: greedy:amd64
+    pull_policy: never
+    restart: unless-stopped
+    user: "0:0"
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
-    volumes:
-      - ./backend/data:/app/data
-      - ./backend:/app:delegated
-      - backend_node_modules:/app/node_modules
+      - "3001:3000"
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - DB_FILE=/app/data/campaign.db
-      - PORT=${BACKEND_PORT:-3001}
-    command: sh -c "npm ci --prefer-offline --no-audit --no-fund && npm run dev"
-    profiles:
-      - dev
-    networks:
-      - app-network
+      NODE_ENV: production
+      PORT: 3000
+      DATA_DIR: database
+      IMAGES_DIR: public/images
+      NEXT_PUBLIC_APP_URL: http://greedy.local:3002
+    volumes:
+      - /home/gianluca/projects/greedy/data:/app/database
+      - /home/gianluca/projects/greedy/data/images:/app/public/images
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
-  app-network:
+  default:
     driver: bridge
-
-volumes:
-  db_data:
-  frontend_node_modules:
-  backend_node_modules:
