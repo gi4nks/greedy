@@ -139,17 +139,14 @@ export default async function EditMagicItemPage({
   // Only allow editing of manual items, not wiki items
   if (item.source === "wiki") {
     return (
-      <div className="container mx-auto p-6">
-        <DynamicBreadcrumb
-          items={[
-            { label: "Campaigns", href: "/campaigns" },
-            { label: "Magic Items", href: "/magic-items" },
-            { label: item.name, href: `/magic-items/${itemId}` },
-            { label: "Edit" },
-          ]}
-        />
-
-        <div className="flex justify-between items-center mb-6">
+      <>
+      <DynamicBreadcrumb
+        items={[
+          { label: "Magic Items", href: "/magic-items" },
+          { label: item.name, href: `/magic-items/${itemId}` },
+          { label: "Edit" },
+        ]}
+      />        <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Edit Magic Item</h1>
             <p className="text-base-content/70 mt-2">
@@ -176,7 +173,7 @@ export default async function EditMagicItemPage({
             </div>
           </CardContent>
         </Card>
-      </div>
+      </>
     );
   }
 
@@ -186,17 +183,14 @@ export default async function EditMagicItemPage({
   const properties = serializeProperties(item.properties);
 
   return (
-    <div className="container mx-auto p-6">
-      <DynamicBreadcrumb
-        items={[
-          { label: "Campaigns", href: "/campaigns" },
-          { label: "Magic Items", href: "/magic-items" },
-          { label: item.name, href: `/magic-items/${itemId}` },
-          { label: "Edit" },
-        ]}
-      />
-
-      <div className="flex justify-between items-center mb-6">
+    <>
+        <DynamicBreadcrumb
+          items={[
+            { label: "Magic Items", href: "/magic-items" },
+            { label: item.name, href: `/magic-items/${itemId}` },
+            { label: "Edit" },
+          ]}
+        />      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Edit Magic Item</h1>
           <p className="text-base-content/70 mt-2">
@@ -308,6 +302,6 @@ export default async function EditMagicItemPage({
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }

@@ -3,10 +3,10 @@ import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 
 export default function NewMagicItemPage() {
   return (
-    <div className="container mx-auto p-6">
+    <>
       {/* Breadcrumb */}
       <DynamicBreadcrumb
-        sectionItems={[
+        items={[
           { label: "Magic Items", href: "/magic-items" },
           { label: "Create Magic Item" },
         ]}
@@ -20,6 +20,6 @@ export default function NewMagicItemPage() {
       </div>
 
       <MagicItemForm mode="create" />
-    </div>
+    </>
   );
 }

@@ -14,7 +14,7 @@ import { campaigns } from "@/lib/db/schema";
 import { parseImagesJson, type ImageInfo } from "@/lib/utils/imageUtils.client";
 import type { MagicItemAssignableEntity } from "@/lib/magicItems/shared";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { Trash2 } from "lucide-react";
+import { DeleteMagicItemForm } from "@/components/magic-items/DeleteMagicItemForm";
 
 function parseProperties(value: unknown): Record<string, unknown> | null {
   if (!value) {
@@ -173,57 +173,6 @@ function metadataBadges(item: {
   return badges;
 }
 
-function DeleteMagicItemForm({
-  itemId,
-  itemName,
-}: {
-  itemId: number;
-  itemName: string;
-}) {
-  async function handleDelete() {
-    "use server";
-
-    try {
-      await deleteMagicItem(itemId);
-      revalidatePath("/magic-items");
-      // Don't redirect here - let the client handle navigation
-    } catch (error) {
-      console.error("Failed to delete magic item", error);
-      // In Next.js server actions, throwing an error will show it in the UI
-      throw new Error(
-        `Failed to delete magic item "${itemName}". Please try again.`,
-      );
-    }
-  }
-
-  return (
-    <form
-      action={handleDelete}
-      onSubmit={(e) => {
-        // Confirm deletion
-        if (
-          !confirm(
-            `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
-          )
-        ) {
-          e.preventDefault();
-          return;
-        }
-
-        // After successful submission, redirect to magic items list
-        setTimeout(() => {
-          window.location.href = "/magic-items";
-        }, 100);
-      }}
-    >
-      <Button variant="neutral" className="gap-2" size="sm" type="submit">
-        <Trash2 className="w-4 h-4" />
-        Delete
-      </Button>
-    </form>
-  );
-}
-
 export default async function MagicItemDetailPage({
   params,
 }: MagicItemDetailPageProps) {
@@ -250,10 +199,9 @@ export default async function MagicItemDetailPage({
   const images = parseImages(item.images);
 
   return (
-    <div className="container mx-auto p-6">
+    <>
       <DynamicBreadcrumb
         items={[
-          { label: "Campaigns", href: "/campaigns" },
           { label: "Magic Items", href: "/magic-items" },
           { label: item.name },
         ]}
@@ -415,6 +363,6 @@ export default async function MagicItemDetailPage({
           )}
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }
