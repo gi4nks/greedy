@@ -7,9 +7,9 @@ import { z } from "zod";
 // Schema for creating a relation
 const createRelationSchema = z.object({
   campaignId: z.number(),
-  sourceEntityType: z.enum(["character", "location", "quest", "adventure", "session"]),
+  sourceEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
   sourceEntityId: z.number(),
-  targetEntityType: z.enum(["character", "location", "quest", "adventure", "session"]),
+  targetEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
   targetEntityId: z.number(),
   relationType: z.string().min(1),
   description: z.string().optional(),

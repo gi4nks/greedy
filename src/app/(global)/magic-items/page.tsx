@@ -166,7 +166,7 @@ export default async function MagicItemsPage({
   ]);
 
   return (
-    <div className="container mx-auto p-6">
+    <>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Magic Items" }]} />
 
@@ -197,6 +197,6 @@ export default async function MagicItemsPage({
       </div>
 
       <MagicItemsList items={items} />
-    </div>
+    </>
   );
 }

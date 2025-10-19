@@ -98,7 +98,7 @@ export default async function EditQuestPage({ params }: EditQuestPageProps) {
 
   return (
     <Suspense fallback={<EditQuestSkeleton />}>
-      <div className="container mx-auto p-6 max-w-5xl">
+      <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
         <DynamicBreadcrumb
           campaignId={campaignId}
           sectionItems={[
@@ -138,7 +138,7 @@ export default async function EditQuestPage({ params }: EditQuestPageProps) {
 
 function EditQuestSkeleton() {
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="skeleton h-8 w-8 rounded-lg"></div>

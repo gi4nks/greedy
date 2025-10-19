@@ -1186,7 +1186,7 @@ function parsePropertiesInput(value?: string): {
 export async function createMagicItemAction(
   _: MagicItemFormState | undefined,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<ActionResult<MagicItem>> {
   const rawValues = {
     name: (formData.get("name") as string | null) ?? "",
     type: (formData.get("type") as string | null) ?? "",
@@ -1248,7 +1248,7 @@ export async function createMagicItemAction(
     });
 
     revalidatePath("/magic-items");
-    redirect(`/magic-items/${created.id}`);
+    return { success: true, data: created };
   } catch (caught) {
     console.error("Failed to create magic item", caught);
     return {
@@ -1256,14 +1256,12 @@ export async function createMagicItemAction(
       message: "Failed to create magic item. Please try again.",
     };
   }
-
-  return { success: true };
 }
 
 export async function updateMagicItemAction(
   _: MagicItemFormState | undefined,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<ActionResult<MagicItem>> {
   const idValue = formData.get("id");
   const itemId =
     typeof idValue === "string" ? Number.parseInt(idValue, 10) : Number.NaN;
@@ -1344,7 +1342,7 @@ export async function updateMagicItemAction(
 
     revalidatePath("/magic-items");
     revalidatePath(`/magic-items/${itemId}`);
-    redirect(`/magic-items/${itemId}`);
+    return { success: true, data: updated };
   } catch (caught) {
     console.error("Failed to update magic item", caught);
     return {

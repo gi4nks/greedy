@@ -13,6 +13,7 @@ import {
   updateMagicItemAction,
   type MagicItemFormState,
 } from "@/lib/actions/magicItems";
+import { type MagicItem } from "@/lib/db/schema";
 import { ImageManager } from "@/components/ui/image-manager";
 import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import { ActionResult } from "@/lib/types/api";
@@ -64,7 +65,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
     try {
       const action =
         mode === "create" ? createMagicItemAction : updateMagicItemAction;
-      const result: ActionResult = await action(
+      const result: ActionResult<MagicItem | undefined> = await action(
         {} as MagicItemFormState,
         formData,
       );
@@ -82,7 +83,11 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
         toast.success(
           `Magic item ${mode === "create" ? "created" : "updated"} successfully!`,
         );
-        router.push("/magic-items");
+        if (result.data?.id) {
+          router.push(`/magic-items/${result.data.id}`);
+        } else {
+          router.push("/magic-items");
+        }
       }
     } catch (error) {
       console.error("Error saving magic item:", error);

@@ -1,0 +1,68 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+
+interface DeleteMagicItemFormProps {
+  itemId: number;
+  itemName: string;
+}
+
+export function DeleteMagicItemForm({
+  itemId,
+  itemName,
+}: DeleteMagicItemFormProps) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDelete = () => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        setError(null);
+        const response = await fetch(`/api/magic-items/${itemId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(payload?.error ?? "Failed to delete magic item.");
+        }
+
+        router.push("/magic-items");
+      } catch (caught) {
+        console.error("Failed to delete magic item", caught);
+        setError((caught as Error).message || "Failed to delete magic item.");
+      }
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        variant="neutral"
+        className="gap-2"
+        size="sm"
+        onClick={handleDelete}
+        disabled={isPending}
+      >
+        <Trash2 className="w-4 h-4" />
+        {isPending ? "Deleting…" : "Delete"}
+      </Button>
+      {error && <span className="text-xs text-error">{error}</span>}
+    </div>
+  );
+}

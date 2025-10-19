@@ -64,7 +64,7 @@ export default async function CreateAdventurePage({
 
 function CreateAdventureSkeleton() {
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 md:p-6 max-w-4xl">
       <div className="mb-6">
         <Skeleton className="h-8 w-64 mb-4" />
         <Skeleton className="h-6 w-48" />

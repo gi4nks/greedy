@@ -169,7 +169,7 @@ export default async function QuestPage({ params }: QuestPageProps) {
   const { quest, adventure, wikiEntities } = questData;
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 md:p-6 max-w-4xl">
       <div className="mb-6">
         <DynamicBreadcrumb
           items={[

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { locations, adventures } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 
 export async function GET(
   request: Request,
@@ -24,8 +24,16 @@ export async function GET(
         name: locations.name,
       })
       .from(locations)
-      .innerJoin(adventures, eq(locations.adventureId, adventures.id))
-      .where(eq(adventures.campaignId, campaignId))
+      .where(
+        or(
+          eq(locations.campaignId, campaignId),
+          and(
+            eq(locations.adventureId, adventures.id),
+            eq(adventures.campaignId, campaignId)
+          )
+        )
+      )
+      .leftJoin(adventures, eq(locations.adventureId, adventures.id))
       .orderBy(locations.name);
 
     return NextResponse.json(campaignLocations);

@@ -50,7 +50,7 @@ export default async function CreateCharacterPage({
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
@@ -79,7 +79,7 @@ export default async function CreateCharacterPage({
 
 function CreateCharacterSkeleton() {
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <div className="mb-6">
         <Skeleton className="h-8 w-64 mb-4" />
         <Skeleton className="h-6 w-48" />

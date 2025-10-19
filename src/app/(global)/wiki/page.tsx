@@ -195,9 +195,9 @@ function ImportedArticlesTab() {
 
   const renderArticleContent = (article: ImportedArticle): string => {
     if (article.rawContent) {
-      // For adnd2e-wiki articles, rawContent should already be valid HTML
+      // For adnd2e-wiki articles, convert MediaWiki markup to HTML
       if (article.importedFrom === "adnd2e-wiki") {
-        return article.rawContent;
+        return WikiDataService.wikitextToHtml(article.rawContent);
       } else if (article.importedFrom === "dnd5e-tools") {
         // 5e.tools content is already formatted as markdown/HTML
         return article.rawContent;
@@ -404,7 +404,7 @@ function ImportedArticlesTab() {
                       <div className="bg-base-200 border-t">
                         <div className="p-4">
                           <WikiContent
-                            content={article.rawContent || ""}
+                            content={renderArticleContent(article)}
                             importedFrom={article.importedFrom}
                             className="prose-sm"
                           />

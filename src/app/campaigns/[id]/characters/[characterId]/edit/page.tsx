@@ -16,6 +16,7 @@ import CharacterForm from "@/components/character/CharacterForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { WikiDataService } from "@/lib/services/wiki-data";
 
 interface EditCharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -135,12 +136,20 @@ async function getCharacter(characterId: number) {
       )
     : [];
 
+  // Apply content conversion for AD&D 2e wiki articles
+  const processedWikiEntities = parsedWikiEntities.map((entity: any) => ({
+    ...entity,
+    description: entity.importedFrom === "adnd2e-wiki"
+      ? WikiDataService.wikitextToHtml(entity.description || "")
+      : entity.description,
+  }));
+
   // Separate by content type for backward compatibility
-  const parsedWikiSpells = parsedWikiEntities.filter(
+  const parsedWikiSpells = processedWikiEntities.filter(
     (entity: unknown) =>
       (entity as { contentType?: string })?.contentType === "spell",
   );
-  const parsedWikiMonsters = parsedWikiEntities.filter(
+  const parsedWikiMonsters = processedWikiEntities.filter(
     (entity: unknown) =>
       (entity as { contentType?: string })?.contentType === "monster",
   );
@@ -150,7 +159,7 @@ async function getCharacter(characterId: number) {
     magicItems: magicItemAssignmentsForCharacter,
     wikiSpells: parsedWikiSpells,
     wikiMonsters: parsedWikiMonsters,
-    wikiEntities: parsedWikiEntities,
+    wikiEntities: processedWikiEntities,
   };
 
   // Get related data
@@ -208,7 +217,7 @@ export default async function EditCharacterPage({
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
@@ -246,7 +255,7 @@ export default async function EditCharacterPage({
 
 function EditCharacterSkeleton() {
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <div className="mb-8">
         <Skeleton className="h-8 w-64 mb-4" />
         <Skeleton className="h-6 w-48" />

@@ -11,6 +11,8 @@ import {
   magicItems,
   magicItemAssignments,
   relations,
+  wikiArticles,
+  wikiArticleEntities,
 } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -370,6 +372,49 @@ export async function GET(
           });
         }
       });
+    });
+
+    // Get wiki magic items assigned to characters
+    const wikiMagicItemAssignments = characterIds.length
+      ? await db
+          .select({
+            characterId: wikiArticleEntities.entityId,
+            wikiArticleId: wikiArticles.id,
+            wikiArticleTitle: wikiArticles.title,
+          })
+          .from(wikiArticleEntities)
+          .innerJoin(
+            wikiArticles,
+            eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
+          )
+          .where(
+            and(
+              eq(wikiArticleEntities.entityType, "character"),
+              eq(wikiArticles.contentType, "magic-item"),
+              inArray(wikiArticleEntities.entityId, characterIds),
+            ),
+          )
+      : [];
+
+    // Create nodes for wiki magic items
+    wikiMagicItemAssignments.forEach((assignment) => {
+      const nodeId = `magicItem-wiki-${assignment.wikiArticleId}`;
+      addNode({
+        id: nodeId,
+        type: "magicItem",
+        name: assignment.wikiArticleTitle,
+        href: `/wiki/article/${assignment.wikiArticleId}`,
+      });
+
+      // Create edge connecting character to wiki magic item
+      const sourceId = `character-${assignment.characterId}`;
+      if (nodeMap.has(sourceId)) {
+        addEdge({
+          source: sourceId,
+          target: nodeId,
+          relation: "owns",
+        });
+      }
     });
 
     // Add relationships if includeRelationships is true

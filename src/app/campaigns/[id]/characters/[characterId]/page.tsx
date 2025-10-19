@@ -44,7 +44,7 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <DynamicBreadcrumb
         campaignId={campaignId}
         campaignTitle={character.campaign?.title || undefined}

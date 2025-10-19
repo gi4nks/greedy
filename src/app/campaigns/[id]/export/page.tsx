@@ -130,7 +130,7 @@ export default function ExportPage() {
   ];
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 md:p-6 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Export Campaign</h1>
         <p className="text-base-content/70">

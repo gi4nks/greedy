@@ -226,7 +226,13 @@ export class SearchService {
 
       // Search sessions
       if (!entityTypes || entityTypes.includes("session")) {
-        let sessionQuery = db.select().from(sessions);
+        let sessionQuery = db
+          .select({
+            session: sessions,
+            campaignId: adventures.campaignId,
+          })
+          .from(sessions)
+          .leftJoin(adventures, eq(sessions.adventureId, adventures.id));
         sessionQuery = applyFilters(sessionQuery, sessions, ["title", "text"]);
         sessionQuery = applySorting(sessionQuery, sessions);
 
@@ -234,11 +240,12 @@ export class SearchService {
 
         results.push(
           ...sessionResults.map((s) => ({
-            id: s.id,
+            id: s.session.id,
             entityType: "session" as const,
-            title: s.title,
-            description: s.text || undefined,
-            adventureId: s.adventureId || undefined,
+            title: s.session.title,
+            description: s.session.text || undefined,
+            campaignId: s.campaignId || undefined,
+            adventureId: s.session.adventureId || undefined,
             tags: [], // TODO: Parse s.tags when implemented
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
@@ -268,6 +275,7 @@ export class SearchService {
             entityType: "character" as const,
             title: c.name,
             description: c.description || undefined,
+            campaignId: c.campaignId || undefined,
             adventureId: c.adventureId || undefined,
             tags: [], // TODO: Parse c.tags when implemented
             relevanceScore: 1,
@@ -278,7 +286,13 @@ export class SearchService {
 
       // Search NPCs
       if (!entityTypes || entityTypes.includes("npc")) {
-        let npcQuery = db.select().from(npcs);
+        let npcQuery = db
+          .select({
+            npc: npcs,
+            campaignId: adventures.campaignId,
+          })
+          .from(npcs)
+          .leftJoin(adventures, eq(npcs.adventureId, adventures.id));
         npcQuery = applyFilters(npcQuery, npcs, [
           "name",
           "description",
@@ -290,11 +304,12 @@ export class SearchService {
 
         results.push(
           ...npcResults.map((n) => ({
-            id: n.id,
+            id: n.npc.id,
             entityType: "npc" as const,
-            title: n.name,
-            description: n.description || undefined,
-            adventureId: n.adventureId || undefined,
+            title: n.npc.name,
+            description: n.npc.description || undefined,
+            campaignId: n.campaignId || undefined,
+            adventureId: n.npc.adventureId || undefined,
             tags: [], // TODO: Parse n.tags when column exists
             relevanceScore: 1,
             createdAt: new Date().toISOString(), // TODO: Use n.createdAt when column exists
@@ -304,7 +319,13 @@ export class SearchService {
 
       // Search locations
       if (!entityTypes || entityTypes.includes("location")) {
-        let locationQuery = db.select().from(locations);
+        let locationQuery = db
+          .select({
+            location: locations,
+            campaignId: adventures.campaignId,
+          })
+          .from(locations)
+          .leftJoin(adventures, eq(locations.adventureId, adventures.id));
         locationQuery = applyFilters(locationQuery, locations, [
           "name",
           "description",
@@ -315,11 +336,12 @@ export class SearchService {
 
         results.push(
           ...locationResults.map((l) => ({
-            id: l.id,
+            id: l.location.id,
             entityType: "location" as const,
-            title: l.name,
-            description: l.description || undefined,
-            adventureId: l.adventureId || undefined,
+            title: l.location.name,
+            description: l.location.description || undefined,
+            campaignId: l.campaignId || undefined,
+            adventureId: l.location.adventureId || undefined,
             tags: [], // TODO: Parse l.tags when implemented
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
@@ -329,7 +351,13 @@ export class SearchService {
 
       // Search quests
       if (!entityTypes || entityTypes.includes("quest")) {
-        let questQuery = db.select().from(quests);
+        let questQuery = db
+          .select({
+            quest: quests,
+            campaignId: adventures.campaignId,
+          })
+          .from(quests)
+          .leftJoin(adventures, eq(quests.adventureId, adventures.id));
         questQuery = applyFilters(questQuery, quests, ["title", "description"]);
         questQuery = applySorting(questQuery, quests);
 
@@ -337,11 +365,12 @@ export class SearchService {
 
         results.push(
           ...questResults.map((q) => ({
-            id: q.id,
+            id: q.quest.id,
             entityType: "quest" as const,
-            title: q.title,
-            description: q.description || undefined,
-            adventureId: q.adventureId || undefined,
+            title: q.quest.title,
+            description: q.quest.description || undefined,
+            campaignId: q.campaignId || undefined,
+            adventureId: q.quest.adventureId || undefined,
             tags: [], // TODO: Parse q.tags when implemented
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
