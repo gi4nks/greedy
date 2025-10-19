@@ -160,16 +160,23 @@ const initializeSchema = async () => {
     await db.run(sql`
       CREATE TABLE IF NOT EXISTS locations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER REFERENCES campaigns(id),
         adventure_id INTEGER REFERENCES adventures(id),
         name TEXT NOT NULL,
         description TEXT,
-        notes TEXT,
         tags TEXT,
         images TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add campaign_id column if it doesn't exist (for migration)
+    try {
+      await db.run(sql`ALTER TABLE locations ADD COLUMN campaign_id INTEGER REFERENCES campaigns(id)`);
+    } catch {
+      // Column might already exist
+    }
 
     // Create quests table
     await db.run(sql`

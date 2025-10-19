@@ -38,6 +38,8 @@ export async function createLocation(
   const images = formData.get("images") as string;
   const campaignId = Number(formData.get("campaignId"));
 
+  console.log("FormData entries:", Array.from(formData.entries()));
+
   // Parse tags
   const tags = tagsString
     ? tagsString
@@ -65,7 +67,7 @@ export async function createLocation(
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to create location.",
+      message: `Database Error: Failed to create location. ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }

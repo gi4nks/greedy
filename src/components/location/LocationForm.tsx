@@ -186,6 +186,11 @@ export default function LocationForm({
 
   return (
     <form action={formAction} className="space-y-6">
+      <input type="hidden" name="campaignId" value={campaignId} />
+      {adventureId && <input type="hidden" name="adventureId" value={adventureId} />}
+      {mode === "edit" && location?.id && <input type="hidden" name="id" value={location.id} />}
+      <input type="hidden" name="tags" value={formData.tags.join(",")} />
+      <input type="hidden" name="images" value={JSON.stringify(images)} />
       {/* Basic Information */}
       <Card>
         <CardHeader>
@@ -197,6 +202,7 @@ export default function LocationForm({
               <Label htmlFor="name">Location Name *</Label>
               <Input
                 id="name"
+                name="name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -210,6 +216,7 @@ export default function LocationForm({
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
+                name="description"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
