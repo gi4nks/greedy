@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏰 Adventure Diary - A Modern D&D Campaign Manager
 
 _Organize your worlds, characters, and adventures — all in one elegant app._
@@ -80,7 +81,7 @@ greedy/
 │   ├── adventure/                # Adventure-specific components
 │   ├── campaign/                 # Campaign-specific components
 │   ├── character/                # Character-specific components
-│   ├── location/                 # Location-specific components
+│   ├── location/                # Location-specific components
 │   ├── quest/                    # Quest-specific components
 │   ├── session/                  # Session-specific components
 │   └── wiki/                     # Wiki-specific components
@@ -370,3 +371,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ for the D&D community**
 
 For questions, issues, or contributions, please visit our [GitHub repository](https://github.com/your-username/greedy).
+=======
+# greedy
+
+>>>>>>> ecfda9179dc043ac9d40ef266e645d54808c017d
