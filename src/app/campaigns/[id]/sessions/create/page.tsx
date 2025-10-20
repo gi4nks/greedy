@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import SessionForm from "@/components/session/SessionForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 
 interface CreateSessionPageProps {
@@ -83,7 +83,7 @@ export default async function CreateSessionPage({
 
   return (
     <Suspense fallback={<CreateSessionSkeleton />}>
-      <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
+      <div className="container mx-auto px-4 py-6 md:p-6">
         <DynamicBreadcrumb
           campaignId={campaignId}
           campaignTitle={campaign.title}
@@ -124,7 +124,10 @@ export default async function CreateSessionPage({
           </div>
         </div>
 
-        <Card>
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+          </CardHeader>
           <CardContent className="p-6">
             <SessionForm
               campaignId={campaignId}
@@ -141,7 +144,7 @@ export default async function CreateSessionPage({
 
 function CreateSessionSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="skeleton h-8 w-8 rounded-lg"></div>
@@ -151,7 +154,7 @@ function CreateSessionSkeleton() {
         <div className="skeleton h-4 w-96"></div>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardContent className="p-6">
           <div className="space-y-6">
             <div className="skeleton h-6 w-32 mb-4"></div>
