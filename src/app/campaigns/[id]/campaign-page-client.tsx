@@ -91,64 +91,68 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-6 md:p-6">
+      <div className="container mx-auto px-4 py-6 md:p-6 min-h-screen flex flex-col">
         {/* Breadcrumb */}
         <DynamicBreadcrumb
           campaignId={campaignId}
           campaignTitle={campaign.title}
         />
 
-        {/* Campaign Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold">{campaign.title}</h1>
-              <div className="flex items-center gap-4 mt-2">
-                <Badge
-                  variant={campaign.status === "active" ? "default" : "secondary"}
-                >
-                  {campaign.status || "active"}
-                </Badge>
-                {campaign.gameEditionName && (
-                  <Badge variant="outline">
-                    {campaign.gameEditionName}
-                    {campaign.gameEditionVersion &&
-                    !campaign.gameEditionName.includes(
-                      campaign.gameEditionVersion,
-                    )
-                      ? ` ${campaign.gameEditionVersion}`
-                      : ""}
+        {/* Main Content Area */}
+        <div className="flex flex-col">
+          {/* Campaign Header */}
+          <div className="flex-shrink-0 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold">{campaign.title}</h1>
+                <div className="flex items-center gap-4 mt-2">
+                  <Badge
+                    variant={campaign.status === "active" ? "default" : "secondary"}
+                  >
+                    {campaign.status || "active"}
                   </Badge>
-                )}
-                {campaign.startDate && (
-                  <div className="flex items-center gap-1 text-sm text-base-content/70">
-                    <Calendar className="w-4 h-4" />
-                    Started {formatDisplayDate(campaign.startDate)}
-                  </div>
-                )}
+                  {campaign.gameEditionName && (
+                    <Badge variant="outline">
+                      {campaign.gameEditionName}
+                      {campaign.gameEditionVersion &&
+                      !campaign.gameEditionName.includes(
+                        campaign.gameEditionVersion,
+                      )
+                        ? ` ${campaign.gameEditionVersion}`
+                        : ""}
+                    </Badge>
+                  )}
+                  {campaign.startDate && (
+                    <div className="flex items-center gap-1 text-sm text-base-content/70">
+                      <Calendar className="w-4 h-4" />
+                      Started {formatDisplayDate(campaign.startDate)}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href={`/campaigns/${campaignId}/edit`}>
-                <Button variant="secondary" className="gap-2" size="sm">
-                  <Edit className="w-4 h-4" />
-                  Edit
+              <div className="flex gap-2">
+                <Link href={`/campaigns/${campaignId}/edit`}>
+                  <Button variant="secondary" className="gap-2" size="sm">
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </Button>
+                </Link>
+                <Button
+                  variant="neutral"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
                 </Button>
-              </Link>
-              <Button
-                variant="neutral"
-                size="sm"
-                className="gap-2"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </Button>
+              </div>
             </div>
           </div>
 
+          {/* Description Area - Takes only needed space */}
           {campaign.description && (
-            <div className="text-base-content/70 mt-4 max-w-3xl">
+            <div className="text-base-content/70 mb-8">
               <MarkdownRenderer
                 content={campaign.description}
                 className="prose-base"
