@@ -495,7 +495,8 @@ export default function QuestForm({
       )}
 
       <div className="flex gap-4 justify-end">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending}
+        size="sm">
           <Save className="w-4 h-4 mr-2" />
           {isPending
             ? mode === "edit"
@@ -510,6 +511,7 @@ export default function QuestForm({
           variant="outline"
           className="gap-2"
           onClick={() => router.push(`/campaigns/${campaignId}/quests`)}
+          size="sm"
         >
           <EyeOff className="w-4 h-4" />
           Cancel

@@ -147,7 +147,7 @@ export default async function AdventureQuestsPage({
           <Link
             href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/create`}
           >
-            <Button className="gap-2" variant="primary">
+            <Button className="gap-2" variant="primary" size="sm">
               <Plus className="w-4 h-4" />
               Create Quest
             </Button>
@@ -170,7 +170,7 @@ export default async function AdventureQuestsPage({
               <Link
                 href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/create`}
               >
-                <Button variant="primary">
+                <Button variant="primary" size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Your First Quest
                 </Button>
@@ -246,7 +246,7 @@ export default async function AdventureQuestsPage({
                     <Link
                       href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${quest.id}/edit`}
                     >
-                      <Button variant="secondary" className="gap-2">
+                      <Button variant="secondary" className="gap-2" size="sm">
                         <Edit className="w-4 h-4" />
                         Edit
                       </Button>
