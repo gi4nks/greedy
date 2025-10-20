@@ -72,109 +72,109 @@ export function MagicItemsFilters({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-lg border border-base-200 bg-base-100 p-2 shadow-sm text-sm"
-    >
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
-        <div className="md:col-span-2">
-          <label
-            className="text-xs font-medium text-base-content/70"
-            htmlFor="magic-item-search"
-          >
-            Search
-          </label>
-          <Input
-            id="magic-item-search"
-            value={search}
-            placeholder="Search by name..."
-            onChange={(event) => setSearch(event.target.value)}
-            className="h-8 text-sm"
-          />
-        </div>
+    <div className="card bg-base-100 shadow-md mb-6">
+      <div className="card-body p-4 md:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <div className="md:col-span-2">
+              <label
+                className="text-sm font-medium text-base-content/70 mb-2 block"
+                htmlFor="magic-item-search"
+              >
+                Search
+              </label>
+              <Input
+                id="magic-item-search"
+                value={search}
+                placeholder="Search by name..."
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full"
+              />
+            </div>
 
-        <div>
-          <Label htmlFor="magic-item-type" className="text-xs">Type</Label>
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger id="magic-item-type" className="w-full h-8 text-sm">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All types</SelectItem>
-              {typeOptions.map((typeOption) => (
-                <SelectItem key={typeOption} value={typeOption}>
-                  {typeOption}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div>
+              <Label htmlFor="magic-item-type" className="text-sm font-medium text-base-content/70 mb-2 block">Type</Label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger id="magic-item-type" className="w-full">
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All types</SelectItem>
+                  {typeOptions.map((typeOption) => (
+                    <SelectItem key={typeOption} value={typeOption}>
+                      {typeOption}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div>
-          <Label htmlFor="magic-item-rarity" className="text-xs">Rarity</Label>
-          <Select value={rarity} onValueChange={setRarity}>
-            <SelectTrigger id="magic-item-rarity" className="w-full h-8 text-sm">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All rarities</SelectItem>
-              {rarityOptions.map((rarityOption) => (
-                <SelectItem key={rarityOption} value={rarityOption}>
-                  {rarityOption}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div>
+              <Label htmlFor="magic-item-rarity" className="text-sm font-medium text-base-content/70 mb-2 block">Rarity</Label>
+              <Select value={rarity} onValueChange={setRarity}>
+                <SelectTrigger id="magic-item-rarity" className="w-full">
+                  <SelectValue placeholder="All rarities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All rarities</SelectItem>
+                  {rarityOptions.map((rarityOption) => (
+                    <SelectItem key={rarityOption} value={rarityOption}>
+                      {rarityOption}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div>
-          <Label htmlFor="magic-item-entity-type" className="text-xs">Entity</Label>
-          <Select value={entityType} onValueChange={setEntityType}>
-            <SelectTrigger id="magic-item-entity-type" className="w-full h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {entityTypeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div>
+              <Label htmlFor="magic-item-entity-type" className="text-sm font-medium text-base-content/70 mb-2 block">Entity</Label>
+              <Select value={entityType} onValueChange={setEntityType}>
+                <SelectTrigger id="magic-item-entity-type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {entityTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div>
-          <Label htmlFor="magic-item-campaign" className="text-xs">Campaign</Label>
-          <Select value={campaignId} onValueChange={setCampaignId}>
-            <SelectTrigger id="magic-item-campaign" className="w-full h-8 text-sm">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All campaigns</SelectItem>
-              {campaignOptions.map((campaign) => (
-                <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                  {campaign.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div>
+              <Label htmlFor="magic-item-campaign" className="text-sm font-medium text-base-content/70 mb-2 block">Campaign</Label>
+              <Select value={campaignId} onValueChange={setCampaignId}>
+                <SelectTrigger id="magic-item-campaign" className="w-full">
+                  <SelectValue placeholder="All campaigns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All campaigns</SelectItem>
+                  {campaignOptions.map((campaign) => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button type="submit" variant="primary" className="gap-2">
+              Apply Filters
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleReset}
+              className="gap-2"
+            >
+              Reset
+            </Button>
+          </div>
+        </form>
       </div>
-
-      <div className="mt-2 flex flex-wrap gap-1">
-        <Button type="submit" variant="primary" className="gap-1" size="xs">
-          Apply
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onClick={handleReset}
-          className="gap-1"
-        >
-          Reset
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
