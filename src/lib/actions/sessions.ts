@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { sessions, adventures, campaigns } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getSessionWithWikiEntities } from "@/lib/db/queries";
 import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/lib/types/api";
@@ -25,7 +25,7 @@ export async function getSessions() {
     .from(sessions)
     .leftJoin(adventures, eq(sessions.adventureId, adventures.id))
     .leftJoin(campaigns, eq(adventures.campaignId, campaigns.id))
-    .orderBy(sessions.date);
+    .orderBy(desc(sessions.date));
 }
 
 export async function getSession(id: number) {

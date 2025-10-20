@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { sessions, adventures } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,7 +69,7 @@ async function getSessions(campaignId: number, adventureId?: number) {
     .from(sessions)
     .leftJoin(adventures, eq(sessions.adventureId, adventures.id))
     .where(whereConditions)
-    .orderBy(sessions.date);
+    .orderBy(desc(sessions.date));
 
   return sessionsList;
 }
