@@ -112,7 +112,8 @@ export default function QuestForm({
             `/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`,
           );
         } else {
-          router.push(`/campaigns/${campaignId}/quests`);
+          // Since campaign-level quests are deprecated, redirect to adventures page
+          router.push(`/campaigns/${campaignId}/adventures`);
         }
         return { success: true };
       } else {
@@ -287,186 +288,182 @@ export default function QuestForm({
       {mode === "edit" && quest && <input type="hidden" name="id" value={quest.id} />}
       <input type="hidden" name="tags" value={formData.tags.join(",")} />
       <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Enter quest title"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={(e) =>
-              handleInputChange("description", e.target.value)
-            }
-            placeholder="Describe the quest objectives, background, and any important details..."
-            rows={4}
-          />
-        </div>
-
-        {/* Only show adventure selector if not in adventure-scoped mode */}
-        {!fixedAdventureId && (
-          <div className="space-y-2">
-            <Label htmlFor="adventureId">Adventure</Label>
-            <Select
-              name="adventureId"
-              value={formData.adventureId}
-              onValueChange={(value) =>
-                handleInputChange("adventureId", value)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an adventure (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No specific adventure</SelectItem>
-                {adventures?.map((adventure) => (
-                  <SelectItem
-                    key={adventure.id}
-                    value={adventure.id.toString()}
-                  >
-                    {adventure.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+      <div className="space-y-2">
+        <Label htmlFor="title">Title *</Label>
+        <Input
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={(e) => handleInputChange("title", e.target.value)}
+          placeholder="Enter quest title"
+          required
+        />
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              name="status"
-              value={formData.status}
-              onValueChange={(value) => handleInputChange("status", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={(e) =>
+            handleInputChange("description", e.target.value)
+          }
+          placeholder="Describe the quest objectives, background, and any important details..."
+          rows={4}
+        />
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="priority">Priority</Label>
-            <Select
-              name="priority"
-              value={formData.priority}
-              onValueChange={(value) =>
-                handleInputChange("priority", value)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                {priorityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
-            <Select
-              name="type"
-              value={formData.type}
-              onValueChange={(value) => handleInputChange("type", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Only show adventure selector if not in adventure-scoped mode */}
+      {!fixedAdventureId && (
+        <div className="space-y-2">
+          <Label htmlFor="adventureId">Adventure</Label>
+          <Select
+            name="adventureId"
+            value={formData.adventureId}
+            onValueChange={(value) =>
+              handleInputChange("adventureId", value)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select an adventure (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No specific adventure</SelectItem>
+              {adventures?.map((adventure) => (
+                <SelectItem
+                  key={adventure.id}
+                  value={adventure.id.toString()}
+                >
+                  {adventure.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">Due Date</Label>
-            <Input
-              id="dueDate"
-              name="dueDate"
-              type="date"
-              value={formData.dueDate}
-              onChange={(e) => handleInputChange("dueDate", e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="assignedTo">Assigned To</Label>
-            <Input
-              id="assignedTo"
-              name="assignedTo"
-              value={formData.assignedTo}
-              onChange={(e) =>
-                handleInputChange("assignedTo", e.target.value)
-              }
-              placeholder="Character or player name"
-            />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <Select
+            name="status"
+            value={formData.status}
+            onValueChange={(value) => handleInputChange("status", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label>Tags</Label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {formData.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="gap-1">
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="ml-1 hover:text-destructive"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              placeholder="Add a tag"
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-            />
-            <Button type="button" onClick={addTag} variant="outline">
-              Add Tag
-            </Button>
-          </div>
+          <Label htmlFor="priority">Priority</Label>
+          <Select
+            name="priority"
+            value={formData.priority}
+            onValueChange={(value) =>
+              handleInputChange("priority", value)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select priority" />
+            </SelectTrigger>
+            <SelectContent>
+              {priorityOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="type">Type</Label>
+          <Select
+            name="type"
+            value={formData.type}
+            onValueChange={(value) => handleInputChange("type", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {typeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="dueDate">Due Date</Label>
+          <Input
+            id="dueDate"
+            name="dueDate"
+            type="date"
+            value={formData.dueDate}
+            onChange={(e) => handleInputChange("dueDate", e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="assignedTo">Assigned To</Label>
+          <Input
+            id="assignedTo"
+            name="assignedTo"
+            value={formData.assignedTo}
+            onChange={(e) =>
+              handleInputChange("assignedTo", e.target.value)
+            }
+            placeholder="Character or player name"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Tags</Label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {formData.tags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="gap-1">
+              {tag}
+              <button
+                type="button"
+                onClick={() => removeTag(tag)}
+                className="ml-1 hover:text-destructive"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Add a tag"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag();
+              }
+            }}
+          />
+          <Button type="button" onClick={addTag} variant="outline">
+            Add Tag
+          </Button>
         </div>
       </div>
 
@@ -494,7 +491,7 @@ export default function QuestForm({
         </div>
       )}
 
-      <div className="flex gap-4 justify-end">
+      <div className="flex gap-4 pt-4 justify-end">
         <Button type="submit" disabled={isPending}
         size="sm">
           <Save className="w-4 h-4 mr-2" />
@@ -510,7 +507,13 @@ export default function QuestForm({
           type="button"
           variant="outline"
           className="gap-2"
-          onClick={() => router.push(`/campaigns/${campaignId}/quests`)}
+          onClick={() => {
+            if (fixedAdventureId) {
+              router.push(`/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`);
+            } else {
+              router.push(`/campaigns/${campaignId}/adventures`);
+            }
+          }}
           size="sm"
         >
           <EyeOff className="w-4 h-4" />

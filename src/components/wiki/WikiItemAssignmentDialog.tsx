@@ -57,13 +57,11 @@ export function WikiItemAssignmentDialog({
   const [entities, setEntities] = useState<{
     characters: Array<{ id: number; name: string }>;
     npcs: Array<{ id: number; name: string }>;
-    quests: Array<{ id: number; title: string }>;
     sessions: Array<{ id: number; title: string; sessionNumber: number }>;
     locations: Array<{ id: number; name: string }>;
   }>({
     characters: [],
     npcs: [],
-    quests: [],
     sessions: [],
     locations: [],
   });
@@ -111,8 +109,6 @@ export function WikiItemAssignmentDialog({
         return <User className="w-4 h-4" />;
       case "npc":
         return <Users className="w-4 h-4" />;
-      case "quest":
-        return <BookOpen className="w-4 h-4" />;
       case "session":
         return <Calendar className="w-4 h-4" />;
       case "location":
@@ -130,8 +126,6 @@ export function WikiItemAssignmentDialog({
         return entities.characters.map((c) => ({ id: c.id, name: c.name }));
       case "npc":
         return entities.npcs.map((n) => ({ id: n.id, name: n.name }));
-      case "quest":
-        return entities.quests.map((q) => ({ id: q.id, name: q.title }));
       case "session":
         return entities.sessions.map((s) => ({
           id: s.id,
@@ -210,12 +204,6 @@ export function WikiItemAssignmentDialog({
                       <div className="flex items-center gap-2">
                         {getEntityIcon("npc")}
                         NPC
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="quest">
-                      <div className="flex items-center gap-2">
-                        {getEntityIcon("quest")}
-                        Quest
                       </div>
                     </SelectItem>
                     <SelectItem value="session">

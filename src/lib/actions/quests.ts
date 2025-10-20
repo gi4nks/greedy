@@ -75,8 +75,7 @@ export async function createQuest(
       })
       .returning();
 
-    // Revalidate both campaign and adventure-specific paths
-    revalidatePath(`/campaigns/${campaignId}/quests`);
+    // Revalidate adventure-specific path if applicable
     if (adventureId) {
       revalidatePath(
         `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
@@ -139,8 +138,7 @@ export async function updateQuest(
       .where(eq(quests.id, id))
       .returning();
 
-    // Revalidate both campaign and adventure-specific paths
-    revalidatePath(`/campaigns/${campaignId}/quests`);
+    // Revalidate adventure-specific path if applicable
     if (adventureId) {
       revalidatePath(
         `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
@@ -164,7 +162,7 @@ export async function deleteQuest(
 ): Promise<ActionResult> {
   try {
     await db.delete(quests).where(eq(quests.id, id));
-    revalidatePath(`/campaigns/${campaignId}/quests`);
+    // Note: Since quests are now adventure-scoped, we don't revalidate a global path
     return { success: true };
   } catch (error) {
     console.error("Database error:", error);

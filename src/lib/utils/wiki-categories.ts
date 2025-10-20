@@ -265,16 +265,14 @@ export function getCategoryDisplayInfo(category: WikiItemCategory): {
 export async function getAssignableEntities(campaignId: number): Promise<{
   characters: Array<{ id: number; name: string }>;
   npcs: Array<{ id: number; name: string }>;
-  quests: Array<{ id: number; title: string }>;
   sessions: Array<{ id: number; title: string; sessionNumber: number }>;
   locations: Array<{ id: number; name: string }>;
 }> {
   try {
-    const [charactersRes, npcsRes, questsRes, sessionsRes, locationsRes] =
+    const [charactersRes, npcsRes, sessionsRes, locationsRes] =
       await Promise.all([
         fetch(`/api/campaigns/${campaignId}/characters`),
         fetch(`/api/campaigns/${campaignId}/npcs`),
-        fetch(`/api/campaigns/${campaignId}/quests`),
         fetch(`/api/campaigns/${campaignId}/sessions`),
         fetch(`/api/campaigns/${campaignId}/locations`),
       ]);
@@ -282,7 +280,6 @@ export async function getAssignableEntities(campaignId: number): Promise<{
     return {
       characters: charactersRes.ok ? await charactersRes.json() : [],
       npcs: npcsRes.ok ? await npcsRes.json() : [],
-      quests: questsRes.ok ? await questsRes.json() : [],
       sessions: sessionsRes.ok ? await sessionsRes.json() : [],
       locations: locationsRes.ok ? await locationsRes.json() : [],
     };
@@ -291,7 +288,6 @@ export async function getAssignableEntities(campaignId: number): Promise<{
     return {
       characters: [],
       npcs: [],
-      quests: [],
       sessions: [],
       locations: [],
     };

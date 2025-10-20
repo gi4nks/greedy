@@ -123,11 +123,10 @@ export default function RelationsPageClient({ campaign, campaignId }: RelationsP
   const fetchEntities = useCallback(async () => {
     try {
       // Fetch all entities for the campaign
-      const [charactersRes, npcsRes, locationsRes, questsRes, adventuresRes, sessionsRes] = await Promise.all([
+      const [charactersRes, npcsRes, locationsRes, adventuresRes, sessionsRes] = await Promise.all([
         fetch(`/api/campaigns/${campaignId}/characters`),
         fetch(`/api/campaigns/${campaignId}/npcs`),
         fetch(`/api/campaigns/${campaignId}/locations`),
-        fetch(`/api/campaigns/${campaignId}/quests`),
         fetch(`/api/campaigns/${campaignId}/adventures`),
         fetch(`/api/campaigns/${campaignId}/sessions`),
       ]);
@@ -155,11 +154,6 @@ export default function RelationsPageClient({ campaign, campaignId }: RelationsP
       if (locationsRes.ok) {
         const locations: Location[] = await locationsRes.json();
         entities.push(...locations.map((l) => ({ id: l.id, name: l.name, type: "location" })));
-      }
-
-      if (questsRes.ok) {
-        const quests: Quest[] = await questsRes.json();
-        entities.push(...quests.map((q) => ({ id: q.id, name: q.title, type: "quest" })));
       }
 
       if (adventuresRes.ok) {

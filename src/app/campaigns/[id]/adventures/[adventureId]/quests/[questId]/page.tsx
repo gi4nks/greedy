@@ -50,8 +50,8 @@ interface QuestData {
     campaignId: number | null;
   } | null;
   campaign: {
-    id: number;
-    title: string;
+    id: number | null;
+    title: string | null;
     gameEditionName: string | null;
     gameEditionVersion: string | null;
   };
@@ -108,11 +108,17 @@ async function getQuestData(campaignId: number, adventureId: number, questId: nu
       )
     );
 
+  // Transform null wikiUrl to undefined to match WikiEntity interface
+  const transformedWikiEntities = wikiEntitiesResult.map(entity => ({
+    ...entity,
+    wikiUrl: entity.wikiUrl || undefined,
+  }));
+
   return {
     ...quest,
     adventure,
     campaign,
-    wikiEntities: wikiEntitiesResult,
+    wikiEntities: transformedWikiEntities,
   };
 }
 
@@ -178,7 +184,7 @@ export default async function QuestPage({
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
-        campaignTitle={questData.campaign.title}
+        campaignTitle={questData.campaign.title || "Campaign"}
         sectionItems={[
           {
             label: "Adventures",
@@ -294,7 +300,6 @@ export default async function QuestPage({
                 <EntityImageCarousel
                   images={images}
                   entityType="quests"
-                  entityId={questData.id}
                 />
               </CardContent>
             </Card>
@@ -330,7 +335,7 @@ export default async function QuestPage({
               <Link
                 href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}/edit`}
               >
-                <Button className="w-full gap-2" variant="outline">
+                <Button className="w-full gap-2" variant="secondary" size="sm">
                   <Edit className="w-4 h-4" />
                   Edit Quest
                 </Button>
@@ -362,11 +367,11 @@ export default async function QuestPage({
                   href={`/campaigns/${campaignId}`}
                   className="text-sm text-primary hover:underline"
                 >
-                  {questData.campaign.title}
+                  {questData.campaign.title || "Campaign"}
                 </Link>
               </div>
 
-              {questData.campaign.gameEditionName && (
+              {questData.campaign?.gameEditionName && (
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-base-content/70">Game Edition</div>
                   <div className="text-sm">

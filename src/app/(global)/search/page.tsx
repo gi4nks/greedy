@@ -208,7 +208,9 @@ function SearchPageContent() {
       case "location":
         return `/campaigns/${result.campaignId}/locations/${result.id}`;
       case "quest":
-        return `/campaigns/${result.campaignId}/quests/${result.id}`;
+        // Since quests are now adventure-scoped, redirect to the campaign's adventures page
+        // The user can then navigate to the specific quest from there
+        return `/campaigns/${result.campaignId}/adventures`;
       case "magic_item":
         return `/magic-items/${result.id}`;
       default:
