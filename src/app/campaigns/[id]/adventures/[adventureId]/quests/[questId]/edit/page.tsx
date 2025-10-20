@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm";
 import QuestForm from "@/components/quest/QuestForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Target } from "lucide-react";
 
 interface EditAdventureQuestPageProps {
   params: Promise<{ id: string; adventureId: string; questId: string }>;
@@ -101,75 +103,97 @@ export default async function EditAdventureQuestPage({
 
   return (
     <Suspense fallback={<EditQuestSkeleton />}>
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={campaign.title}
-        sectionItems={[
-          { label: "Adventures", href: `/campaigns/${campaignId}/adventures` },
-          {
-            label: adventure.title,
-            href: `/campaigns/${campaignId}/adventures/${adventureId}`,
-          },
-          {
-            label: "Quests",
-            href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
-          },
-          {
-            label: quest.title,
-            href: `/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}`,
-          },
-          { label: "Edit" },
-        ]}
-      />
+      <div className="container mx-auto px-4 py-6 md:p-6">
+        {/* Breadcrumb */}
+        <DynamicBreadcrumb
+          campaignId={campaignId}
+          campaignTitle={campaign.title}
+          sectionItems={[
+            { label: "Adventures", href: `/campaigns/${campaignId}/adventures` },
+            {
+              label: adventure.title,
+              href: `/campaigns/${campaignId}/adventures/${adventureId}`,
+            },
+            {
+              label: "Quests",
+              href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+            },
+            {
+              label: quest.title,
+              href: `/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}`,
+            },
+            { label: "Edit" },
+          ]}
+        />
 
-      <QuestForm
-        quest={quest}
-        campaignId={campaignId}
-        adventureId={adventureId}
-        adventures={campaignAdventures}
-        mode="edit"
-      />
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <Target className="w-8 h-8" />
+            <div>
+              <h1 className="text-3xl font-bold">Edit Quest</h1>
+              <p className="text-base-content/70">Update quest details and settings.</p>
+            </div>
+          </div>
+        </div>
+
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Quest Details</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <QuestForm
+              quest={quest}
+              campaignId={campaignId}
+              adventureId={adventureId}
+              adventures={campaignAdventures}
+              mode="edit"
+            />
+          </CardContent>
+        </Card>
+      </div>
     </Suspense>
   );
 }
 
 function EditQuestSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <div className="mb-6">
-        <Skeleton className="h-8 w-64 mb-4" />
-        <Skeleton className="h-6 w-48" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="skeleton h-8 w-8 rounded-lg"></div>
+          <div className="skeleton h-6 w-48"></div>
+        </div>
+        <div className="skeleton h-8 w-64 mb-2"></div>
+        <div className="skeleton h-4 w-96"></div>
       </div>
 
-      <div className="space-y-6">
-        <div className="card bg-base-100 shadow-sm">
-          <div className="card-body">
-            <Skeleton className="h-6 w-32 mb-4" />
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="skeleton h-6 w-32 mb-4"></div>
             <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <div className="skeleton h-10 w-full" />
+              <div className="skeleton h-20 w-full" />
+              <div className="skeleton h-10 w-full" />
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="skeleton h-10 w-full" />
+                <div className="skeleton h-10 w-full" />
+                <div className="skeleton h-10 w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="skeleton h-10 w-full" />
+                <div className="skeleton h-10 w-full" />
+              </div>
+            </div>
+            <div className="flex gap-4 justify-end">
+              <div className="skeleton h-10 w-24" />
+              <div className="skeleton h-10 w-20" />
             </div>
           </div>
-        </div>
-
-        <div className="card bg-base-100 shadow-sm">
-          <div className="card-body">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="grid grid-cols-3 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-20" />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
