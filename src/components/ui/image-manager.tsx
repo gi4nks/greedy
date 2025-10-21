@@ -41,6 +41,12 @@ export function ImageManager({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    // Prevent uploads for new entities (entityId = 0)
+    if (entityId === 0) {
+      showToast.error("Cannot upload images", "Please save the entity first before adding images.");
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -156,6 +162,13 @@ export function ImageManager({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
+
+    // Prevent uploads for new entities (entityId = 0)
+    if (entityId === 0) {
+      showToast.error("Cannot upload images", "Please save the entity first before adding images.");
+      return;
+    }
+
     if (files.length > 0) {
       // Create a proper FileList-like object
       const fileList = files as unknown as FileList;
@@ -201,7 +214,25 @@ export function ImageManager({
 
       {/* Main Content */}
       <div className="space-y-3">
-        {images.length > 0 ? (
+        {entityId === 0 ? (
+          <Card className="border-2 border-dashed border-base-300 bg-base-200">
+            <CardContent className="p-6 text-center">
+              <div className="space-y-2">
+                <div className="mx-auto w-8 h-8 bg-base-100 rounded-full flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-base-content/40" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-base-content/60">
+                    Save entity first
+                  </h3>
+                  <p className="text-xs text-base-content/50 mt-1">
+                    Images can be uploaded after the {entityTypeNames[entityType]?.toLowerCase() || "entity"} is saved.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : images.length > 0 ? (
           <>
             {/* Images Grid with Upload Card */}
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">

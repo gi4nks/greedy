@@ -5,7 +5,7 @@ import { MagicItemAssignmentComposer } from "@/components/magic-items/MagicItemA
 import { UnassignMagicItemButton } from "@/components/magic-items/UnassignMagicItemButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { getMagicItemById } from "@/lib/actions/magicItems";
 import { db } from "@/lib/db";
@@ -192,117 +192,124 @@ export default async function EditMagicItemPage({
           { label: "Edit" },
         ]}
       />
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-3">
           <Sparkles className="w-8 h-8" />
           <div>
             <h1 className="text-3xl font-bold">Edit: {item.name}</h1>
-            <p className="text-base-content/70 mt-2">Update item details</p>
+            <p className="text-base-content/70">Update item details</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2">
-            <MagicItemForm
-              mode="edit"
-              magicItem={{
-                id: item.id,
-                name: item.name,
-                rarity: item.rarity,
-                type: item.type,
-                description: item.description,
-                properties,
-                attunementRequired: item.attunementRequired,
-                images: item.images,
-              }}
-            />
-          </div>
+        {/* Main Form */}
+        <div className="lg:col-span-2">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Magic Item Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <MagicItemForm
+                mode="edit"
+                magicItem={{
+                  id: item.id,
+                  name: item.name,
+                  rarity: item.rarity,
+                  type: item.type,
+                  description: item.description,
+                  properties,
+                  attunementRequired: item.attunementRequired,
+                  images: item.images,
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Assignment Management */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Assignments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MagicItemAssignmentComposer
-                  itemId={item.id}
-                  existingAssignments={existingAssignments}
-                  campaignOptions={campaignOptions}
-                />
-              </CardContent>
-            </Card>
+        {/* Assignment Management */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Assignments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MagicItemAssignmentComposer
+                itemId={item.id}
+                existingAssignments={existingAssignments}
+                campaignOptions={campaignOptions}
+              />
+            </CardContent>
+          </Card>
 
-            {/* Current Assignments */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Current Assignments</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {assignmentBadges(parsedAssignments)}
-                {parsedAssignments.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-base-300 p-4 text-center text-sm text-base-content/60">
-                    This magic item has not been assigned to any entities yet.
-                  </div>
-                ) : (
-                  Object.entries(assignmentsByType).map(
-                    ([entityType, assignments]) => (
-                      <div key={entityType} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">
-                            {entityType}
-                          </Badge>
-                          <span className="text-xs text-base-content/60">
-                            {assignments.length} assignment
-                            {assignments.length === 1 ? "" : "s"}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {assignments.slice(0, 3).map((assignment) => (
-                            <div
-                              key={assignment.id}
-                              className="flex items-center justify-between gap-2 rounded-md border border-base-200 bg-base-100 p-3 text-sm"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-base-content truncate">
-                                  {assignment.entityName}
-                                </p>
-                                {assignment.campaignTitle && (
-                                  <p className="text-xs text-base-content/60 truncate">
-                                    {assignment.campaignTitle}
-                                  </p>
-                                )}
-                              </div>
-                              <UnassignMagicItemButton
-                                itemId={item.id}
-                                entityType={assignment.entityType}
-                                entityId={assignment.entityId}
-                              />
-                            </div>
-                          ))}
-                          {assignments.length > 3 && (
-                            <p className="text-xs text-base-content/60 text-center">
-                              +{assignments.length - 3} more assignments
-                            </p>
-                          )}
-                        </div>
+          {/* Current Assignments */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Current Assignments</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {assignmentBadges(parsedAssignments)}
+              {parsedAssignments.length === 0 ? (
+                <div className="rounded-md border border-dashed border-base-300 p-4 text-center text-sm text-base-content/60">
+                  This magic item has not been assigned to any entities yet.
+                </div>
+              ) : (
+                Object.entries(assignmentsByType).map(
+                  ([entityType, assignments]) => (
+                    <div key={entityType} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {entityType}
+                        </Badge>
+                        <span className="text-xs text-base-content/60">
+                          {assignments.length} assignment
+                          {assignments.length === 1 ? "" : "s"}
+                        </span>
                       </div>
-                    ),
+                      <div className="space-y-2">
+                        {assignments.slice(0, 3).map((assignment) => (
+                          <div
+                            key={assignment.id}
+                            className="flex items-center justify-between gap-2 rounded-md border border-base-200 bg-base-100 p-3 text-sm"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-base-content truncate">
+                                {assignment.entityName}
+                              </p>
+                              {assignment.campaignTitle && (
+                                <p className="text-xs text-base-content/60 truncate">
+                                  {assignment.campaignTitle}
+                                </p>
+                              )}
+                            </div>
+                            <UnassignMagicItemButton
+                              itemId={item.id}
+                              entityType={assignment.entityType}
+                              entityId={assignment.entityId}
+                            />
+                          </div>
+                        ))}
+                        {assignments.length > 3 && (
+                          <p className="text-xs text-base-content/60 text-center">
+                            +{assignments.length - 3} more assignments
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   )
-                )}
-              </CardContent>
-            </Card>
+                )
+              )}
+            </CardContent>
+          </Card>
 
-            <div className="flex gap-2">
-              <Link href={`/magic-items/${itemId}`} className="flex-1">
-                <Button variant="warning" className="gap-2 w-full" size="sm">
-                  <Eye className="w-4 h-4" />
-                  View Item
-                </Button>
-              </Link>
-          </div>
+          <div className="flex gap-2">
+            <Link href={`/magic-items/${itemId}`} className="flex-1">
+              <Button variant="warning" className="gap-2 w-full" size="sm">
+                <Eye className="w-4 h-4" />
+                View Item
+              </Button>
+            </Link>
+        </div>
         </div>
       </div>
     </div>

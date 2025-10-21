@@ -250,13 +250,6 @@ export default async function MagicItemDetailPage({
         </div>
       </div>
 
-      {/* Images */}
-      {images.length > 0 && (
-        <div className="mb-6">
-          <EntityImageCarousel images={images} entityType="magic-item" className="max-w-2xl mx-auto" />
-        </div>
-      )}
-
       {/* Description */}
       <div className="mb-6">
         <Card className="border-base-200">
@@ -363,6 +356,15 @@ export default async function MagicItemDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Images */}
+      <div className="mt-8">
+        <EntityImageCarousel
+          images={parseImagesJson(images)}
+          entityType="magic-item"
+          className="max-w-2xl mx-auto"
+        />
+      </div>
     </div>
   );
 }

@@ -97,13 +97,17 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
     }
   };
 
+  const formAction = async (formData: FormData) => {
+    await handleSubmit(formData);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Magic Item Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form action={handleSubmit} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <input type="hidden" name="images" value={JSON.stringify(images)} />
           {mode === "edit" && magicItem && (
             <input type="hidden" name="id" value={magicItem.id} />
@@ -201,19 +205,12 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
             </Label>
           </div>
 
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Images</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ImageManager
-                entityType="magic-items"
-                entityId={magicItem?.id || 0}
-                currentImages={images}
-                onImagesChange={handleImagesChange}
-              />
-            </CardContent>
-          </Card>
+          <ImageManager
+            entityType="magic-items"
+            entityId={magicItem?.id || 0}
+            currentImages={images}
+            onImagesChange={handleImagesChange}
+          />
         </form>
       </CardContent>
       <CardFooter className="pt-3">

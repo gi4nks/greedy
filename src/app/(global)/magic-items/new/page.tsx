@@ -1,5 +1,6 @@
 import { MagicItemForm } from "@/components/magic-items/MagicItemForm";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 
 export default function NewMagicItemPage() {
@@ -13,19 +14,24 @@ export default function NewMagicItemPage() {
         ]}
       />
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-3">
           <Sparkles className="w-8 h-8" />
           <div>
             <h1 className="text-3xl font-bold">New Magic Item</h1>
-            <p className="text-base-content/70 mt-2">Add to your collection</p>
+            <p className="text-base-content/70">Add to your collection</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl">
-        <MagicItemForm mode="create" />
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Magic Item Details</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <MagicItemForm mode="create" />
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -88,6 +88,33 @@ export const markdownComponents: Components = {
       </code>
     );
   },
+  ul: (props) => (
+    <ul
+      {...props}
+      className={cn(
+        "list-disc list-inside space-y-1",
+        (props as { className?: string }).className,
+      )}
+    />
+  ),
+  ol: (props) => (
+    <ol
+      {...props}
+      className={cn(
+        "list-decimal list-inside space-y-1",
+        (props as { className?: string }).className,
+      )}
+    />
+  ),
+  li: (props) => (
+    <li
+      {...props}
+      className={cn(
+        "leading-relaxed",
+        (props as { className?: string }).className,
+      )}
+    />
+  ),
 };
 
 const htmlSanitizeSchema = {
