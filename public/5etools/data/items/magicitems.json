@@ -20,6 +20,88 @@
       "entries": [
         "This bag has an interior space considerably larger than its outside dimensions."
       ]
+    },
+    {
+      "name": "Belt of Dwarvenkind",
+      "source": "DMG",
+      "page": 155,
+      "type": "Wondrous Item",
+      "rarity": "rare",
+      "reqAttune": true,
+      "entries": [
+        "While wearing this belt, you gain the following benefits:",
+        {
+          "type": "list",
+          "items": [
+            "Your Constitution score increases by 2, to a maximum of 20.",
+            "You have advantage on Charisma (Persuasion) checks made to interact with dwarves.",
+            "You can speak and understand Dwarvish.",
+            "You can use an action to cast the {@spell speak with animals} spell, but only to speak with and understand subterranean beasts. The spell lasts for 1 hour or until you use this property again."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ring of Invisibility",
+      "source": "DMG",
+      "page": 191,
+      "type": "Ring",
+      "rarity": "legendary",
+      "reqAttune": false,
+      "entries": [
+        "This ring is crafted from a thin band of cold metal, usually silver, and is always slightly cool to the touch.",
+        "While wearing this ring, you can turn {@condition invisible} as an action. Anything you are wearing or carrying is {@condition invisible} with you. You remain {@condition invisible} until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again."
+      ]
+    },
+    {
+      "name": "Staff of Power",
+      "source": "DMG",
+      "page": 201,
+      "type": "Staff",
+      "rarity": "very rare",
+      "reqAttune": true,
+      "entries": [
+        "This staff can be wielded as a magic quarterstaff that grants a +2 bonus to attack and damage rolls made with it.",
+        "While holding it, you gain a +2 bonus to spell attack rolls.",
+        "The staff has 20 charges. While holding it, you can use an action to expend 1 or more of its charges to cast one of the following spells from it, using your spell save DC: {@spell cone of cold} (5 charges), {@spell fireball} (5th-level version, 5 charges), {@spell globe of invulnerability} (6 charges), {@spell hold monster} (5 charges), {@spell levitate} (2 charges), {@spell lightning bolt} (5th-level version, 5 charges), {@spell magic missile} (1 charge), {@spell ray of enfeeblement} (1 charge), or {@spell wall of force} (5 charges).",
+        "The staff regains {@dice 2d6 + 4} expended charges daily at dawn. If you expend the last charge, roll a {@dice d20}. On a 1, the staff loses its properties and becomes a nonmagical quarterstaff."
+      ]
+    },
+    {
+      "name": "Cloak of Elvenkind",
+      "source": "DMG",
+      "page": 158,
+      "type": "Wondrous Item",
+      "rarity": "uncommon",
+      "reqAttune": true,
+      "entries": [
+        "This cloak is made of a thin, shimmering gray fabric that seems to absorb light.",
+        "While you wear this cloak with its hood up, Wisdom ({@skill Perception}) checks made to see you have disadvantage, and you have advantage on Dexterity ({@skill Stealth}) checks made to hide."
+      ]
+    },
+    {
+      "name": "Wand of Fireballs",
+      "source": "DMG",
+      "page": 209,
+      "type": "Wand",
+      "rarity": "rare",
+      "reqAttune": false,
+      "entries": [
+        "This wand has 7 charges. While holding it, you can use an action to expend 1 or more of its charges to cast the {@spell fireball} spell (save DC 15) from it.",
+        "For {@dice 1 charge}, you cast the {@dice 3rd-level} version of the spell. You can increase the spell slot level by one for each additional charge you expend.",
+        "The wand regains {@dice 1d6 + 1} expended charges daily at dawn. If you expend the wand's last charge, roll a {@dice d20}. On a 1, the wand crumbles into ashes and is destroyed."
+      ]
+    },
+    {
+      "name": "Amulet of Health",
+      "source": "DMG",
+      "page": 150,
+      "type": "Wondrous Item",
+      "rarity": "rare",
+      "reqAttune": true,
+      "entries": [
+        "Your Constitution score is 19 while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher."
+      ]
     }
   ]
 }

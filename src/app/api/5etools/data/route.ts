@@ -14,7 +14,52 @@ export async function GET(request: Request) {
       );
     }
 
-    // Try to read from local files first
+    // For magic items, always try remote first since local data may be incomplete
+    if (source === '/items/magicitems.json') {
+      try {
+        // Construct the full 5e.tools URL
+        const url = `https://5e.tools/data${source}`;
+
+        // Fetch data from 5e.tools with shorter timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "greedy-Bot/1.0",
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.error(
+            `5e.tools API error: ${response.status} ${response.statusText} for URL: ${url}`,
+          );
+          // Fall back to local file if remote fails
+          throw new Error('Remote fetch failed');
+        }
+
+        const data = await response.json();
+
+        // Add CORS headers
+        return NextResponse.json(data, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Cache-Control": "public, s-maxage=3600", // Cache for 1 hour
+          },
+        });
+      } catch (remoteError) {
+        console.log(`Remote fetch failed for ${source}, trying local: ${remoteError}`);
+        // Fall back to local file
+      }
+    }
+
+    // Try to read from local files first (for other sources)
     const localPath = path.join(process.cwd(), "public", "5etools", "data", source.replace(/^\//, ""));
     
     try {
