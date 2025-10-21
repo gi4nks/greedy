@@ -1,5 +1,6 @@
 import { WikiDataService, WikiArticle } from "./wiki-data";
 import { DnD5eToolsService } from "./dnd5e-tools";
+import * as Open5eAPI from "./open5e-api";
 
 export type GameEdition = "adnd2e" | "dnd5e" | "pf2e" | "other";
 
@@ -125,7 +126,7 @@ export class EditionAwareImportService {
   }
 
   /**
-   * Search D&D 5e content using DnD5eToolsService and convert to WikiArticle format
+   * Search D&D 5e content using Open5e API and convert to WikiArticle format
    */
   private static async searchDnD5eContent(
     categoryId: string,
@@ -133,47 +134,47 @@ export class EditionAwareImportService {
   ): Promise<WikiArticle[]> {
     switch (categoryId) {
       case "monsters":
-        const monsters = await DnD5eToolsService.searchMonsters(searchQuery);
+        const monsters = await Open5eAPI.searchOpen5eMonsters(searchQuery);
         return monsters.map((monster, index) => ({
           id: 5000000 + index, // Use high ID to avoid conflicts
           title: monster.name,
-          url: `/5e/monsters/${encodeURIComponent(monster.name.toLowerCase())}`,
+          url: `/5e/monsters/${encodeURIComponent(monster.slug || monster.name.toLowerCase())}`,
           ns: 0,
         }));
 
       case "spells":
-        const spells = await DnD5eToolsService.searchSpells(searchQuery);
+        const spells = await Open5eAPI.searchOpen5eSpells(searchQuery);
         return spells.map((spell, index) => ({
           id: 6000000 + index,
           title: spell.name,
-          url: `/5e/spells/${encodeURIComponent(spell.name.toLowerCase())}`,
+          url: `/5e/spells/${encodeURIComponent(spell.slug || spell.name.toLowerCase())}`,
           ns: 0,
         }));
 
       case "magic-items":
-        const items = await DnD5eToolsService.searchMagicItems(searchQuery);
+        const items = await Open5eAPI.searchOpen5eMagicItems(searchQuery);
         return items.map((item, index) => ({
           id: 7000000 + index,
           title: item.name,
-          url: `/5e/items/${encodeURIComponent(item.name.toLowerCase())}`,
+          url: `/5e/items/${encodeURIComponent(item.slug || item.name.toLowerCase())}`,
           ns: 0,
         }));
 
       case "races":
-        const races = await DnD5eToolsService.searchRaces(searchQuery);
+        const races = await Open5eAPI.searchOpen5eRaces(searchQuery);
         return races.map((race, index) => ({
           id: 8000000 + index,
           title: race.name,
-          url: `/5e/races/${encodeURIComponent(race.name.toLowerCase())}`,
+          url: `/5e/races/${encodeURIComponent(race.slug || race.name.toLowerCase())}`,
           ns: 0,
         }));
 
       case "classes":
-        const classes = await DnD5eToolsService.searchClasses(searchQuery);
+        const classes = await Open5eAPI.searchOpen5eClasses(searchQuery);
         return classes.map((cls, index) => ({
           id: 9000000 + index,
           title: cls.name,
-          url: `/5e/classes/${encodeURIComponent(cls.name.toLowerCase())}`,
+          url: `/5e/classes/${encodeURIComponent(cls.slug || cls.name.toLowerCase())}`,
           ns: 0,
         }));
 

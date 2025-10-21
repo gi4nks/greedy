@@ -11,6 +11,7 @@ import {
   GameEdition,
 } from "../../../lib/services/edition-aware-import";
 import { DnD5eToolsService } from "../../../lib/services/dnd5e-tools";
+import * as Open5eAPI from "../../../lib/services/open5e-api";
 import { Campaign } from "../../../lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
@@ -198,6 +199,10 @@ function ImportedArticlesTab() {
       // For adnd2e-wiki articles, convert MediaWiki markup to HTML
       if (article.importedFrom === "adnd2e-wiki") {
         return WikiDataService.wikitextToHtml(article.rawContent);
+      } else if (article.importedFrom === "open5e-api") {
+        // Open5e API content - already formatted, may contain HTML
+        // The WikiContent component will detect and handle the format
+        return article.rawContent;
       } else if (article.importedFrom === "dnd5e-tools") {
         // 5e.tools content is already formatted as markdown/HTML
         return article.rawContent;
@@ -315,8 +320,8 @@ function ImportedArticlesTab() {
                               </div>
                               <div className="flex gap-2 mt-2 flex-wrap ml-7">
                                 <Badge variant="outline">
-                                  {article.importedFrom === "dnd5e-tools"
-                                    ? "D&D 5e (5e.tools)"
+                                  {article.importedFrom === "open5e-api"
+                                    ? "D&D 5e (Open5e API)"
                                     : article.importedFrom === "adnd2e-wiki"
                                       ? "AD&D 2e (Fandom Wiki)"
                                       : "Unknown Source"}
@@ -580,8 +585,8 @@ export default function WikiImport() {
     ) {
       try {
         if (article.id >= 5000000) {
-          // This is a 5e.tools article, load detailed content
-          const detailedContent = await load5eToolsContent(article);
+          // This is a D&D 5e article from Open5e API, load detailed content
+          const detailedContent = await loadOpen5eContent(article);
           setFullContentArticles((prev) =>
             new Map(prev).set(article.id, detailedContent),
           );
@@ -839,22 +844,47 @@ export default function WikiImport() {
                                     );
                                     let parsedData = {};
 
-                                    // For 5e.tools items, use the already parsed data from load5eToolsContent
+                                    // For Open5e items, parse based on category
                                     if (article.id >= 5000000 && fullContent) {
-                                      // The parsedData is already available from load5eToolsContent
-                                      // We need to extract it from the formatted content or store it properly
-                                      const is5eTools = article.id >= 5000000;
-                                      if (is5eTools) {
-                                        // For 5e.tools items, we need to re-parse using the correct service
-                                        let searchResults: any[] = [];
-                                        if (article.url.includes("/items/")) {
-                                          searchResults = await DnD5eToolsService.searchMagicItems();
-                                        }
-                                        const item = searchResults.find(
+                                      if (article.url.includes("/items/")) {
+                                        const items = await Open5eAPI.searchOpen5eMagicItems(article.title);
+                                        const item = items.find(
                                           (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (item) {
-                                          parsedData = DnD5eToolsService.parseMagicItemForImport(item);
+                                          parsedData = Open5eAPI.parseOpen5eMagicItemForImport(item);
+                                        }
+                                      } else if (article.url.includes("/spells/")) {
+                                        const spells = await Open5eAPI.searchOpen5eSpells(article.title);
+                                        const spell = spells.find(
+                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                        );
+                                        if (spell) {
+                                          parsedData = Open5eAPI.parseOpen5eSpellForImport(spell);
+                                        }
+                                      } else if (article.url.includes("/monsters/")) {
+                                        const monsters = await Open5eAPI.searchOpen5eMonsters(article.title);
+                                        const monster = monsters.find(
+                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                        );
+                                        if (monster) {
+                                          parsedData = Open5eAPI.parseOpen5eMonsterForImport(monster);
+                                        }
+                                      } else if (article.url.includes("/races/")) {
+                                        const races = await Open5eAPI.searchOpen5eRaces(article.title);
+                                        const race = races.find(
+                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                        );
+                                        if (race) {
+                                          parsedData = Open5eAPI.parseOpen5eRaceForImport(race);
+                                        }
+                                      } else if (article.url.includes("/classes/")) {
+                                        const classes = await Open5eAPI.searchOpen5eClasses(article.title);
+                                        const cls = classes.find(
+                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                        );
+                                        if (cls) {
+                                          parsedData = Open5eAPI.parseOpen5eClassForImport(cls);
                                         }
                                       }
                                     } else if (fullContent?.content) {
@@ -895,7 +925,7 @@ export default function WikiImport() {
                                           parsedData: parsedData,
                                           importedFrom:
                                             article.id >= 5000000
-                                              ? "dnd5e-tools"
+                                              ? "open5e-api"
                                               : "adnd2e-wiki",
                                         }),
                                       },
@@ -1003,99 +1033,83 @@ export default function WikiImport() {
 }
 
 /**
- * Load detailed content for 5e.tools articles
+ * Load detailed content for D&D 5e articles from Open5e API
  */
-async function load5eToolsContent(article: WikiArticle): Promise<WikiArticleDetails> {
+async function loadOpen5eContent(article: WikiArticle): Promise<WikiArticleDetails> {
   try {
     // Determine the content type from the URL pattern
     let contentType: "spell" | "monster" | "magic-item" | "race" | "class" | null = null;
-    let searchResults: (import("../../../lib/services/dnd5e-tools").DnD5eSpell | import("../../../lib/services/dnd5e-tools").DnD5eMonster | import("../../../lib/services/dnd5e-tools").DnD5eItem | import("../../../lib/services/dnd5e-tools").DnD5eRace | import("../../../lib/services/dnd5e-tools").DnD5eClass)[] = [];
+    let formattedContent = "";
+    let parsedData: any = null;
 
     if (article.url.includes("/spells/")) {
       contentType = "spell";
-      searchResults = await DnD5eToolsService.searchSpells();
+      const spells = await Open5eAPI.searchOpen5eSpells(article.title);
+      const spell = spells.find((s) => s.name.toLowerCase() === article.title.toLowerCase());
+      if (spell) {
+        parsedData = Open5eAPI.parseOpen5eSpellForImport(spell);
+        formattedContent = formatSpellContent(parsedData);
+      }
     } else if (article.url.includes("/monsters/")) {
       contentType = "monster";
-      searchResults = await DnD5eToolsService.searchMonsters();
+      const monsters = await Open5eAPI.searchOpen5eMonsters(article.title);
+      const monster = monsters.find((m) => m.name.toLowerCase() === article.title.toLowerCase());
+      if (monster) {
+        parsedData = Open5eAPI.parseOpen5eMonsterForImport(monster);
+        formattedContent = formatMonsterContent(parsedData);
+      }
     } else if (article.url.includes("/items/")) {
       contentType = "magic-item";
-      searchResults = await DnD5eToolsService.searchMagicItems();
+      const items = await Open5eAPI.searchOpen5eMagicItems(article.title);
+      const item = items.find((i) => i.name.toLowerCase() === article.title.toLowerCase());
+      if (item) {
+        parsedData = Open5eAPI.parseOpen5eMagicItemForImport(item);
+        formattedContent = formatMagicItemContent(parsedData);
+      }
     } else if (article.url.includes("/races/")) {
       contentType = "race";
-      searchResults = await DnD5eToolsService.searchRaces();
+      const races = await Open5eAPI.searchOpen5eRaces(article.title);
+      const race = races.find((r) => r.name.toLowerCase() === article.title.toLowerCase());
+      if (race) {
+        parsedData = Open5eAPI.parseOpen5eRaceForImport(race);
+        formattedContent = formatRaceContent(parsedData);
+      }
     } else if (article.url.includes("/classes/")) {
       contentType = "class";
-      searchResults = await DnD5eToolsService.searchClasses();
+      const classes = await Open5eAPI.searchOpen5eClasses(article.title);
+      const cls = classes.find((c) => c.name.toLowerCase() === article.title.toLowerCase());
+      if (cls) {
+        parsedData = Open5eAPI.parseOpen5eClassForImport(cls);
+        formattedContent = formatClassContent(parsedData);
+      }
     }
 
-    if (!contentType || searchResults.length === 0) {
+    if (!contentType || !parsedData) {
       return {
         id: article.id,
         title: article.title,
         url: article.url,
-        extract: "D&D 5e content from 5e.tools",
+        extract: "D&D 5e content from Open5e API",
         content: "Unable to load detailed content for this item.",
         isFullContent: false,
       };
     }
 
-    // Find the item by name
-    const item = searchResults.find(
-      (result: import("../../../lib/services/dnd5e-tools").DnD5eSpell | import("../../../lib/services/dnd5e-tools").DnD5eMonster | import("../../../lib/services/dnd5e-tools").DnD5eItem | import("../../../lib/services/dnd5e-tools").DnD5eRace | import("../../../lib/services/dnd5e-tools").DnD5eClass) =>
-        result.name.toLowerCase() === article.title.toLowerCase()
-    );
-
-    if (!item) {
-      return {
-        id: article.id,
-        title: article.title,
-        url: article.url,
-        extract: "D&D 5e content from 5e.tools",
-        content: "Item details not found in the data source.",
-        isFullContent: false,
-      };
-    }
-
-    // Parse the item based on its type
-    let parsedData: ReturnType<typeof DnD5eToolsService.parseSpellForImport> | ReturnType<typeof DnD5eToolsService.parseMonsterForImport> | ReturnType<typeof DnD5eToolsService.parseMagicItemForImport> | import("../../../lib/services/dnd5e-tools").DnD5eRace | import("../../../lib/services/dnd5e-tools").DnD5eClass;
-    let formattedContent = "";
-
-    switch (contentType) {
-      case "spell":
-        parsedData = DnD5eToolsService.parseSpellForImport(item as import("../../../lib/services/dnd5e-tools").DnD5eSpell);
-        formattedContent = formatSpellContent(parsedData);
-        break;
-      case "monster":
-        parsedData = DnD5eToolsService.parseMonsterForImport(item as import("../../../lib/services/dnd5e-tools").DnD5eMonster);
-        formattedContent = formatMonsterContent(parsedData);
-        break;
-      case "magic-item":
-        parsedData = DnD5eToolsService.parseMagicItemForImport(item as import("../../../lib/services/dnd5e-tools").DnD5eItem);
-        formattedContent = formatMagicItemContent(parsedData);
-        break;
-      case "race":
-        formattedContent = formatRaceContent(item as import("../../../lib/services/dnd5e-tools").DnD5eRace);
-        break;
-      case "class":
-        formattedContent = formatClassContent(item as import("../../../lib/services/dnd5e-tools").DnD5eClass);
-        break;
-    }
-
     return {
       id: article.id,
       title: article.title,
       url: article.url,
-      extract: `D&D 5e ${contentType} from 5e.tools`,
+      extract: `D&D 5e ${contentType} from Open5e API`,
       content: formattedContent,
       isFullContent: true,
     };
   } catch (error) {
-    console.error("Error loading 5e.tools content:", error);
+    console.error("Error loading Open5e content:", error);
     return {
       id: article.id,
       title: article.title,
       url: article.url,
-      extract: "D&D 5e content from 5e.tools",
+      extract: "D&D 5e content from Open5e API",
       content: "Error loading detailed content.",
       isFullContent: false,
     };
@@ -1104,8 +1118,9 @@ async function load5eToolsContent(article: WikiArticle): Promise<WikiArticleDeta
 
 /**
  * Format spell content for display
+ * Works with both DnD5eToolsService and Open5eAPI parsed spells
  */
-function formatSpellContent(spell: ReturnType<typeof DnD5eToolsService.parseSpellForImport>): string {
+function formatSpellContent(spell: any): string {
   return `## ${spell.name}
 
 **Level:** ${spell.level}
@@ -1120,8 +1135,9 @@ ${spell.description}`;
 
 /**
  * Format monster content for display
+ * Works with both DnD5eToolsService and Open5eAPI parsed monsters
  */
-function formatMonsterContent(monster: ReturnType<typeof DnD5eToolsService.parseMonsterForImport>): string {
+function formatMonsterContent(monster: any): string {
   return `## ${monster.name}
 
 **Size:** ${monster.size}
@@ -1146,8 +1162,9 @@ ${monster.description}`;
 
 /**
  * Format magic item content for display
+ * Works with both DnD5eToolsService and Open5eAPI parsed items
  */
-function formatMagicItemContent(item: ReturnType<typeof DnD5eToolsService.parseMagicItemForImport>): string {
+function formatMagicItemContent(item: any): string {
   const attunement = item.requiresAttunement ? " (requires attunement)" : "";
   return `## ${item.name}
 
@@ -1159,53 +1176,33 @@ ${item.description}`;
 
 /**
  * Format race content for display
+ * Works with both DnD5eToolsService and Open5eAPI parsed races
  */
-function formatRaceContent(race: import("../../../lib/services/dnd5e-tools").DnD5eRace): string {
-  const size = typeof race.size === "string" ? race.size : "Unknown";
-  const abilityText = race.ability ? formatAbilityScores(race.ability) : "";
+function formatRaceContent(race: any): string {
+  const abilityText = race.abilityBonuses ? `**Ability Bonuses:** ${race.abilityBonuses}` : "";
+  const speed = typeof race.speed === "string" ? race.speed : "Unknown";
   
   return `## ${race.name}
 
-**Size:** ${size}
-**Speed:** ${race.speed || "Unknown"} ft.
+${race.speed ? `**Speed:** ${speed}` : ""}
 
 ${abilityText}
 
-${race.entries ? DnD5eToolsService.parseEntries(race.entries) : "No description available."}`;
+${race.description || "No description available."}`;
 }
 
 /**
  * Format class content for display
+ * Works with both DnD5eToolsService and Open5eAPI parsed classes
  */
-function formatClassContent(cls: import("../../../lib/services/dnd5e-tools").DnD5eClass): string {
-  const hitDie = cls.hd ? `${cls.hd.number}d${cls.hd.faces}` : "Unknown";
+function formatClassContent(cls: any): string {
+  const hitDie = cls.hitDice || "Unknown";
   
   return `## ${cls.name}
 
 **Hit Die:** ${hitDie}
-**Proficiencies:** ${cls.proficiency ? cls.proficiency.join(", ") : "None"}
+${cls.primaryAbility ? `**Primary Ability:** ${cls.primaryAbility}` : ""}
+${cls.savingThrows ? `**Saving Throws:** ${cls.savingThrows}` : ""}
 
-**Starting Equipment:** ${cls.startingEquipment || "Not specified"}`;
-}
-
-/**
- * Format ability score bonuses
- */
-function formatAbilityScores(ability: import("../../../lib/services/dnd5e-tools").DnD5eRace["ability"]): string {
-  if (!ability || !Array.isArray(ability)) return "";
-  
-  const bonuses = ability
-    .map((bonus) => {
-      const parts: string[] = [];
-      if (bonus.str) parts.push(`STR +${bonus.str}`);
-      if (bonus.dex) parts.push(`DEX +${bonus.dex}`);
-      if (bonus.con) parts.push(`CON +${bonus.con}`);
-      if (bonus.int) parts.push(`INT +${bonus.int}`);
-      if (bonus.wis) parts.push(`WIS +${bonus.wis}`);
-      if (bonus.cha) parts.push(`CHA +${bonus.cha}`);
-      return parts.join(", ");
-    })
-    .filter(Boolean);
-  
-  return bonuses.length > 0 ? `**Ability Score Increases:** ${bonuses.join("; ")}` : "";
+${cls.description || "No description available."}`;
 }
