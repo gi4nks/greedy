@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,7 @@ interface SessionFormProps {
   }>;
   mode: "create" | "edit";
   defaultAdventureId?: number;
+  showButtons?: boolean;
 }
 
 interface FormState {
@@ -57,6 +58,7 @@ export default function SessionForm({
   adventures,
   mode,
   defaultAdventureId,
+  showButtons = true,
 }: SessionFormProps) {
   const router = useRouter();
 
@@ -94,7 +96,7 @@ export default function SessionForm({
     }
   };
 
-  const [state, formAction, isPending] = useActionState(createOrUpdateSession, {
+  const [, formAction, isPending] = useActionState(createOrUpdateSession, {
     success: false,
   });
 
@@ -332,37 +334,44 @@ export default function SessionForm({
         </Card>
       )}
 
-      <div className="flex gap-4 justify-end">
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isPending}
-          variant="primary"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isPending
-            ? mode === "edit"
-              ? "Updating..."
-              : "Creating..."
-            : mode === "edit"
-              ? "Update"
+      {/* Actions */}
+      {showButtons && (
+        <Card>
+          <CardFooter>
+            <div className="flex gap-4 justify-end">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isPending}
+            variant="primary"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isPending
+              ? mode === "edit"
+                ? "Updating..."
+                : "Creating..."
+              : mode === "edit"
+                ? "Update"
               : "Create"}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="gap-2"
-          onClick={() =>
-            router.push(
-              campaignId ? `/campaigns/${campaignId}/sessions` : "/sessions",
-            )
-          }
-        >
-          <EyeOff className="w-4 h-4" />
-          Cancel
-        </Button>
-      </div>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={() =>
+              router.push(
+                campaignId ? `/campaigns/${campaignId}/sessions` : "/sessions",
+              )
+            }
+          >
+            <EyeOff className="w-4 h-4" />
+            Cancel
+          </Button>
+            </div>
+          </CardFooter>
+        </Card>
+      )}
     </form>
   );
 }

@@ -6,7 +6,9 @@ import { eq } from "drizzle-orm";
 import SessionForm from "@/components/session/SessionForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Save, EyeOff } from "lucide-react";
 import { Calendar } from "lucide-react";
 
 interface CreateSessionPageProps {
@@ -124,19 +126,12 @@ export default async function CreateSessionPage({
           </div>
         </div>
 
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Session Details</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <SessionForm
-              campaignId={campaignId}
-              adventures={campaignAdventures}
-              mode="create"
-              defaultAdventureId={adventureId}
-            />
-          </CardContent>
-        </Card>
+        <SessionForm
+          campaignId={campaignId}
+          adventures={campaignAdventures}
+          mode="create"
+          defaultAdventureId={adventureId}
+        />
       </div>
     </Suspense>
   );

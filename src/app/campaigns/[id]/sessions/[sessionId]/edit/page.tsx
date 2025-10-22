@@ -100,19 +100,12 @@ export default async function EditSessionPage({
           </div>
         </div>
 
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Session Details</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <SessionForm
-              session={session}
-              campaignId={campaignId}
-              adventures={campaignAdventures}
-              mode="edit"
-            />
-          </CardContent>
-        </Card>
+        <SessionForm
+          session={session}
+          campaignId={campaignId}
+          adventures={campaignAdventures}
+          mode="edit"
+        />
       </div>
     </Suspense>
   );
