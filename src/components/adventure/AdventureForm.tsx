@@ -239,7 +239,7 @@ export default function AdventureForm({
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 pt-4 justify-end">
         <Button type="submit" size="sm" disabled={isPending} variant="primary">
           <Save className="w-4 h-4 mr-2" />
           {isPending

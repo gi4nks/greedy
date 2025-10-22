@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import LocationForm from "@/components/location/LocationForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 
 interface CreateLocationPageProps {
@@ -51,7 +51,7 @@ export default async function CreateLocationPage({
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <DynamicBreadcrumb
         campaignId={campaignId}
         campaignTitle={campaign.title}
@@ -71,7 +71,10 @@ export default async function CreateLocationPage({
         </div>
       </div>
 
-      <Card>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Location Details</CardTitle>
+        </CardHeader>
         <CardContent className="p-6">
           <Suspense fallback={<CreateLocationSkeleton />}>
             <LocationForm campaignId={campaignId} mode="create" />
@@ -84,7 +87,7 @@ export default async function CreateLocationPage({
 
 function CreateLocationSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
+    <div className="container mx-auto px-4 py-6 md:p-6">
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="skeleton h-8 w-8 rounded-lg"></div>
@@ -99,12 +102,17 @@ function CreateLocationSkeleton() {
           <div className="space-y-6">
             <div className="skeleton h-6 w-32 mb-4"></div>
             <div className="skeleton h-10 w-full mb-4"></div>
-            <div className="skeleton h-20 w-full mb-4"></div>
             <div className="skeleton h-6 w-32 mb-4"></div>
-            <div className="skeleton h-20 w-full mb-4"></div>
-            <div className="flex gap-4 justify-end">
+            <div className="skeleton h-32 w-full mb-4"></div>
+            <div className="skeleton h-6 w-32 mb-4"></div>
+            <div className="skeleton h-10 w-full mb-4"></div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="skeleton h-10 w-full"></div>
+              <div className="skeleton h-10 w-full"></div>
+            </div>
+            <div className="flex gap-4">
               <div className="skeleton h-10 w-24"></div>
-              <div className="skeleton h-10 w-20"></div>
+              <div className="skeleton h-10 w-32"></div>
             </div>
           </div>
         </CardContent>
