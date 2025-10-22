@@ -50,6 +50,7 @@ export const adventures = sqliteTable("adventures", {
 
 export const sessions = sqliteTable("sessions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  campaignId: integer("campaign_id").references(() => campaigns.id),
   adventureId: integer("adventure_id").references(() => adventures.id),
   title: text("title").notNull(),
   date: text("date").notNull(),
@@ -309,6 +310,7 @@ export type Adventure = {
 
 export type Session = {
   id: number;
+  campaignId: number | null;
   adventureId: number | null;
   title: string;
   date: string;

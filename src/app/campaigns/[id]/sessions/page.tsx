@@ -3,16 +3,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { sessions, adventures } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Plus, Clock, FileText, Edit, View } from "lucide-react";
+import { Calendar, Plus, Clock, FileText, Edit, View, Trash } from "lucide-react";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { formatDate, formatMonthYear, formatDisplayDate } from "@/lib/utils/date";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
 import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
+import { deleteSessionAction } from "@/lib/actions/sessions";
 
 interface SessionsPageProps {
   params: Promise<{ id: string }>;
@@ -21,6 +22,7 @@ interface SessionsPageProps {
 
 interface SessionData {
   id: number;
+  campaignId: number | null;
   adventureId: number | null;
   title: string;
   date: string;
@@ -44,17 +46,21 @@ async function getAdventure(adventureId: number) {
 }
 
 async function getSessions(campaignId: number, adventureId?: number) {
-  // Get sessions through adventures that belong to this campaign
+  // Get sessions that belong to this campaign either directly or through adventures
   const whereConditions = adventureId
     ? and(
         eq(adventures.campaignId, campaignId),
         eq(sessions.adventureId, adventureId),
       )
-    : eq(adventures.campaignId, campaignId);
+    : or(
+        eq(sessions.campaignId, campaignId),
+        eq(adventures.campaignId, campaignId)
+      );
 
   const sessionsList = await db
     .select({
       id: sessions.id,
+      campaignId: sessions.campaignId,
       adventureId: sessions.adventureId,
       title: sessions.title,
       date: sessions.date,
@@ -296,6 +302,13 @@ function SessionsList({
                         Edit
                       </Button>
                     </Link>
+                    <form action={deleteSessionAction} className="flex-1">
+                      <input type="hidden" name="id" value={session.id} />
+                      <Button type="submit" variant="neutral" className="gap-2 w-full" size="sm">
+                        <Trash className="w-4 h-4" />
+                        Delete
+                      </Button>
+                    </form>
                   </div>
                 </Card>
               );

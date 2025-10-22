@@ -42,6 +42,7 @@ interface SessionFormProps {
   mode: "create" | "edit";
   defaultAdventureId?: number;
   showButtons?: boolean;
+  id?: string;
 }
 
 interface FormState {
@@ -59,6 +60,7 @@ export default function SessionForm({
   mode,
   defaultAdventureId,
   showButtons = true,
+  id,
 }: SessionFormProps) {
   const router = useRouter();
 
@@ -203,7 +205,7 @@ export default function SessionForm({
   };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form id={id} action={formAction} className="space-y-6">
       {/* Hidden inputs for server action */}
       <input type="hidden" name="campaignId" value={campaignId || ""} />
       <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
@@ -336,9 +338,7 @@ export default function SessionForm({
 
       {/* Actions */}
       {showButtons && (
-        <Card>
-          <CardFooter>
-            <div className="flex gap-4 justify-end">
+        <div className="flex gap-4 justify-end">
           <Button
             type="submit"
             size="sm"
@@ -368,9 +368,7 @@ export default function SessionForm({
             <EyeOff className="w-4 h-4" />
             Cancel
           </Button>
-            </div>
-          </CardFooter>
-        </Card>
+        </div>
       )}
     </form>
   );

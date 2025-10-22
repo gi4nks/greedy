@@ -126,12 +126,19 @@ export default async function CreateSessionPage({
           </div>
         </div>
 
-        <SessionForm
-          campaignId={campaignId}
-          adventures={campaignAdventures}
-          mode="create"
-          defaultAdventureId={adventureId}
-        />
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <SessionForm
+              campaignId={campaignId}
+              adventures={campaignAdventures}
+              mode="create"
+              defaultAdventureId={adventureId}
+            />
+          </CardContent>
+        </Card>
       </div>
     </Suspense>
   );

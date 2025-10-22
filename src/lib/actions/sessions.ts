@@ -12,6 +12,7 @@ export async function getSessions() {
   return await db
     .select({
       id: sessions.id,
+      campaignId: sessions.campaignId,
       adventureId: sessions.adventureId,
       title: sessions.title,
       date: sessions.date,
@@ -19,12 +20,11 @@ export async function getSessions() {
       images: sessions.images,
       createdAt: sessions.createdAt,
       updatedAt: sessions.updatedAt,
-      campaignId: adventures.campaignId,
       campaignTitle: campaigns.title,
     })
     .from(sessions)
     .leftJoin(adventures, eq(sessions.adventureId, adventures.id))
-    .leftJoin(campaigns, eq(adventures.campaignId, campaigns.id))
+    .leftJoin(campaigns, eq(sessions.campaignId, campaigns.id))
     .orderBy(desc(sessions.date));
 }
 
@@ -36,12 +36,11 @@ export async function getSession(id: number) {
   // Get campaign info separately since the optimized query doesn't include it
   const [campaignInfo] = await db
     .select({
-      campaignId: adventures.campaignId,
+      campaignId: sessions.campaignId,
       campaignTitle: campaigns.title,
     })
     .from(sessions)
-    .leftJoin(adventures, eq(sessions.adventureId, adventures.id))
-    .leftJoin(campaigns, eq(adventures.campaignId, campaigns.id))
+    .leftJoin(campaigns, eq(sessions.campaignId, campaigns.id))
     .where(eq(sessions.id, id))
     .limit(1);
 
@@ -76,6 +75,7 @@ export async function createSession(
     const [session] = await db
       .insert(sessions)
       .values({
+        campaignId: campaignId ? Number(campaignId) : null,
         title,
         date,
         adventureId,
@@ -126,6 +126,7 @@ export async function updateSession(
     const [session] = await db
       .update(sessions)
       .set({
+        campaignId: campaignId ? Number(campaignId) : null,
         title,
         date,
         adventureId,
@@ -180,8 +181,11 @@ export async function deleteSession(id: number): Promise<ActionResult> {
 
 export async function deleteSessionAction(
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<void> {
   "use server";
   const id = Number(formData.get("id"));
-  return await deleteSession(id);
+  const result = await deleteSession(id);
+  if (!result.success) {
+    throw new Error(result.message || "Failed to delete session");
+  }
 }
