@@ -254,11 +254,11 @@ export function WikiItemAssignmentDialog({
             </CardContent>
 
             <CardFooter>
-              <Button onClick={handleAssign} disabled={!selectedEntityId || loading}>
+              <Button onClick={handleAssign} disabled={!selectedEntityId || loading} variant="primary">
                 <Plus className="w-4 h-4" />
                 Assign
               </Button>
-              <Button type="button" variant="neutral" className="gap-2" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" className="gap-2" onClick={() => setOpen(false)}>
                 <EyeOff className="w-4 h-4" />
                 Cancel
               </Button>
