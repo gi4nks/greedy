@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { locations, adventures } from "@/lib/db/schema";
+import { locations, adventures, campaigns } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import LocationForm from "@/components/location/LocationForm";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +39,19 @@ async function getLocation(locationId: number) {
   return location;
 }
 
+async function getCampaign(campaignId: number) {
+  const [campaign] = await db
+    .select({
+      id: campaigns.id,
+      title: campaigns.title,
+    })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .limit(1);
+
+  return campaign;
+}
+
 export default async function EditLocationPage({
   params,
 }: EditLocationPageProps) {
@@ -47,6 +60,7 @@ export default async function EditLocationPage({
   const campaignId = parseInt(resolvedParams.id);
 
   const location = await getLocation(locationId);
+  const campaign = await getCampaign(campaignId);
 
   if (!location || location.campaignId !== campaignId) {
     notFound();
@@ -57,6 +71,7 @@ export default async function EditLocationPage({
       <div className="container mx-auto px-4 py-6 md:p-6">
         <DynamicBreadcrumb
           campaignId={campaignId}
+          campaignTitle={campaign?.title}
           sectionItems={[
             { label: "Locations", href: `/campaigns/${campaignId}/locations` },
             {
