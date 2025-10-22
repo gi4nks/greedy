@@ -21,6 +21,7 @@ import {
   X,
   EyeOff,
 } from "lucide-react";
+import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import {
   WikiItemCategory,
   AssignableEntity,
@@ -152,28 +153,22 @@ export function WikiItemAssignmentDialog({
 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-base-100 rounded-lg shadow-lg border w-full max-w-md">
-            <div className="flex flex-col space-y-1.5 p-6">
-              <div className="flex items-center justify-between">
+          <Card className="w-full max-w-lg border">
+            <CardHeader>
+              <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold leading-none tracking-tight">
-                    Assign Wiki Item
-                  </h3>
+                  <CardTitle>Assign Wiki Item</CardTitle>
                   <Badge className={`${categoryInfo.color} text-white`}>
                     {categoryInfo.icon} {categoryInfo.label}
                   </Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOpen(false)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-            </div>
+            </CardHeader>
 
-            <div className="p-6 pt-0 space-y-4">
+            <CardContent className="space-y-4">
               <div>
                 <h4 className="font-medium text-sm mb-1">Item</h4>
                 <p className="text-sm text-base-content/70">{itemTitle}</p>
@@ -223,25 +218,19 @@ export function WikiItemAssignmentDialog({
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Select {selectedEntityType}:
-                </label>
+                <label className="text-sm font-medium">Select {selectedEntityType}:</label>
                 <Select
                   name="entityId"
                   value={selectedEntityId?.toString() || ""}
                   onValueChange={(value) => {
                     const id = parseInt(value);
                     setSelectedEntityId(id);
-                    const entity = getCurrentEntityList().find(
-                      (e) => e.id === id,
-                    );
+                    const entity = getCurrentEntityList().find((e) => e.id === id);
                     setSelectedEntityName(entity?.name || "");
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={`Choose a ${selectedEntityType}...`}
-                    />
+                    <SelectValue placeholder={`Choose a ${selectedEntityType}...`} />
                   </SelectTrigger>
                   <SelectContent>
                     {getCurrentEntityList().map((entity) => (
@@ -262,28 +251,19 @@ export function WikiItemAssignmentDialog({
                   rows={3}
                 />
               </div>
-            </div>
+            </CardContent>
 
-            <div className="flex items-center p-6 pt-0 gap-2">
-              <Button
-                onClick={handleAssign}
-                disabled={!selectedEntityId || loading}
-                className="flex-1"
-              >
+            <CardFooter>
+              <Button onClick={handleAssign} disabled={!selectedEntityId || loading}>
                 <Plus className="w-4 h-4" />
                 Assign
               </Button>
-              <Button
-                type="button"
-                variant="neutral"
-                className="gap-2"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="neutral" className="gap-2" onClick={() => setOpen(false)}>
                 <EyeOff className="w-4 h-4" />
                 Cancel
               </Button>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </>
