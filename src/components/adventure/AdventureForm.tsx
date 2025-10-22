@@ -145,136 +145,122 @@ export default function AdventureForm({
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {mode === "edit" ? "Edit Adventure" : "Create New Adventure"}
-          </h1>
-          <p className="text-base-content/70">
-            {mode === "edit"
-              ? "Update adventure details"
-              : "Add a new adventure to your campaign"}
-          </p>
-        </div>
-      </div>
+    <form action={formAction} className="space-y-6">
+      {/* Hidden inputs for form data */}
+      <input type="hidden" name="title" value={formData.title} />
+      <input type="hidden" name="description" value={formData.description} />
+      <input type="hidden" name="startDate" value={formData.startDate} />
+      <input type="hidden" name="endDate" value={formData.endDate} />
+      <input type="hidden" name="status" value={formData.status} />
+      <input type="hidden" name="slug" value={formData.slug} />
+      <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
+      {mode === "edit" && adventure && (
+        <input type="hidden" name="id" value={adventure.id.toString()} />
+      )}
+      <input type="hidden" name="campaignId" value={campaignId.toString()} />
 
-      <form action={formAction} className="space-y-6">
-        {/* Hidden inputs for form data */}
-        <input type="hidden" name="title" value={formData.title} />
-        <input type="hidden" name="description" value={formData.description} />
-        <input type="hidden" name="startDate" value={formData.startDate} />
-        <input type="hidden" name="endDate" value={formData.endDate} />
-        <input type="hidden" name="status" value={formData.status} />
-        <input type="hidden" name="slug" value={formData.slug} />
-        <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
-        {mode === "edit" && adventure && (
-          <input type="hidden" name="id" value={adventure.id.toString()} />
-        )}
-        <input type="hidden" name="campaignId" value={campaignId.toString()} />
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  placeholder="Enter adventure title"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => handleInputChange("slug", e.target.value)}
-                  placeholder="adventure-slug"
-                />
-                <p className="text-sm text-base-content/70">
-                  URL-friendly identifier (auto-generated from title)
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  name="status"
-                  value={formData.status}
-                  onValueChange={(value) => handleInputChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Enter adventure title"
+                required
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                placeholder="Describe the adventure, its goals, themes, and key elements..."
-                rows={6}
+              <Label htmlFor="slug">Slug</Label>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => handleInputChange("slug", e.target.value)}
+                placeholder="adventure-slug"
               />
+              <p className="text-sm text-base-content/70">
+                URL-friendly identifier (auto-generated from title)
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Images</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ImageManager
-              entityType="adventures"
-              entityId={adventure?.id || 0}
-              currentImages={formData.images}
-              onImagesChange={handleImagesChange}
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                name="status"
+                value={formData.status}
+                onValueChange={(value) => handleInputChange("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                handleInputChange("description", e.target.value)
+              }
+              placeholder="Describe the adventure, its goals, themes, and key elements..."
+              rows={6}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex gap-4">
-          <Button type="submit" size="sm" disabled={isPending} variant="primary">
-            <Save className="w-4 h-4 mr-2" />
-            {isPending
-              ? mode === "edit"
-                ? "Updating..."
-                : "Creating..."
-              : mode === "edit"
-                ? "Update"
-                : "Create"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            size="sm"
-            onClick={() => router.push(`/campaigns/${campaignId}/adventures`)}
-          >
-            <EyeOff className="w-4 h-4" />
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Images</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ImageManager
+            entityType="adventures"
+            entityId={adventure?.id || 0}
+            currentImages={formData.images}
+            onImagesChange={handleImagesChange}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-4">
+        <Button type="submit" size="sm" disabled={isPending} variant="primary">
+          <Save className="w-4 h-4 mr-2" />
+          {isPending
+            ? mode === "edit"
+              ? "Updating..."
+              : "Creating..."
+            : mode === "edit"
+              ? "Update"
+              : "Create"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          size="sm"
+          onClick={() => router.push(`/campaigns/${campaignId}/adventures`)}
+        >
+          <EyeOff className="w-4 h-4" />
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
