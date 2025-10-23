@@ -7,16 +7,49 @@ import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { ImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
+import { db } from "@/lib/db";
+import { adventures, sessions } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 interface SessionPageProps {
   params: Promise<{ id: string; sessionId: string }>;
+}
+
+async function checkSessionBelongsToCampaign(sessionId: number, campaignId: number): Promise<boolean> {
+  // Get the adventure ID for this session
+  const [sessionData] = await db
+    .select({ adventureId: sessions.adventureId })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .limit(1);
+
+  if (!sessionData?.adventureId) {
+    return false;
+  }
+
+  // Check if the adventure belongs to the campaign
+  const [adventureData] = await db
+    .select({ campaignId: adventures.campaignId })
+    .from(adventures)
+    .where(eq(adventures.id, sessionData.adventureId))
+    .limit(1);
+
+  return adventureData?.campaignId === campaignId;
 }
 
 async function SessionContent({ sessionId, campaignId }: { sessionId: number; campaignId: number }) {
   const session = await getSession(sessionId);
   const campaign = await getCampaignWithEdition(campaignId);
 
-  if (!session || !campaign || session.campaignId !== campaignId) {
+  if (!session || !campaign) {
+    notFound();
+  }
+
+  // Check if session belongs to this campaign either directly or through adventure
+  const belongsToCampaign = session.campaignId === campaignId || 
+    (session.adventureId && await checkSessionBelongsToCampaign(sessionId, campaignId));
+
+  if (!belongsToCampaign) {
     notFound();
   }
 
