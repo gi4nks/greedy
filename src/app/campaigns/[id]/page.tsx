@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { campaigns, gameEditions } from "@/lib/db/schema";
+import { campaigns, gameEditions, quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import CampaignPageClient from "./campaign-page-client";
 
@@ -14,6 +14,7 @@ interface CampaignData {
   status: string | null;
   startDate: string | null;
   endDate: string | null;
+  questCount: number;
 }
 
 async function getCampaign(campaignId: number): Promise<CampaignData | null> {
@@ -33,7 +34,22 @@ async function getCampaign(campaignId: number): Promise<CampaignData | null> {
     .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
     .where(eq(campaigns.id, campaignId))
     .limit(1);
-  return campaign || null;
+
+  if (!campaign) return null;
+
+  // Get quest count for this campaign
+  const questsList = await db
+    .select({ id: quests.id })
+    .from(quests)
+    .innerJoin(adventures, eq(quests.adventureId, adventures.id))
+    .where(eq(adventures.campaignId, campaignId));
+
+  const questCount = questsList.length;
+
+  return {
+    ...campaign,
+    questCount: Number(questCount),
+  };
 }
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {

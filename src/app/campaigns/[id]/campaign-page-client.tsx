@@ -17,6 +17,7 @@ import {
   Trash2,
   AlertTriangle,
   Link as LinkIcon,
+  CheckCircle,
 } from "lucide-react";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { formatDisplayDate } from "@/lib/utils/date";
@@ -33,6 +34,7 @@ interface CampaignData {
   status: string | null;
   startDate: string | null;
   endDate: string | null;
+  questCount: number;
 }
 
 interface CampaignPageClientProps {
@@ -162,7 +164,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
           <Link href={`/campaigns/${campaignId}/adventures`} className="group">
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-6 text-center">
@@ -182,6 +184,18 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
                 <h3 className="font-semibold mb-1">Sessions</h3>
                 <p className="text-sm text-base-content/70">
                   Track game sessions
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/campaigns/${campaignId}/quests`} className="group">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <CheckCircle className="w-8 h-8 mx-auto mb-3 text-emerald-500 group-hover:scale-110 transition-transform" />
+                <h3 className="font-semibold mb-1">Quests</h3>
+                <p className="text-sm text-base-content/70">
+                  {campaign.questCount} quest{campaign.questCount !== 1 ? 's' : ''} available
                 </p>
               </CardContent>
             </Card>
