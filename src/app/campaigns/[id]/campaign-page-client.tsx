@@ -34,7 +34,6 @@ interface CampaignData {
   status: string | null;
   startDate: string | null;
   endDate: string | null;
-  questCount: number;
 }
 
 interface CampaignPageClientProps {
@@ -195,7 +194,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
                 <CheckCircle className="w-8 h-8 mx-auto mb-3 text-emerald-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Quests</h3>
                 <p className="text-sm text-base-content/70">
-                  {campaign.questCount} quest{campaign.questCount !== 1 ? 's' : ''} available
+                  Track objectives and storylines
                 </p>
               </CardContent>
             </Card>
