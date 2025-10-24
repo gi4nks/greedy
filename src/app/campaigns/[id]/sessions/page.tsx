@@ -249,7 +249,7 @@ function SessionsList({
                         </div>
                         <div className="flex-1">
                           <CardTitle className="text-lg">
-                            {session.title}
+                            {session.title || `Session ${session.id}`}
                           </CardTitle>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="info" className="text-xs">
@@ -281,7 +281,7 @@ function SessionsList({
                       )}
                       <div className="flex items-center gap-1">
                         <span className="text-xs">Created:</span>
-                        <span>{formatDisplayDate(session.createdAt)}</span>
+                        <span>{formatDisplayDate(session.createdAt) !== "—" ? formatDisplayDate(session.createdAt) : "Unknown"}</span>
                       </div>
                     </div>
                   </CardContent>

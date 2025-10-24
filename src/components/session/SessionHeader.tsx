@@ -21,7 +21,7 @@ export function SessionHeader({ session }: SessionHeaderProps) {
       {/* Session Header */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold mb-2">{session.title}</h1>
+          <h1 className="text-3xl font-bold mb-2">{session.title || `Session ${session.id}`}</h1>
           <div className="space-y-1">
             <p className="text-lg text-base-content/70">
               {formatUIDate(session.date)}
