@@ -73,13 +73,6 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </p>
             <div className="flex gap-3 justify-end">
               <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
                 variant="neutral"
                 onClick={handleDelete}
                 disabled={isDeleting}
@@ -87,12 +80,19 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
                 <Trash2 className="w-4 h-4 mr-2" />
                 {isDeleting ? "Deleting..." : "Delete"}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-6 md:p-6 min-h-screen flex flex-col">
+      <div className="container mx-auto p-6 max-w-7xl min-h-screen flex flex-col">
         {/* Breadcrumb */}
         <DynamicBreadcrumb
           campaignId={campaignId}

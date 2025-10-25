@@ -161,7 +161,7 @@ export function MagicItemsFilters({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button type="submit" variant="primary" className="gap-2">
+            <Button type="submit" variant="primary" size="sm" className="gap-2">
               Apply Filters
             </Button>
             <Button
@@ -169,6 +169,7 @@ export function MagicItemsFilters({
               variant="outline"
               onClick={handleReset}
               className="gap-2"
+              size="sm"
             >
               Reset
             </Button>

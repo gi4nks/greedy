@@ -276,6 +276,27 @@ export const relations = sqliteTable(
   }),
 );
 
+// Character diary entries - for narrative character development tracking
+export const characterDiaryEntries = sqliteTable(
+  "character_diary_entries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    characterId: integer("character_id")
+      .references(() => characters.id, { onDelete: "cascade" })
+      .notNull(),
+    description: text("description").notNull(),
+    date: text("date").notNull(),
+    linkedEntities: text("linked_entities", { mode: "json" }), // Array of {id, type, name}
+    isImportant: integer("is_important", { mode: "boolean" }).default(false),
+    createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+    updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
+  },
+  (table) => ({
+    characterIndex: index("idx_diary_character").on(table.characterId),
+    dateIndex: index("idx_diary_date").on(table.date),
+  }),
+);
+
 // Additional tables will be added as needed
 
 // Type exports for components
@@ -430,6 +451,17 @@ export type Relation = {
   description: string | null;
   bidirectional: boolean | null;
   metadata: unknown;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type CharacterDiaryEntry = {
+  id: number;
+  characterId: number;
+  description: string;
+  date: string;
+  linkedEntities: unknown; // JSON array of {id, type, name}
+  isImportant: boolean | null;
   createdAt: string | null;
   updatedAt: string | null;
 };

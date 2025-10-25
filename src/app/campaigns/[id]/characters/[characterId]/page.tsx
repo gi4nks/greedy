@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { getCharacterWithAllEntities } from "@/lib/db/queries";
 import CharacterDetail from "@/components/character/CharacterDetail";
 import CharacterStats from "@/components/character/CharacterStats";
-import CharacterActions from "@/components/character/CharacterActions";
+import CharacterDiary from "@/components/character/CharacterDiary";
+import CharacterHeroHeader from "@/components/character/CharacterHeroHeader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import CollapsibleSection from "@/components/ui/collapsible-section";
+import CharacterDiaryWrapper from "@/components/character/CharacterDiaryWrapper";
 
 interface CharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -44,7 +46,7 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
+    <div className="container mx-auto px-4 py-6 md:p-6 max-w-7xl">
       <DynamicBreadcrumb
         campaignId={campaignId}
         campaignTitle={character.campaign?.title || undefined}
@@ -54,46 +56,28 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
         ]}
       />
 
-      {/* Character Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold">{character.name}</h1>
-            <div className="flex items-center gap-4 mt-2">
-              <p className="text-base-content/70">
-                {character.campaign?.title} • {character.adventure?.title}
-              </p>
-              {character.characterType && (
-                <Badge variant="outline" className="capitalize">
-                  {character.characterType === "pc"
-                    ? "Player Character"
-                    : character.characterType === "npc"
-                      ? "NPC"
-                      : character.characterType}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <CharacterActions character={character} campaignId={campaignId} />
-          </div>
-        </div>
-      </div>
+      {/* Hero Header */}
+      <CharacterHeroHeader
+        character={character}
+        campaignId={campaignId}
+      />
 
-      {/* Character Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Suspense fallback={<CharacterDetailSkeleton />}>
-            <CharacterDetail character={character} />
-          </Suspense>
-        </div>
+      {/* Character Details */}
+      <CollapsibleSection title="Character Details" className="mb-6">
+        <Suspense fallback={<CharacterDetailSkeleton />}>
+          <CharacterDetail character={character} />
+        </Suspense>
+      </CollapsibleSection>
 
-        <div>
-          <Suspense fallback={<CharacterStatsSkeleton />}>
-            <CharacterStats character={character} />
-          </Suspense>
-        </div>
-      </div>
+      {/* Stats & Abilities */}
+      <CollapsibleSection title="Stats & Abilities" className="mb-6" defaultExpanded={false}>
+        <Suspense fallback={<CharacterStatsSkeleton />}>
+          <CharacterStats character={character} />
+        </Suspense>
+      </CollapsibleSection>
+
+      {/* Character Journey - Central Feature */}
+      <CharacterDiaryWrapper characterId={character.id} campaignId={campaignId} />
 
       {/* Images */}
       <div className="mt-8">
@@ -133,6 +117,20 @@ function CharacterStatsSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <Skeleton key={i} className="h-16 w-full" />
       ))}
+    </div>
+  );
+}
+
+function CharacterDiarySkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="animate-pulse">
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-24 bg-base-300 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

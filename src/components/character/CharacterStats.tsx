@@ -107,43 +107,6 @@ export default function CharacterStats({ character }: CharacterStatsProps) {
               {character.armorClass || 10}
             </span>
           </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Initiative</span>
-            <span className="text-sm font-mono">
-              {formatModifier(calculateModifier(character.dexterity))}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Proficiency Bonus</span>
-            <span className="text-sm font-mono">
-              +{character.proficiencyBonus || 2}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Skills & Proficiencies - temporarily removed conditional */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Skills & Proficiencies
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-1">
-            {character.skills
-              ? (parseJsonArray(character.skills) as string[]).map(
-                  (skill: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ),
-                )
-              : null}
-          </div>
         </CardContent>
       </Card>
     </div>

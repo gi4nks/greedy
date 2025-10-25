@@ -7,6 +7,7 @@ import EquipmentDisplay from "@/components/ui/equipment-display";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
+import CollapsibleSection from "@/components/ui/collapsible-section";
 
 interface MagicItem {
   assignmentId?: number;
@@ -188,57 +189,52 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
       )}
 
       {/* Magic Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Magic Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {unifiedMagicItems.length > 0 ? (
-            <div className="grid gap-3">
-              {unifiedMagicItems.map((item) => (
-                <div
-                  key={`${item.source}-${item.id}`}
-                  className="border border-purple-200 bg-purple-50 rounded-lg"
-                >
-                  <div className="flex justify-between items-start p-3">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="text-2xl">✨</span>
-                      <span className="font-medium text-purple-800">
-                        {item.name}
-                      </span>
+      <CollapsibleSection title="Magic Items" defaultExpanded={false}>
+        {unifiedMagicItems.length > 0 ? (
+          <div className="grid gap-3">
+            {unifiedMagicItems.map((item) => (
+              <div
+                key={`${item.source}-${item.id}`}
+                className="border border-purple-200 bg-purple-50 rounded-lg"
+              >
+                <div className="flex justify-between items-start p-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-2xl">✨</span>
+                    <span className="font-medium text-purple-800">
+                      {item.name}
+                    </span>
+                    <Badge
+                      variant={
+                        item.source === "wiki" ? "secondary" : "default"
+                      }
+                      className={`text-xs ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
+                    >
+                      {item.source === "wiki" ? "Wiki" : "Manual"}
+                    </Badge>
+                    {item.rarity && (
                       <Badge
-                        variant={
-                          item.source === "wiki" ? "secondary" : "default"
-                        }
-                        className={`text-xs ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
+                        variant="outline"
+                        className="text-xs bg-purple-100 border-purple-300 capitalize"
                       >
-                        {item.source === "wiki" ? "Wiki" : "Manual"}
+                        {item.rarity}
                       </Badge>
-                      {item.rarity && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-purple-100 border-purple-300 capitalize"
-                        >
-                          {item.rarity}
-                        </Badge>
-                      )}
-                      {item.type && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.type}
-                        </Badge>
-                      )}
-                    </div>
+                    )}
+                    {item.type && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.type}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-base-content/70">
-              No magic items assigned yet.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-base-content/70">
+            No magic items assigned yet.
+          </p>
+        )}
+      </CollapsibleSection>
 
       {/* Equipment */}
       {equipmentList.length > 0 && (

@@ -101,7 +101,7 @@ export default async function SessionsPage({
   const sessions = await getSessions(campaignId, adventureId);
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
+    <div className="container mx-auto p-6">
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}

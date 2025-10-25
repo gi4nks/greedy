@@ -166,7 +166,7 @@ export default async function CharactersPage() {
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Characters" }]} />
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Characters</h1>
           <p className="text-base-content/70 mt-2">

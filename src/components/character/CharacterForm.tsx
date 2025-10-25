@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Character, Adventure, Campaign } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,12 @@ import {
   ChevronDown,
   ChevronUp,
   EyeOff,
+  Search,
+  Filter,
+  Calendar,
+  Package,
+  Sparkles,
+  Gem,
 } from "lucide-react";
 import { createCharacter, updateCharacter } from "@/lib/actions/characters";
 import { ImageManager } from "@/components/ui/image-manager";
@@ -35,6 +41,15 @@ import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import WikiContent from "@/components/ui/wiki-content";
 import { formatUIDate } from "@/lib/utils/date";
 import { toast } from "sonner";
+import EntitySelectorModal from "@/components/ui/entity-selector-modal";
+
+interface DiaryEntry {
+  id: number;
+  description: string;
+  date: string;
+  linkedEntities: { id: string; type: string; name: string }[];
+  isImportant?: boolean;
+}
 
 interface CharacterFormProps {
   character?: Character & {
@@ -121,8 +136,6 @@ interface FormData {
   // Arrays
   equipment: string[];
   weapons: string[];
-  skills: string[];
-  savingThrows: string[];
   spells: string[];
   tags: string[];
   classes: Array<{ name: string; level: number }>;
@@ -145,6 +158,20 @@ export default function CharacterForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Diary entries state
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [isAddingEntry, setIsAddingEntry] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [entryFormData, setEntryFormData] = useState<Omit<DiaryEntry, 'id'>>({
+    description: "",
+    date: new Date().toISOString().split('T')[0],
+    linkedEntities: [],
+    isImportant: false,
+  });
+  const [isEntitySelectorOpen, setIsEntitySelectorOpen] = useState(false);
+  const [diarySearchQuery, setDiarySearchQuery] = useState("");
+  const [diaryEntityFilter, setDiaryEntityFilter] = useState<string[]>([]);
+
   // Item modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
@@ -159,10 +186,14 @@ export default function CharacterForm({
   // Expanded items state
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
+  // Text expansion state for diary descriptions
+  const [expandedTexts, setExpandedTexts] = useState<Set<number>>(new Set());
+
   // Loading states for remove operations
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (itemId: string) => {
+    if (!expandedItems) return;
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(itemId)) {
       newExpanded.delete(itemId);
@@ -170,6 +201,16 @@ export default function CharacterForm({
       newExpanded.add(itemId);
     }
     setExpandedItems(newExpanded);
+  };
+
+  const toggleTextExpanded = (entryId: number) => {
+    const newExpanded = new Set(expandedTexts);
+    if (newExpanded.has(entryId)) {
+      newExpanded.delete(entryId);
+    } else {
+      newExpanded.add(entryId);
+    }
+    setExpandedTexts(newExpanded);
   };
 
   // Initialize form data
@@ -232,8 +273,6 @@ export default function CharacterForm({
 
         equipment: parseJsonArray(character.equipment),
         weapons: parseJsonArray(character.weapons),
-        skills: parseJsonArray(character.skills),
-        savingThrows: parseJsonArray(character.savingThrows),
         spells: parseJsonArray(character.spells),
         tags: parseJsonArray(character.tags),
 
@@ -288,8 +327,6 @@ export default function CharacterForm({
 
       equipment: [],
       weapons: [],
-      skills: [],
-      savingThrows: [],
       spells: [],
       tags: [],
 
@@ -516,8 +553,6 @@ export default function CharacterForm({
     field:
       | "equipment"
       | "weapons"
-      | "skills"
-      | "savingThrows"
       | "spells"
       | "tags",
     value: string,
@@ -531,8 +566,6 @@ export default function CharacterForm({
     field:
       | "equipment"
       | "weapons"
-      | "skills"
-      | "savingThrows"
       | "spells"
       | "tags",
     index: number,
@@ -579,6 +612,154 @@ export default function CharacterForm({
       updateFormData("items", [...formData.items, itemFormData]);
     }
     closeItemModal();
+  };
+
+  // Load diary entries when in edit mode
+  useEffect(() => {
+    if (mode === "edit" && character) {
+      fetchDiaryEntries();
+    }
+  }, [mode, character?.id]);
+
+  const fetchDiaryEntries = async () => {
+    if (!character) return;
+    
+    try {
+      const response = await fetch(`/api/characters/${character.id}/diary`);
+      if (response.ok) {
+        const entries = await response.json();
+        setDiaryEntries(entries);
+      }
+    } catch (error) {
+      console.error("Error fetching diary entries:", error);
+      toast.error("Failed to load diary entries");
+    }
+  };
+
+  // Diary entry functions
+  const addDiaryEntry = async () => {
+    if (!entryFormData.description.trim() || !character) return;
+    
+    try {
+      const response = await fetch(`/api/characters/${character.id}/diary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entryFormData),
+      });
+
+      if (response.ok) {
+        const newEntry = await response.json();
+        setDiaryEntries([newEntry, ...diaryEntries]);
+        setEntryFormData({
+          description: "",
+          date: new Date().toISOString().split('T')[0],
+          linkedEntities: [],
+          isImportant: false,
+        });
+        setIsAddingEntry(false);
+        toast.success("Diary entry added");
+      } else {
+        toast.error("Failed to add diary entry");
+      }
+    } catch (error) {
+      console.error("Error adding diary entry:", error);
+      toast.error("Failed to add diary entry");
+    }
+  };
+
+  const updateDiaryEntry = async (id: number) => {
+    if (!character) return;
+
+    try {
+      const response = await fetch(`/api/characters/${character.id}/diary/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entryFormData),
+      });
+
+      if (response.ok) {
+        const updatedEntry = await response.json();
+        setDiaryEntries(diaryEntries.map(entry =>
+          entry.id === id ? updatedEntry : entry
+        ));
+        setEditingEntryId(null);
+        setEntryFormData({
+          description: "",
+          date: new Date().toISOString().split('T')[0],
+          linkedEntities: [],
+          isImportant: false,
+        });
+        setIsAddingEntry(false);
+        toast.success("Diary entry updated");
+      } else {
+        toast.error("Failed to update diary entry");
+      }
+    } catch (error) {
+      console.error("Error updating diary entry:", error);
+      toast.error("Failed to update diary entry");
+    }
+  };
+
+  const deleteDiaryEntry = async (id: number) => {
+    if (!character || !confirm("Are you sure you want to delete this diary entry?")) return;
+
+    try {
+      const response = await fetch(`/api/characters/${character.id}/diary/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setDiaryEntries(diaryEntries.filter(entry => entry.id !== id));
+        toast.success("Diary entry deleted");
+      } else {
+        toast.error("Failed to delete diary entry");
+      }
+    } catch (error) {
+      console.error("Error deleting diary entry:", error);
+      toast.error("Failed to delete diary entry");
+    }
+  };
+
+  const startEditEntry = (entry: DiaryEntry) => {
+    setEditingEntryId(entry.id);
+    setEntryFormData({
+      description: entry.description,
+      date: entry.date,
+      linkedEntities: entry.linkedEntities,
+      isImportant: entry.isImportant,
+    });
+    setIsAddingEntry(true);
+  };
+
+  const cancelEntryForm = () => {
+    setIsAddingEntry(false);
+    setEditingEntryId(null);
+    setEntryFormData({
+      description: "",
+      date: new Date().toISOString().split('T')[0],
+      linkedEntities: [],
+      isImportant: false,
+    });
+  };
+
+  const addLinkedEntity = (entity: { id: string; type: string; name: string }) => {
+    const currentEntities = Array.isArray(entryFormData.linkedEntities) ? entryFormData.linkedEntities : [];
+    // Check if entity is already linked
+    if (currentEntities.some(e => e.id === entity.id && e.type === entity.type)) {
+      return;
+    }
+    setEntryFormData({
+      ...entryFormData,
+      linkedEntities: [...currentEntities, entity],
+    });
+    setIsEntitySelectorOpen(false);
+  };
+
+  const removeLinkedEntity = (entityId: string) => {
+    setEntryFormData({
+      ...entryFormData,
+      linkedEntities: entryFormData.linkedEntities.filter(e => e.id !== entityId),
+    });
   };
 
   const addRelationship = () => {
@@ -755,22 +936,71 @@ export default function CharacterForm({
     }
   };
 
+  // Helper function to highlight search terms
+  const highlightSearchTerms = (text: string, searchQuery: string) => {
+    if (!searchQuery.trim()) return text;
+
+    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 px-0.5 rounded">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
+
+  // Handle clicking on linked entities
+  const handleEntityClick = (entity: { id: string; type: string; name: string }) => {
+    // Navigate to the appropriate entity page based on type
+    const entityRoutes: Record<string, string> = {
+      'character': `/campaigns/${campaignId}/characters/${entity.id}`,
+      'location': `/campaigns/${campaignId}/locations/${entity.id}`,
+      'session': `/campaigns/${campaignId}/sessions/${entity.id}`,
+      'quest': `/campaigns/${campaignId}/quests/${entity.id}`,
+      'magic-item': `/campaigns/${campaignId}/magic-items/${entity.id}`,
+      'adventure': `/campaigns/${campaignId}/adventures/${entity.id}`,
+    };
+
+    const route = entityRoutes[entity.type];
+    if (route) {
+      router.push(route);
+    }
+  };
+
+  // Filter diary entries based on search query and entity filter (client-side only)
+  const filteredDiaryEntries = useMemo(() => {
+    return diaryEntries.filter((entry) => {
+      // Content search filter
+      const contentMatches = !diarySearchQuery.trim() ||
+        entry.description?.toLowerCase().includes(diarySearchQuery.toLowerCase()) ||
+        entry.linkedEntities?.some(entity => entity.name.toLowerCase().includes(diarySearchQuery.toLowerCase()));
+
+      // Entity type filter
+      const entityMatches = diaryEntityFilter.length === 0 ||
+        entry.linkedEntities?.some(entity => diaryEntityFilter.includes(entity.type));
+
+      return contentMatches && entityMatches;
+    });
+  }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
+
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="abilities">Abilities</TabsTrigger>
-            <TabsTrigger value="combat">Combat</TabsTrigger>
-            <TabsTrigger value="personality">Personality</TabsTrigger>
+            <TabsTrigger value="diary">Diary</TabsTrigger>
             <TabsTrigger value="items">Items</TabsTrigger>
             <TabsTrigger value="spells">Spells</TabsTrigger>
             <TabsTrigger value="wiki">Wiki Entities</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="space-y-6">
+          <TabsContent value="basic" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
@@ -948,12 +1178,12 @@ export default function CharacterForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="abilities" className="space-y-6">
+          <TabsContent value="abilities" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Ability Scores</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     { key: "strength", label: "Strength" },
@@ -985,32 +1215,15 @@ export default function CharacterForm({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="combat" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Combat Statistics</CardTitle>
+                <CardTitle>Combat Basics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="hitPoints">Current Hit Points</Label>
-                    <Input
-                      id="hitPoints"
-                      type="number"
-                      min="0"
-                      value={formData.hitPoints}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData(
-                          "hitPoints",
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="maxHitPoints">Maximum Hit Points</Label>
+                    <Label htmlFor="maxHitPoints">Max Hit Points</Label>
                     <Input
                       id="maxHitPoints"
                       type="number"
@@ -1024,15 +1237,12 @@ export default function CharacterForm({
                       }
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="armorClass">Armor Class</Label>
                     <Input
                       id="armorClass"
                       type="number"
-                      min="0"
+                      min="-20"
                       value={formData.armorClass}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         updateFormData(
@@ -1042,244 +1252,465 @@ export default function CharacterForm({
                       }
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="proficiencyBonus">Proficiency Bonus</Label>
-                    <Input
-                      id="proficiencyBonus"
-                      type="number"
-                      min="0"
-                      value={formData.proficiencyBonus}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData(
-                          "proficiencyBonus",
-                          parseInt(e.target.value) || 2,
-                        )
-                      }
-                    />
-                  </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Skills & Proficiencies</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Skills</Label>
-                  <div className="flex gap-2 mb-2">
+          <TabsContent value="diary" className="space-y-4">
+            {/* Add Entry Button */}
+            {!isAddingEntry && (
+              <div className="flex justify-end mt-4">
+                <Button
+                  type="button"
+                  onClick={() => setIsAddingEntry(true)}
+                  className="btn-sm"
+                  size="sm"
+                  variant="primary"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Diary Entry
+                </Button>
+              </div>
+            )}
+
+            {/* Entry Form */}
+            {isAddingEntry && (
+              <Card className="border-2 border-primary">
+                <CardHeader>
+                  <CardTitle>{editingEntryId ? 'Edit Entry' : 'New Diary Entry'}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="entryDate">Date</Label>
                     <Input
-                      placeholder="Add skill..."
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
+                      id="entryDate"
+                      type="date"
+                      value={entryFormData.date}
+                      onChange={(e) => setEntryFormData({ ...entryFormData, date: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
                           e.preventDefault();
-                          addToArray(
-                            "skills",
-                            (e.target as HTMLInputElement).value,
-                          );
-                          (e.target as HTMLInputElement).value = "";
                         }
                       }}
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="entryDescription">Notes *</Label>
+                    <Textarea
+                      id="entryDescription"
+                      value={entryFormData.description}
+                      onChange={(e) => setEntryFormData({ ...entryFormData, description: e.target.value })}
+                      rows={4}
+                      placeholder="What happened during this event..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                          // Allow Ctrl+Enter to save
+                          return;
+                        }
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          // Prevent Enter from submitting form, but allow Shift+Enter for new lines
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Linked Entities</Label>
+                    <div className="space-y-2">
+                      {Array.isArray(entryFormData.linkedEntities) && entryFormData.linkedEntities.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {entryFormData.linkedEntities.map((entity) => (
+                            <Badge key={`${entity.type}-${entity.id}`} variant="outline" className="text-xs">
+                              <span className="text-gray-500 mr-1">{entity.type}:</span>
+                              {entity.name}
+                              <X 
+                                className="w-3 h-3 ml-1 cursor-pointer hover:text-red-500" 
+                                onClick={() => removeLinkedEntity(entity.id)}
+                              />
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setIsEntitySelectorOpen(true)}
+                          className="btn-sm"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Linked Entity
+                        </Button>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Link this entry to other elements from your campaign (sessions, locations, NPCs, magic items, quests, etc.)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="entryImportant"
+                      className="checkbox checkbox-primary"
+                      checked={entryFormData.isImportant}
+                      onChange={(e) => setEntryFormData({ ...entryFormData, isImportant: e.target.checked })}
+                    />
+                    <Label htmlFor="entryImportant" className="cursor-pointer">
+                      Mark as important
+                    </Label>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => editingEntryId ? updateDiaryEntry(editingEntryId) : addDiaryEntry()}
+                      disabled={!entryFormData.description.trim()}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {editingEntryId ? 'Update' : 'Save'}
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={(e) => {
-                        const input = e.currentTarget
-                          .previousElementSibling as HTMLInputElement;
-                        addToArray("skills", input.value);
-                        input.value = "";
-                      }}
+                      onClick={cancelEntryForm}
                     >
-                      <Plus className="w-4 h-4" />
+                      <EyeOff className="w-4 h-4" />
+                      Cancel
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {formData.skills.map((skill, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {skill}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeFromArray("skills", index)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Entity Selector Modal */}
+            <EntitySelectorModal
+              campaignId={campaignId}
+              isOpen={isEntitySelectorOpen}
+              onClose={() => setIsEntitySelectorOpen(false)}
+              onSelect={addLinkedEntity}
+              title="Add to Diary Entry"
+              selectLabel="Entity"
+              excludedEntities={entryFormData.linkedEntities}
+              sourceEntity={character ? { id: character.id.toString(), type: "character", name: character.name } : undefined}
+            />
+
+            {/* Search and Filter Controls */}
+            {diaryEntries.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex flex-col space-y-4">
+                    {/* Search Bar */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Input
+                        type="text"
+                        placeholder="Search diary entries..."
+                        value={diarySearchQuery}
+                        onChange={(e) => setDiarySearchQuery(e.target.value)}
+                        className="pl-10 pr-10 py-3 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
+                        aria-label="Search diary entries"
+                      />
+                      {diarySearchQuery && (
+                        <button
+                          onClick={() => setDiarySearchQuery("")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active Filters Display */}
+                    {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">Active filters:</span>
+
+                        {/* Search term badge */}
+                        {diarySearchQuery && (
+                          <Badge variant="default" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                            <Search className="w-3 h-3" />
+                            "{diarySearchQuery}"
+                            <X
+                              className="w-3 h-3 cursor-pointer ml-1"
+                              onClick={() => setDiarySearchQuery("")}
+                              aria-label="Remove search filter"
+                            />
+                          </Badge>
+                        )}
+
+                        {/* Entity type badges */}
+                        {diaryEntityFilter.map((entityType) => (
+                          <Badge
+                            key={entityType}
+                            variant="default"
+                            className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 hover:bg-green-200"
+                          >
+                            <Filter className="w-3 h-3" />
+                            {entityType.replace('-', ' ')}
+                            <X
+                              className="w-3 h-3 cursor-pointer ml-1"
+                              onClick={() => setDiaryEntityFilter(prev => prev.filter(type => type !== entityType))}
+                              aria-label={`Remove ${entityType} filter`}
+                            />
+                          </Badge>
+                        ))}
+
+                        {/* Clear all button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDiarySearchQuery("");
+                            setDiaryEntityFilter([]);
+                          }}
+                          className="text-xs text-gray-500 hover:text-gray-700 h-6 px-2"
+                        >
+                          Clear all
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Entity Filter Section */}
+                    <div className="border-t border-gray-100 pt-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">Filter by entity type:</span>
+
+                        {/* Quick filter buttons for common entity types */}
+                        {(() => {
+                          const allEntityTypes = new Set<string>();
+                          diaryEntries.forEach(entry => {
+                            entry.linkedEntities?.forEach(entity => {
+                              allEntityTypes.add(entity.type);
+                            });
+                          });
+
+                          const commonTypes = ['character', 'location', 'session', 'quest', 'magic-item'];
+                          const availableTypes = Array.from(allEntityTypes).sort();
+
+                          return availableTypes.map((entityType) => {
+                            const isSelected = diaryEntityFilter.includes(entityType);
+                            return (
+                              <button
+                                type="button"
+                                key={entityType}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setDiaryEntityFilter(prev => prev.filter(type => type !== entityType));
+                                  } else {
+                                    setDiaryEntityFilter(prev => [...prev, entityType]);
+                                  }
+                                }}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ${
+                                  isSelected
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300 shadow-sm'
+                                    : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                                aria-label={`${isSelected ? 'Remove' : 'Add'} ${entityType} filter`}
+                              >
+                                {entityType.replace('-', ' ')}
+                              </button>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+
+            {/* Diary Entries List */}
+            <div className="space-y-2">
+              {filteredDiaryEntries.length === 0 ? (
+                <div className="text-center py-12 px-4">
+                  <div className="text-gray-400 mb-4">
+                    <Search className="w-12 h-12 mx-auto opacity-50" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {diaryEntries.length === 0 ? "No diary entries yet" : "No matching entries"}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {diaryEntries.length === 0
+                      ? "Start documenting your character's journey by adding your first diary entry."
+                      : "Try adjusting your search terms or filters to find what you're looking for."
+                    }
+                  </p>
+                  {diaryEntries.length > 0 && (diarySearchQuery || diaryEntityFilter.length > 0) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setDiarySearchQuery("");
+                        setDiaryEntityFilter([]);
+                      }}
+                      className="text-sm"
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredDiaryEntries.map((entry, index) => {
+                    const entryId = `diary-${entry.id}`;
+                    const isTextExpanded = expandedTexts.has(entry.id);
+                    const description = entry.description || 'Untitled Entry';
+                    
+                    // Check if text needs truncation (more than 2 lines worth of content)
+                    const needsTruncation = description.length > 150 || description.split('\n').length > 2;
+                    
+                    return (
+                      <div
+                        key={entry.id}
+                        className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        {/* Entry Row */}
+                        <div className="flex items-start gap-3">
+                          {/* Date Chip */}
+                          <div className="flex-shrink-0">
+                            <Badge variant="warning" className="text-xs px-2 py-1">
+                              {new Date(entry.date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </Badge>
+                          </div>
+
+                          {/* Main Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                {/* Description with line clamping */}
+                                <div className="relative">
+                                  <p className={`text-sm text-gray-900 leading-relaxed ${
+                                    !isTextExpanded && needsTruncation ? 'line-clamp-2' : ''
+                                  }`}>
+                                    {highlightSearchTerms(description, diarySearchQuery)}
+                                  </p>
+                                  
+                                  {/* Show more/less toggle */}
+                                  {needsTruncation && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleTextExpanded(entry.id)}
+                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
+                                    >
+                                      {isTextExpanded ? 'Show less' : 'Show more'}
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Linked Entities */}
+                                {entry.linkedEntities && entry.linkedEntities.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {entry.linkedEntities.map((entity) => (
+                                      <Badge
+                                        key={`${entity.type}-${entity.id}`}
+                                        variant="outline"
+                                        className="text-xs px-1.5 py-0.5 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                                        onClick={() => handleEntityClick(entity)}
+                                      >
+                                        <span className="capitalize text-xs">{entity.type.replace('-', ' ')}</span>
+                                        <span className="font-medium ml-1">{entity.name}</span>
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Important Badge */}
+                                {entry.isImportant && (
+                                  <Badge variant="warning" className="text-xs mt-2">
+                                    ⭐ Important
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => startEditEntry(entry)}
+                                  className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                                  aria-label="Edit diary entry"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
-          <TabsContent value="personality" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personality & Background</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="personalityTraits">Personality Traits</Label>
-                  <Textarea
-                    id="personalityTraits"
-                    value={formData.personalityTraits}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("personalityTraits", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="ideals">Ideals</Label>
-                  <Textarea
-                    id="ideals"
-                    value={formData.ideals}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("ideals", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bonds">Bonds</Label>
-                  <Textarea
-                    id="bonds"
-                    value={formData.bonds}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("bonds", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="flaws">Flaws</Label>
-                  <Textarea
-                    id="flaws"
-                    value={formData.flaws}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("flaws", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="backstory">Backstory</Label>
-                  <Textarea
-                    id="backstory"
-                    value={formData.backstory}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("backstory", e.target.value)
-                    }
-                    rows={5}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>NPC Relationships</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {formData.npcRelationships.map((relationship, index) => (
-                  <div key={index} className="border rounded p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Relationship {index + 1}</h4>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeRelationship(index)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        placeholder="Name"
-                        value={relationship.name}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          updateRelationship(index, "name", e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder="Type (e.g., friend, enemy, ally)"
-                        value={relationship.type}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          updateRelationship(index, "type", e.target.value)
-                        }
-                      />
-                    </div>
-                    <Textarea
-                      placeholder="Description"
-                      value={relationship.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                        updateRelationship(index, "description", e.target.value)
-                      }
-                      rows={2}
-                    />
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addRelationship}
-                  className="w-full"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Relationship
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="items" className="space-y-6">
+          <TabsContent value="items" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Manual Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {formData.items.map((item, index) => (
-                  <div key={index} className="border rounded p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">
-                        {item.title || `Item ${index + 1}`}
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="gap-2"
-                          onClick={() => openItemModal(index)}
-                          size="sm"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="neutral"
-                          className="gap-2"
-                          size="sm"
-                          onClick={() => removeItem(index)}
-                        >
-                          <X className="w-4 h-4" />
-                          Unassign
-                        </Button>
-                      </div>
+                {formData.items.length === 0 ? (
+                  <div className="text-center py-8 px-4">
+                    <div className="text-gray-400 mb-4">
+                      <Package className="w-12 h-12 mx-auto opacity-50" />
                     </div>
-                    <p className="text-sm text-gray-600">{item.description}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No manual items yet
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Add custom items that don't exist in the wiki or database.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid gap-3">
+                    {formData.items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 mb-1">
+                              {item.title || `Item ${index + 1}`}
+                            </h4>
+                            {item.description && (
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openItemModal(index)}
+                              className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                              aria-label="Edit item"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -1299,79 +1730,98 @@ export default function CharacterForm({
                   🪄 Assigned Magic Items
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {dbMagicItems.length > 0 ? (
-                  <div className="space-y-3">
+              <CardContent className="space-y-4">
+                {dbMagicItems.length === 0 ? (
+                  <div className="text-center py-8 px-4">
+                    <div className="text-gray-400 mb-4">
+                      <Sparkles className="w-12 h-12 mx-auto opacity-50" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No magic items assigned
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Assign magic items from the database to this character.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
                     {dbMagicItems.map((item) => {
                       const itemId = `db-magic-${item.id}`;
-                      const isExpanded = expandedItems.has(itemId);
+                      const isExpanded = expandedItems?.has(itemId) || false;
                       return (
                         <div
                           key={item.id}
-                          className="border border-green-200 bg-green-50 rounded-lg"
+                          className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
                         >
-                          <div className="flex justify-between items-start mb-2">
-                            <div
-                              className="flex items-center gap-2 p-3 cursor-pointer hover:bg-green-100 transition-colors flex-1"
-                              onClick={() => toggleExpanded(itemId)}
-                            >
-                              <h4 className="font-semibold text-green-800">
-                                {item.name}
-                              </h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-medium text-gray-900">
+                                  {item.name}
+                                </h4>
+                                <Badge variant="outline" className="text-xs">
                                   {item.rarity || "Unknown"}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-green-600" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 text-green-600" />
+                                </Badge>
+                              </div>
+                              
+                              <div className="text-sm text-gray-600 space-y-1">
+                                {item.type && (
+                                  <p><strong>Type:</strong> {item.type}</p>
+                                )}
+                                {item.source && (
+                                  <p><strong>Source:</strong> {item.source}</p>
+                                )}
+                                {item.assignedAt && (
+                                  <p><strong>Assigned:</strong> {formatUIDate(item.assignedAt)}</p>
                                 )}
                               </div>
+
+                              {item.description && (
+                                <>
+                                  {!isExpanded && item.description.length > 100 && (
+                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                                      {item.description.substring(0, 100)}...
+                                    </p>
+                                  )}
+                                  {isExpanded && (
+                                    <div className="mt-2">
+                                      <MarkdownRenderer
+                                        content={item.description}
+                                        className="prose-sm"
+                                      />
+                                    </div>
+                                  )}
+                                  {item.description.length > 100 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpanded(itemId)}
+                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
+                                    >
+                                      {isExpanded ? 'Show less' : 'Show more'}
+                                    </button>
+                                  )}
+                                </>
+                              )}
                             </div>
-                            <Button
-                              type="button"
-                              variant="neutral"
-                              className="gap-2 mr-3 mt-3"
-                              size="sm"
-                              onClick={() => removeDbMagicItem(item.id)}
-                              disabled={removingItems.has(`db-magic-item-${item.id}`)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Unassign
-                            </Button>
-                          </div>
-                          <div className="px-3 pb-1 mb-2">
-                            <p className="text-sm text-gray-600 mb-1">
-                              <strong>Type:</strong> {item.type || "Unknown"}
-                            </p>
-                            {item.source && (
-                              <p className="text-sm text-gray-600 mb-1">
-                                <strong>Source:</strong> {item.source}
-                              </p>
-                            )}
-                            {item.assignedAt && (
-                              <p className="text-sm text-gray-600">
-                                <strong>Assigned:</strong> {formatUIDate(item.assignedAt)}
-                              </p>
-                            )}
-                          </div>
-                          {isExpanded && item.description && (
-                            <div className="px-3 pb-3">
-                              <MarkdownRenderer
-                                content={item.description}
-                                className="prose-sm"
-                              />
+
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeDbMagicItem(item.id)}
+                                disabled={removingItems.has(`db-magic-item-${item.id}`)}
+                                className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                                aria-label="Unassign magic item"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             </div>
-                          )}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No magic items assigned to this character
-                  </p>
                 )}
               </CardContent>
             </Card>
@@ -1382,80 +1832,101 @@ export default function CharacterForm({
                   💎 Magic Items from Wiki
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {magicItems.length > 0 ? (
-                  <div className="space-y-3">
+              <CardContent className="space-y-4">
+                {magicItems.length === 0 ? (
+                  <div className="text-center py-8 px-4">
+                    <div className="text-gray-400 mb-4">
+                      <Gem className="w-12 h-12 mx-auto opacity-50" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No wiki magic items
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Import magic items from the wiki to assign them here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
                     {magicItems.map((item) => {
                       const itemId = `magic-${item.id}`;
-                      const isExpanded = expandedItems.has(itemId);
+                      const isExpanded = expandedItems?.has(itemId) || false;
                       return (
                         <div
                           key={item.id}
-                          className="border border-purple-200 bg-purple-50 rounded-lg"
+                          className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
                         >
-                          <div className="flex justify-between items-start mb-2">
-                            <div
-                              className="flex items-center gap-2 p-3 cursor-pointer hover:bg-purple-100 transition-colors flex-1"
-                              onClick={() => toggleExpanded(itemId)}
-                            >
-                              <h4 className="font-semibold text-purple-800">
-                                {item.name}
-                              </h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-medium text-gray-900">
+                                  {item.name}
+                                </h4>
+                                <Badge variant="outline" className="text-xs">
                                   {item.rarity}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-purple-600" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 text-purple-600" />
-                                )}
+                                </Badge>
                               </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="neutral"
-                              className="gap-2 mr-3 mt-3"
-                              size="sm"
-                              onClick={() =>
-                                removeWikiItem(item.id, "magic-item")
-                              }
-                              disabled={removingItems.has(
-                                `magic-item-${item.id}`,
+                              
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <p><strong>Type:</strong> {item.type}</p>
+                              </div>
+
+                              {item.description && (
+                                <>
+                                  {!isExpanded && item.description.length > 100 && (
+                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                                      {item.description.substring(0, 100)}...
+                                    </p>
+                                  )}
+                                  {isExpanded && (
+                                    <div className="mt-2">
+                                      <WikiContent
+                                        content={item.description}
+                                        importedFrom={item.importedFrom}
+                                        className="prose-sm"
+                                      />
+                                    </div>
+                                  )}
+                                  {item.description.length > 100 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpanded(itemId)}
+                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
+                                    >
+                                      {isExpanded ? 'Show less' : 'Show more'}
+                                    </button>
+                                  )}
+                                </>
                               )}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Unassign
-                            </Button>
-                          </div>
-                          <div className="px-3 pb-1 mb-2">
-                            <p className="text-sm text-gray-600 mb-1">
-                              <strong>Type:</strong> {item.type}
-                            </p>
-                          </div>
-                          {isExpanded && item.description && (
-                            <div className="px-3 pb-3">
-                              <WikiContent
-                                content={item.description}
-                                importedFrom={item.importedFrom}
-                                className="prose-sm"
-                              />
                             </div>
-                          )}
+
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  removeWikiItem(item.id, "magic-item")
+                                }
+                                disabled={removingItems.has(
+                                  `magic-item-${item.id}`,
+                                )}
+                                className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                                aria-label="Unassign magic item"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No magic items assigned from wiki imports
-                  </p>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="images" className="space-y-6">
+          <TabsContent value="images" className="space-y-4">
             <ImageManager
               entityType="characters"
               entityId={character?.id || 0}
@@ -1464,7 +1935,7 @@ export default function CharacterForm({
             />
           </TabsContent>
 
-          <TabsContent value="spells" className="space-y-6">
+          <TabsContent value="spells" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Manual Known Spells</CardTitle>
@@ -1525,12 +1996,12 @@ export default function CharacterForm({
                   📚 Spells from Wiki
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {wikiSpells.length > 0 ? (
                   <div className="space-y-3">
                     {wikiSpells.map((spell) => {
                       const itemId = `spell-${spell.id}`;
-                      const isExpanded = expandedItems.has(itemId);
+                      const isExpanded = expandedItems?.has(itemId) || false;
                       return (
                         <div
                           key={spell.id}
@@ -1593,7 +2064,7 @@ export default function CharacterForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="wiki" className="space-y-6">
+          <TabsContent value="wiki" className="space-y-4">
             {(() => {
               // Combine all wiki entities from local state for the WikiEntitiesDisplay
               const allWikiEntities = [

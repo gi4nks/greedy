@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
+    "analyze-unused": "node scripts/analyze-unused.js",
     "init-db": "tsx scripts/init-database.ts",
     "migrate": "tsx scripts/migrate-from-backend.ts"
   },

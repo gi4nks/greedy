@@ -22,12 +22,11 @@ async function SessionsList() {
 
 export default function SessionsPage() {
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-6">
         {/* Breadcrumb */}
         <DynamicBreadcrumb items={[{ label: "Sessions" }]} />
 
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-base-content">Sessions</h1>
             <p className="text-base-content/70 mt-2">
@@ -55,7 +54,6 @@ export default function SessionsPage() {
         >
           <SessionsList />
         </Suspense>
-      </div>
     </div>
   );
 }
