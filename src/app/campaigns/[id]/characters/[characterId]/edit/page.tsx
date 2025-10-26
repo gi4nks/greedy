@@ -32,10 +32,8 @@ async function getCharacter(characterId: number) {
       characterType: characters.characterType,
       name: characters.name,
       race: characters.race,
-      level: characters.level,
       background: characters.background,
       alignment: characters.alignment,
-      experience: characters.experience,
       strength: characters.strength,
       dexterity: characters.dexterity,
       constitution: characters.constitution,
@@ -45,28 +43,8 @@ async function getCharacter(characterId: number) {
       hitPoints: characters.hitPoints,
       maxHitPoints: characters.maxHitPoints,
       armorClass: characters.armorClass,
-      initiative: characters.initiative,
-      speed: characters.speed,
-      proficiencyBonus: characters.proficiencyBonus,
-      savingThrows: characters.savingThrows,
-      skills: characters.skills,
-      equipment: characters.equipment,
-      weapons: characters.weapons,
-      spells: characters.spells,
-      items: characters.items,
-      spellcastingAbility: characters.spellcastingAbility,
-      spellSaveDc: characters.spellSaveDc,
-      spellAttackBonus: characters.spellAttackBonus,
-      personalityTraits: characters.personalityTraits,
-      ideals: characters.ideals,
-      bonds: characters.bonds,
-      flaws: characters.flaws,
-      backstory: characters.backstory,
-      role: characters.role,
-      npcRelationships: characters.npcRelationships,
       classes: characters.classes,
       description: characters.description,
-      tags: characters.tags,
       images: characters.images,
       createdAt: characters.createdAt,
       updatedAt: characters.updatedAt,
@@ -144,21 +122,9 @@ async function getCharacter(characterId: number) {
       : entity.description,
   }));
 
-  // Separate by content type for backward compatibility
-  const parsedWikiSpells = processedWikiEntities.filter(
-    (entity: unknown) =>
-      (entity as { contentType?: string })?.contentType === "spell",
-  );
-  const parsedWikiMonsters = processedWikiEntities.filter(
-    (entity: unknown) =>
-      (entity as { contentType?: string })?.contentType === "monster",
-  );
-
   const characterWithParsedEntities = {
     ...character,
     magicItems: magicItemAssignmentsForCharacter,
-    wikiSpells: parsedWikiSpells,
-    wikiMonsters: parsedWikiMonsters,
     wikiEntities: processedWikiEntities,
   };
 

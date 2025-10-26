@@ -269,12 +269,13 @@ export async function getAssignableEntities(campaignId: number): Promise<{
   locations: Array<{ id: number; name: string }>;
 }> {
   try {
+    // Use simpler queries to avoid complex joins that might fail
     const [charactersRes, npcsRes, sessionsRes, locationsRes] =
       await Promise.all([
-        fetch(`/api/campaigns/${campaignId}/characters`),
-        fetch(`/api/campaigns/${campaignId}/npcs`),
-        fetch(`/api/campaigns/${campaignId}/sessions`),
-        fetch(`/api/campaigns/${campaignId}/locations`),
+        fetch(`/api/campaigns/${campaignId}/assignable-entities/characters`),
+        fetch(`/api/campaigns/${campaignId}/assignable-entities/npcs`),
+        fetch(`/api/campaigns/${campaignId}/assignable-entities/sessions`),
+        fetch(`/api/campaigns/${campaignId}/assignable-entities/locations`),
       ]);
 
     return {

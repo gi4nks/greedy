@@ -286,7 +286,7 @@ export default function CharacterDiary({ characterId, campaignId }: CharacterDia
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {sortedEntries.map((entry, index) => (
             <DiaryEntryCard
               key={entry.id}

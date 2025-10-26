@@ -37,14 +37,12 @@ interface RelationshipFormProps {
     name: string;
     race: string | null;
     classes: unknown;
-    level: number | null;
   }>;
   playerCharacters: Array<{
     id: number;
     name: string;
     race: string | null;
     classes: unknown;
-    level: number | null;
   }>;
   mode: "create" | "edit";
   relationship?: Relationship;
@@ -199,7 +197,6 @@ export default function RelationshipForm({
                       {Array.isArray(npc.classes) &&
                         npc.classes.length > 0 &&
                         ` - ${npc.classes.join(", ")}`}
-                      {npc.level && ` Lvl ${npc.level}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -223,7 +220,6 @@ export default function RelationshipForm({
                       {Array.isArray(pc.classes) &&
                         pc.classes.length > 0 &&
                         ` (${pc.classes.join(", ")})`}
-                      {pc.level && ` Lvl ${pc.level}`}
                     </SelectItem>
                   ))}
                 </SelectContent>

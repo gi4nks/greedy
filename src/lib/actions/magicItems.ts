@@ -330,7 +330,6 @@ export async function getMagicItemsWithAssignments(
             .select({
               id: characters.id,
               name: characters.name,
-              level: characters.level,
               race: characters.race,
               campaignId: characters.campaignId,
               adventureId: characters.adventureId,
@@ -448,9 +447,7 @@ export async function getMagicItemsWithAssignments(
         const character = characterMap.get(assignment.entityId);
         if (character) {
           entityName = character.name;
-          entityDescription = character.race
-            ? `${character.race}${character.level ? ` • Level ${character.level}` : ""}`
-            : null;
+          entityDescription = character.race || null;
           campaignIdValue ??= character.campaignId ?? null;
           adventureIdValue = character.adventureId;
         }
@@ -583,7 +580,6 @@ export async function searchAssignableEntities(
           id: characters.id,
           name: characters.name,
           race: characters.race,
-          level: characters.level,
           campaignId: characters.campaignId,
           adventureId: characters.adventureId,
           campaignTitle: campaigns.title,
@@ -598,9 +594,6 @@ export async function searchAssignableEntities(
         const descriptionParts = [] as string[];
         if (row.race) {
           descriptionParts.push(row.race);
-        }
-        if (row.level) {
-          descriptionParts.push(`Level ${row.level}`);
         }
 
         const path = ENTITY_PATH_BUILDERS.character({

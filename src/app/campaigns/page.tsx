@@ -12,6 +12,8 @@ import { formatCardDate } from "../../lib/utils/date";
 import { CardSkeleton } from "../../components/ui/skeleton";
 import DynamicBreadcrumb from "../../components/ui/dynamic-breadcrumb";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { PageContainer } from "../../components/layout/PageContainer";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 interface CampaignWithGameEdition {
   id: number;
@@ -156,28 +158,26 @@ function CampaignsSkeleton() {
 
 export default async function CampaignsPage() {
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Campaigns" }]} />
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">My Campaigns</h1>
-          <p className="text-base-content/70 mt-2">
-            Manage and track your D&D adventures
-          </p>
-        </div>
-        <Link href="/campaigns/new">
-          <Button className="gap-2" variant="primary" size="sm">
-            <Plus className="w-4 h-4" />
-            Create
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="My Campaigns"
+        description="Manage and track your D&D adventures"
+        actions={
+          <Link href="/campaigns/new">
+            <Button className="gap-2" variant="primary" size="sm">
+              <Plus className="w-4 h-4" />
+              Create
+            </Button>
+          </Link>
+        }
+      />
 
       <Suspense fallback={<CampaignsSkeleton />}>
         <CampaignsContent />
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }

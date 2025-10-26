@@ -15,7 +15,6 @@ async function getNpcs() {
       name: characters.name,
       race: characters.race,
       classes: characters.classes,
-      level: characters.level,
     })
     .from(characters)
     .where(eq(characters.characterType, "npc"))
@@ -31,7 +30,6 @@ async function getPlayerCharacters() {
       name: characters.name,
       race: characters.race,
       classes: characters.classes,
-      level: characters.level,
     })
     .from(characters)
     .where(eq(characters.characterType, "pc"))

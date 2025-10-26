@@ -47,8 +47,6 @@ export async function GET(
         characterType: characters.characterType,
         name: characters.name,
         race: characters.race,
-        level: characters.level,
-        role: characters.role,
       })
       .from(characters)
       .where(eq(characters.campaignId, campaignId))
@@ -106,7 +104,7 @@ export async function GET(
     });
 
     const charactersWithMagicItems = campaignCharacters.map(
-      (character: CampaignCharacterRow) => ({
+      (character) => ({
         ...character,
         magicItems: assignmentsByCharacter.get(character.id) ?? [],
       }),

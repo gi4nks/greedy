@@ -75,8 +75,8 @@ export function MagicItemsFilters({
     <div className="card bg-base-100 shadow-md mb-6">
       <div className="card-body p-4 md:p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
               <label
                 className="text-sm font-medium text-base-content/70 mb-2 block"
                 htmlFor="magic-item-search"

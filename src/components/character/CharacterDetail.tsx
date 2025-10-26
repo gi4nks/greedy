@@ -52,19 +52,6 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
     return null;
   };
 
-  // Parse equipment data
-  const parseEquipment = (): string[] => {
-    try {
-      const equipment =
-        typeof character.equipment === "string"
-          ? JSON.parse(character.equipment)
-          : character.equipment;
-      return Array.isArray(equipment) ? equipment : [];
-    } catch {
-      return [];
-    }
-  };
-
   // Combine manual and wiki magic items
   const getUnifiedMagicItems = () => {
     const manualItems = (character.magicItems || []).map((item) => ({
@@ -124,7 +111,6 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
   };
 
   const classesDisplay = parseClasses();
-  const equipmentList = parseEquipment();
   const unifiedMagicItems = getUnifiedMagicItems();
   const filteredWikiEntities = getFilteredWikiEntities();
 
@@ -237,16 +223,7 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
       </CollapsibleSection>
 
       {/* Equipment */}
-      {equipmentList.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Equipment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <EquipmentDisplay equipment={equipmentList} />
-          </CardContent>
-        </Card>
-      )}
+      
     </div>
   );
 }

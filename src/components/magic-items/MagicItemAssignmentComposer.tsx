@@ -299,7 +299,7 @@ export function MagicItemAssignmentComposer({
     <>
       <Button
         type="button"
-        variant="primary"
+        variant="secondary"
         className="gap-2"
         onClick={handleOpen}
         size="sm"
@@ -466,7 +466,7 @@ export function MagicItemAssignmentComposer({
             <div className="modal-action flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 type="button"
-                variant="primary"
+                variant="secondary"
                 className="gap-2"
                 onClick={handleAssign}
                 disabled={isSubmitting || selected.length === 0}

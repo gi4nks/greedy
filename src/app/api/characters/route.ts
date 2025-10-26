@@ -50,12 +50,9 @@ export async function GET() {
         id: characters.id,
         name: characters.name,
         race: characters.race,
-        level: characters.level,
-        role: characters.role,
         campaignId: characters.campaignId,
         adventureId: characters.adventureId,
         characterType: characters.characterType,
-        equipment: characters.equipment,
       })
       .from(characters)
       .orderBy(characters.name);
@@ -105,9 +102,8 @@ export async function GET() {
     });
 
     const charactersWithMagicItems = allCharacters.map(
-      (character: CharacterRow) => ({
+      (character) => ({
         ...character,
-        equipment: parseEquipment(character.equipment),
         magicItems: assignmentsByCharacter.get(character.id) ?? [],
       }),
     );

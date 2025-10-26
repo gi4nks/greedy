@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import DynamicBreadcrumb from "../components/ui/dynamic-breadcrumb";
 import { BookOpen, Plus, View } from "lucide-react";
+import { PageContainer } from "../components/layout/PageContainer";
+import { PageHeader } from "../components/layout/PageHeader";
 
 // Force dynamic rendering to avoid database queries during build
 export const dynamic = "force-dynamic";
@@ -13,24 +15,22 @@ export default async function HomePage() {
   const campaigns = await getCampaigns();
 
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Home" }]} />
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Greedy</h1>
-          <p className="text-base-content/70 mt-2">
-            Your gateway to D&D campaign management
-          </p>
-        </div>
-        <Link href="/campaigns/new">
-          <Button size="sm" className="gap-2" variant="primary">
-            <Plus className="w-4 h-4" />
-            Create
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Greedy"
+        description="Your gateway to D&D campaign management"
+        actions={
+          <Link href="/campaigns/new">
+            <Button size="sm" className="gap-2" variant="primary">
+              <Plus className="w-4 h-4" />
+              Create
+            </Button>
+          </Link>
+        }
+      />
 
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((campaign: Campaign) => (
@@ -81,6 +81,6 @@ export default async function HomePage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

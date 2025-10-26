@@ -67,10 +67,8 @@ export const characters = sqliteTable("characters", {
   characterType: text("character_type").default("pc"),
   name: text("name").notNull(),
   race: text("race"),
-  level: integer("level").default(1),
   background: text("background"),
   alignment: text("alignment"),
-  experience: integer("experience").default(0),
   strength: integer("strength").default(10),
   dexterity: integer("dexterity").default(10),
   constitution: integer("constitution").default(10),
@@ -80,28 +78,8 @@ export const characters = sqliteTable("characters", {
   hitPoints: integer("hit_points").default(0),
   maxHitPoints: integer("max_hit_points").default(0),
   armorClass: integer("armor_class").default(10),
-  initiative: integer("initiative").default(0),
-  speed: integer("speed").default(30),
-  proficiencyBonus: integer("proficiency_bonus").default(2),
-  savingThrows: text("saving_throws", { mode: "json" }),
-  skills: text("skills", { mode: "json" }),
-  equipment: text("equipment", { mode: "json" }),
-  weapons: text("weapons", { mode: "json" }),
-  spells: text("spells", { mode: "json" }),
-  spellcastingAbility: text("spellcasting_ability"),
-  spellSaveDc: integer("spell_save_dc"),
-  spellAttackBonus: integer("spell_attack_bonus"),
-  personalityTraits: text("personality_traits"),
-  ideals: text("ideals"),
-  bonds: text("bonds"),
-  flaws: text("flaws"),
-  backstory: text("backstory"),
-  role: text("role"),
-  npcRelationships: text("npc_relationships", { mode: "json" }),
   classes: text("classes", { mode: "json" }),
-  items: text("items", { mode: "json" }),
   description: text("description"),
-  tags: text("tags", { mode: "json" }),
   images: text("images", { mode: "json" }),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
   updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
@@ -378,7 +356,6 @@ export type Character = {
   race: string | null;
   background: string | null;
   alignment: string | null;
-  experience: number | null;
   strength: number | null;
   dexterity: number | null;
   constitution: number | null;
@@ -388,28 +365,8 @@ export type Character = {
   hitPoints: number | null;
   maxHitPoints: number | null;
   armorClass: number | null;
-  initiative: number | null;
-  speed: number | null;
-  proficiencyBonus: number | null;
-  savingThrows: unknown;
-  skills: unknown;
-  equipment: unknown;
-  weapons: unknown;
-  spells: unknown;
-  spellcastingAbility: string | null;
-  spellSaveDc: number | null;
-  spellAttackBonus: number | null;
-  personalityTraits: string | null;
-  ideals: string | null;
-  bonds: string | null;
-  flaws: string | null;
-  backstory: string | null;
-  role: string | null;
-  npcRelationships: unknown;
   classes: unknown;
-  items: unknown;
   description: string | null;
-  tags: unknown;
   images: unknown;
   createdAt: string | null;
   updatedAt: string | null;

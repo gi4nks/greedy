@@ -11,6 +11,7 @@ import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import CollapsibleSection from "@/components/ui/collapsible-section";
 import CharacterDiaryWrapper from "@/components/character/CharacterDiaryWrapper";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 interface CharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -46,7 +47,7 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-7xl">
+    <PageContainer>
       <DynamicBreadcrumb
         campaignId={campaignId}
         campaignTitle={character.campaign?.title || undefined}
@@ -87,7 +88,7 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
           className="max-w-2xl mx-auto"
         />
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

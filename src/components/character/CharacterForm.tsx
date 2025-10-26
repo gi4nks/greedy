@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Character, Adventure, Campaign } from "@/lib/db/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import type { Adventure, Campaign, Character } from "@/lib/db/schema";
+import { createCharacter, updateCharacter } from "@/lib/actions/characters";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,30 +25,42 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Plus,
-  X,
-  Save,
-  Edit,
-  Trash2,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  Edit,
   EyeOff,
-  Search,
   Filter,
-  Calendar,
-  Package,
+  Plus,
+  Save,
+  Search,
   Sparkles,
-  Gem,
+  Trash2,
+  X,
 } from "lucide-react";
-import { createCharacter, updateCharacter } from "@/lib/actions/characters";
+import EntitySelectorModal from "@/components/ui/entity-selector-modal";
 import { ImageManager } from "@/components/ui/image-manager";
 import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
-import WikiContent from "@/components/ui/wiki-content";
 import { formatUIDate } from "@/lib/utils/date";
-import { toast } from "sonner";
-import EntitySelectorModal from "@/components/ui/entity-selector-modal";
+import DiaryEntryCard from "@/components/character/DiaryEntryCard";
+import type { WikiEntity } from "@/lib/types/wiki";
+import type { ActionResult } from "@/lib/types/api";
+
+interface MagicItemSummary {
+  id: number;
+  assignmentId?: number;
+  name: string;
+  rarity: string | null;
+  type: string | null;
+  description: string | null;
+  source?: string | null;
+  notes?: string | null;
+  metadata?: unknown;
+  assignedAt?: string | null;
+  campaignId?: number | null;
+}
 
 interface DiaryEntry {
   id: number;
@@ -51,101 +70,224 @@ interface DiaryEntry {
   isImportant?: boolean;
 }
 
+interface DiaryEntryDraft {
+  description: string;
+  date: string;
+  linkedEntities: { id: string; type: string; name: string }[];
+  isImportant: boolean;
+}
+
 interface CharacterFormProps {
   character?: Character & {
     adventure?: Adventure | null;
     campaign?: Campaign | null;
-    wikiSpells?: Array<{
-      id: number;
-      title: string;
-      contentType: string;
-      wikiUrl?: string;
-      parsedData?: unknown;
-      relationshipType?: string;
-      relationshipData?: unknown;
-    }>;
-    wikiMonsters?: Array<{
-      id: number;
-      title: string;
-      contentType: string;
-      wikiUrl?: string;
-      parsedData?: unknown;
-      relationshipType?: string;
-      relationshipData?: unknown;
-    }>;
-    wikiEntities?: Array<{
-      id: number;
-      title: string;
-      contentType: string;
-      wikiUrl?: string;
-      description?: string; // Added description field mapped from rawContent
-      parsedData?: unknown;
-      importedFrom?: string;
-      relationshipType?: string;
-      relationshipData?: unknown;
-    }>;
-    magicItems?: Array<{
-      id: number;
-      assignmentId?: number;
-      name: string;
-      rarity: string | null;
-      type: string | null;
-      description: string | null;
-      source?: string | null;
-      notes?: string | null;
-      metadata?: unknown;
-      assignedAt?: string | null;
-      campaignId?: number | null;
-    }>;
+    magicItems?: MagicItemSummary[];
+    wikiEntities?: WikiEntity[];
   };
   campaignId: number;
   adventureId?: number;
   mode: "create" | "edit";
 }
 
-interface FormData {
+interface ClassEntry {
+  name: string;
+  level: number;
+}
+
+interface CharacterFormState {
   name: string;
   race: string;
-  description: string;
-  characterType: "player" | "npc";
-  campaignId?: number;
-  adventureId?: number;
+  background: string;
   alignment: string;
-
-  // Ability scores
+  description: string;
+  characterType: "player" | "npc" | "monster";
+  campaignId: number;
+  adventureId?: number;
   strength: number;
   dexterity: number;
   constitution: number;
   intelligence: number;
   wisdom: number;
   charisma: number;
-
-  // Combat stats
   hitPoints: number;
   maxHitPoints: number;
   armorClass: number;
-  proficiencyBonus: number;
-
-  // Personality
-  personalityTraits: string;
-  ideals: string;
-  bonds: string;
-  flaws: string;
-  backstory: string;
-
-  // Arrays
-  equipment: string[];
-  weapons: string[];
-  spells: string[];
-  tags: string[];
-  classes: Array<{ name: string; level: number }>;
-  items: Array<{ title: string; description: string }>;
-
-  // Relationships
-  npcRelationships: Array<{ name: string; type: string; description: string }>;
-
-  // Images
+  classes: ClassEntry[];
   images: ImageInfo[];
+}
+
+const DEFAULT_ALIGNMENT = "True Neutral";
+
+const abilityFields = [
+  { key: "strength", label: "Strength" },
+  { key: "dexterity", label: "Dexterity" },
+  { key: "constitution", label: "Constitution" },
+  { key: "intelligence", label: "Intelligence" },
+  { key: "wisdom", label: "Wisdom" },
+  { key: "charisma", label: "Charisma" },
+] as const;
+
+const alignmentOptions = [
+  "Lawful Good",
+  "Neutral Good",
+  "Chaotic Good",
+  "Lawful Neutral",
+  "True Neutral",
+  "Chaotic Neutral",
+  "Lawful Evil",
+  "Neutral Evil",
+  "Chaotic Evil",
+];
+
+const characterTypeOptions: Array<{
+  label: string;
+  value: "player" | "npc" | "monster";
+  serverValue: "pc" | "npc" | "monster";
+}> = [
+  { label: "Player Character", value: "player", serverValue: "pc" },
+  { label: "NPC", value: "npc", serverValue: "npc" },
+  { label: "Monster", value: "monster", serverValue: "monster" },
+];
+
+function parseStringArray(value: unknown): string[] {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+
+  return [];
+}
+
+function parseClasses(value: unknown): ClassEntry[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed
+            .filter(
+              (item): item is ClassEntry =>
+                Boolean(
+                  item &&
+                    typeof item === "object" &&
+                    "name" in item &&
+                    "level" in item,
+                ),
+            )
+            .map((item) => ({
+              name: String(
+                (item as { name?: unknown }).name ?? "",
+              ).trim(),
+              level:
+                Number((item as { level?: unknown }).level ?? 1) > 0
+                  ? Number((item as { level?: unknown }).level ?? 1)
+                  : 1,
+            }))
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter(
+        (item): item is ClassEntry =>
+          Boolean(
+            item &&
+              typeof item === "object" &&
+              "name" in item &&
+              "level" in item,
+          ),
+      )
+      .map((item) => ({
+        name: String((item as { name?: unknown }).name ?? "").trim(),
+        level:
+          Number((item as { level?: unknown }).level ?? 1) > 0
+            ? Number((item as { level?: unknown }).level ?? 1)
+            : 1,
+      }));
+  }
+
+  return [];
+}
+
+function mapCharacterToState(
+  campaignId: number,
+  adventureId: number | undefined,
+  character?: CharacterFormProps["character"],
+): CharacterFormState {
+  if (!character) {
+    return {
+      name: "",
+      race: "",
+      background: "",
+      alignment: DEFAULT_ALIGNMENT,
+      description: "",
+      characterType: "player",
+      campaignId,
+      adventureId,
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      hitPoints: 0,
+      maxHitPoints: 0,
+      armorClass: 10,
+      classes: [],
+      images: [],
+    };
+  }
+
+  const typeOption = characterTypeOptions.find(
+    (option) => option.serverValue === (character.characterType ?? "pc"),
+  );
+
+  return {
+    name: character.name ?? "",
+    race: character.race ?? "",
+    background: character.background ?? "",
+    alignment: character.alignment ?? DEFAULT_ALIGNMENT,
+    description: character.description ?? "",
+    characterType: typeOption?.value ?? "player",
+    campaignId,
+    adventureId: character.adventureId ?? adventureId,
+    strength: character.strength ?? 10,
+    dexterity: character.dexterity ?? 10,
+    constitution: character.constitution ?? 10,
+    intelligence: character.intelligence ?? 10,
+    wisdom: character.wisdom ?? 10,
+    charisma: character.charisma ?? 10,
+    hitPoints: character.hitPoints ?? 0,
+    maxHitPoints: character.maxHitPoints ?? 0,
+    armorClass: character.armorClass ?? 10,
+    classes: parseClasses(character.classes),
+    images: parseImagesJson(character.images),
+  };
+}
+
+function createDiaryDraft(): DiaryEntryDraft {
+  return {
+    description: "",
+    date: new Date().toISOString().split("T")[0],
+    linkedEntities: [],
+    isImportant: false,
+  };
 }
 
 export default function CharacterForm({
@@ -155,754 +297,269 @@ export default function CharacterForm({
   mode,
 }: CharacterFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formState, setFormState] = useState<CharacterFormState>(() =>
+    mapCharacterToState(campaignId, adventureId, character),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Diary entries state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
-  const [isAddingEntry, setIsAddingEntry] = useState(false);
-  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
-  const [entryFormData, setEntryFormData] = useState<Omit<DiaryEntry, 'id'>>({
-    description: "",
-    date: new Date().toISOString().split('T')[0],
-    linkedEntities: [],
-    isImportant: false,
-  });
-  const [isEntitySelectorOpen, setIsEntitySelectorOpen] = useState(false);
+  const [diaryLoading, setDiaryLoading] = useState(mode === "edit");
+  const [showDiaryForm, setShowDiaryForm] = useState(false);
+  const [editingDiaryId, setEditingDiaryId] = useState<number | null>(null);
+  const [diaryDraft, setDiaryDraft] = useState<DiaryEntryDraft>(createDiaryDraft);
   const [diarySearchQuery, setDiarySearchQuery] = useState("");
   const [diaryEntityFilter, setDiaryEntityFilter] = useState<string[]>([]);
-
-  // Item modal state
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [itemFormData, setItemFormData] = useState<{
-    title: string;
-    description: string;
-  }>({
-    title: "",
-    description: "",
-  });
-
-  // Expanded items state
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  // Text expansion state for diary descriptions
-  const [expandedTexts, setExpandedTexts] = useState<Set<number>>(new Set());
-
-  // Loading states for remove operations
+  const [expandedDiaryEntries, setExpandedDiaryEntries] = useState<Set<number>>(new Set());
+  const [isEntitySelectorOpen, setIsEntitySelectorOpen] = useState(false);
+  const [manualMagicItems, setManualMagicItems] = useState<MagicItemSummary[]>(
+    character?.magicItems ?? [],
+  );
+  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(
+    character?.wikiEntities ?? [],
+  );
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
-  const toggleExpanded = (itemId: string) => {
-    if (!expandedItems) return;
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId);
-    } else {
-      newExpanded.add(itemId);
-    }
-    setExpandedItems(newExpanded);
-  };
-
-  const toggleTextExpanded = (entryId: number) => {
-    const newExpanded = new Set(expandedTexts);
-    if (newExpanded.has(entryId)) {
-      newExpanded.delete(entryId);
-    } else {
-      newExpanded.add(entryId);
-    }
-    setExpandedTexts(newExpanded);
-  };
-
-  // Initialize form data
-  const [formData, setFormData] = useState<FormData>(() => {
-    if (mode === "edit" && character) {
-      const parseJsonArray = (json: unknown): string[] => {
-        if (typeof json === "string") {
-          try {
-            return JSON.parse(json);
-          } catch {
-            return [];
-          }
-        }
-        return Array.isArray(json) ? json : [];
-      };
-
-      const parseJsonObjectArray = (
-        json: unknown,
-      ): Array<{ name: string; type: string; description: string }> => {
-        if (typeof json === "string") {
-          try {
-            const parsed = JSON.parse(json);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        }
-        return Array.isArray(json) ? json : [];
-      };
-
-      return {
-        name: character.name || "",
-        race: character.race || "",
-        alignment: character.alignment || "True Neutral",
-        description: character.description || "",
-        characterType:
-          (character.characterType === "pc"
-            ? "player"
-            : (character.characterType as "player" | "npc")) || "player",
-        campaignId: campaignId,
-        adventureId: character.adventureId || adventureId,
-
-        strength: character.strength || 10,
-        dexterity: character.dexterity || 10,
-        constitution: character.constitution || 10,
-        intelligence: character.intelligence || 10,
-        wisdom: character.wisdom || 10,
-        charisma: character.charisma || 10,
-
-        hitPoints: character.hitPoints || 0,
-        maxHitPoints: character.maxHitPoints || 0,
-        armorClass: character.armorClass || 10,
-        proficiencyBonus: character.proficiencyBonus || 2,
-
-        personalityTraits: character.personalityTraits || "",
-        ideals: character.ideals || "",
-        bonds: character.bonds || "",
-        flaws: character.flaws || "",
-        backstory: character.backstory || "",
-
-        equipment: parseJsonArray(character.equipment),
-        weapons: parseJsonArray(character.weapons),
-        spells: parseJsonArray(character.spells),
-        tags: parseJsonArray(character.tags),
-
-        npcRelationships: parseJsonObjectArray(character.npcRelationships),
-        classes: (() => {
-          try {
-            const parsed =
-              typeof character.classes === "string"
-                ? JSON.parse(character.classes)
-                : character.classes;
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        })(),
-
-        items: [],
-
-        spellcastingAbility: character.spellcastingAbility || "",
-        spellSaveDc: character.spellSaveDc || 0,
-        spellAttackBonus: character.spellAttackBonus || 0,
-        images: parseImagesJson(character.images),
-      };
-    }
-
-    return {
-      name: "",
-      race: "",
-      alignment: "True Neutral",
-      description: "",
-      characterType: "player" as "player" | "npc",
-      campaignId,
-      adventureId,
-
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
-
-      hitPoints: 0,
-      maxHitPoints: 0,
-      armorClass: 10,
-      proficiencyBonus: 2,
-
-      personalityTraits: "",
-      ideals: "",
-      bonds: "",
-      flaws: "",
-      backstory: "",
-
-      equipment: [],
-      weapons: [],
-      spells: [],
-      tags: [],
-
-      npcRelationships: [],
-      classes: [],
-
-      items: [],
-
-      spellcastingAbility: "",
-      spellSaveDc: 0,
-      spellAttackBonus: 0,
-      images: [],
-    };
-  });
-
-  // Database magic items state - initialize from character prop
-  const [dbMagicItems, setDbMagicItems] = useState<
-    Array<{
-      id: number;
-      assignmentId?: number;
-      name: string;
-      rarity: string | null;
-      type: string | null;
-      description: string | null;
-      source?: string | null;
-      notes?: string | null;
-      assignedAt?: string | null;
-    }>
-  >(character?.magicItems || []);
-
-  // Wiki entities state - initialize from character prop
-  const [wikiSpells, setWikiSpells] = useState<
-    Array<{
-      id: number;
-      name: string;
-      level: number;
-      school: string;
-      description: string;
-      isPrepared?: boolean;
-      isKnown?: boolean;
-    }>
-  >(
-    character?.wikiEntities
-      ?.filter((entity) => entity.contentType === "spell")
-      .map((spell) => ({
-        id: spell.id,
-        name: spell.title,
-        level: (spell.parsedData as { level?: number })?.level || 0,
-        school: (spell.parsedData as { school?: string })?.school || "common",
-        description: spell.description || "", // Use description field (mapped from rawContent)
-        isPrepared: Boolean(
-          (spell.relationshipData as { isPrepared?: boolean })?.isPrepared,
-        ),
-        isKnown: Boolean(
-          (spell.relationshipData as { isKnown?: boolean })?.isKnown,
-        ),
-      })) || [],
-  );
-
-  const [wikiMonsters, setWikiMonsters] = useState<
-    Array<{
-      id: number;
-      name: string;
-      type: string;
-      challengeRating: string;
-      description: string;
-      relationshipType?: string;
-    }>
-  >(
-    character?.wikiEntities
-      ?.filter((entity) => entity.contentType === "monster")
-      .map((monster) => ({
-        id: monster.id,
-        name: monster.title,
-        type: monster.contentType,
-        challengeRating:
-          (monster.parsedData as { challengeRating?: string })
-            ?.challengeRating || "",
-        description: monster.description || "", // Use description field (mapped from rawContent)
-        relationshipType: monster.relationshipType,
-      })) || [],
-  );
-
-  const [magicItems, setMagicItems] = useState<
-    Array<{
-      id: number;
-      name: string;
-      rarity: string;
-      type: string;
-      description: string;
-      importedFrom?: string;
-    }>
-  >(
-    character?.wikiEntities
-      ?.filter((entity) => entity.contentType === "magic-item")
-      .map((item) => ({
-        id: item.id,
-        name: item.title,
-        rarity: (item.parsedData as { rarity?: string })?.rarity || "",
-        type: item.contentType,
-        description: item.description || "",
-        importedFrom: item.importedFrom,
-      })) || [],
-  );
-
-  const [otherWikiItems, setOtherWikiItems] = useState<
-    Array<{
-      id: number;
-      name: string;
-      contentType: string;
-      description: string;
-    }>
-  >(
-    character?.wikiEntities
-      ?.filter(
-        (entity) =>
-          !["spell", "monster", "magic-item"].includes(entity.contentType),
-      )
-      .map((item) => ({
-        id: item.id,
-        name: item.title,
-        contentType: item.contentType,
-        description: item.description || "", // Use description field (mapped from rawContent)
-      })) || [],
-  );
-
-  const handleImagesChange = (images: ImageInfo[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      images,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      const submitFormData = new FormData();
-
-      // Map characterType from 'player'/'npc' to 'pc'/'npc'
-      const mappedCharacterType =
-        formData.characterType === "player" ? "pc" : formData.characterType;
-
-      // Add all form data to FormData object
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "characterType") {
-          submitFormData.append(key, mappedCharacterType);
-        } else if (Array.isArray(value)) {
-          submitFormData.append(key, JSON.stringify(value));
-        } else if (value !== undefined && value !== null) {
-          submitFormData.append(key, value.toString());
-        }
-      });
-
-      if (mode === "create") {
-        const result = await createCharacter(submitFormData);
-        if (result?.success === false) {
-          if (result.errors) {
-            const errorMessages: Record<string, string> = {};
-            Object.entries(result.errors).forEach(([key, messages]) => {
-              if (Array.isArray(messages)) {
-                errorMessages[key] = messages[0] || "Invalid value";
-              }
-            });
-            setErrors(errorMessages);
-            toast.error(
-              "Failed to create character. Please check the form for errors.",
-            );
-          } else {
-            toast.error(result.message || "Failed to create character.");
-          }
-          return;
-        }
-        // Success - navigate to characters list
-        toast.success("Character created successfully!");
-        router.push(`/campaigns/${campaignId}/characters`);
-      } else if (mode === "edit" && character) {
-        const result = await updateCharacter(character.id, submitFormData);
-        if (result?.success === false) {
-          if (result.errors) {
-            const errorMessages: Record<string, string> = {};
-            Object.entries(result.errors).forEach(([key, messages]) => {
-              if (Array.isArray(messages)) {
-                errorMessages[key] = messages[0] || "Invalid value";
-              }
-            });
-            setErrors(errorMessages);
-            toast.error(
-              "Failed to update character. Please check the form for errors.",
-            );
-          } else {
-            toast.error(result.message || "Failed to update character.");
-          }
-          return;
-        }
-        toast.success("Character updated successfully!");
-        router.push(`/campaigns/${campaignId}/characters`);
-      }
-    } catch (error) {
-      console.error("Error saving character:", error);
-      setErrors({ submit: "Failed to save character. Please try again." });
-      toast.error("Failed to save character. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const updateFormData = (
-    field: keyof FormData,
-    value:
-      | string
-      | number
-      | string[]
-      | Array<{ name: string; type: string; description: string }>
-      | Array<{ name: string; level: number }>
-      | Array<{ title: string; description: string }>,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const addToArray = (
-    field:
-      | "equipment"
-      | "weapons"
-      | "spells"
-      | "tags",
-    value: string,
-  ) => {
-    if (value.trim() && !formData[field].includes(value.trim())) {
-      updateFormData(field, [...formData[field], value.trim()]);
-    }
-  };
-
-  const removeFromArray = (
-    field:
-      | "equipment"
-      | "weapons"
-      | "spells"
-      | "tags",
-    index: number,
-  ) => {
-    updateFormData(
-      field,
-      formData[field].filter((_, i) => i !== index),
-    );
-  };
-
-  const removeItem = (index: number) => {
-    updateFormData(
-      "items",
-      formData.items.filter((_, i) => i !== index),
-    );
-  };
-
-  const openItemModal = (index?: number) => {
-    if (index !== undefined) {
-      setEditingItemIndex(index);
-      setItemFormData(formData.items[index]);
-    } else {
-      setEditingItemIndex(null);
-      setItemFormData({ title: "", description: "" });
-    }
-    setIsItemModalOpen(true);
-  };
-
-  const closeItemModal = () => {
-    setIsItemModalOpen(false);
-    setEditingItemIndex(null);
-    setItemFormData({ title: "", description: "" });
-  };
-
-  const saveItem = () => {
-    if (editingItemIndex !== null) {
-      // Edit existing item
-      const updated = formData.items.map((item, i) =>
-        i === editingItemIndex ? itemFormData : item,
-      );
-      updateFormData("items", updated);
-    } else {
-      // Add new item
-      updateFormData("items", [...formData.items, itemFormData]);
-    }
-    closeItemModal();
-  };
-
-  // Load diary entries when in edit mode
   useEffect(() => {
-    if (mode === "edit" && character) {
-      fetchDiaryEntries();
+    if (character) {
+      setManualMagicItems(character.magicItems ?? []);
+      setWikiEntities(character.wikiEntities ?? []);
     }
+  }, [character]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !character?.id) {
+      setDiaryLoading(false);
+      return;
+    }
+
+    const fetchDiaryEntries = async () => {
+      try {
+        const response = await fetch(`/api/characters/${character.id}/diary`);
+        if (!response.ok) {
+          throw new Error("Failed to load diary entries");
+        }
+        const entries = (await response.json()) as DiaryEntry[];
+        setDiaryEntries(entries);
+      } catch (error) {
+        console.error("Error fetching diary entries:", error);
+        toast.error("Failed to load diary entries");
+      } finally {
+        setDiaryLoading(false);
+      }
+    };
+
+    void fetchDiaryEntries();
   }, [mode, character?.id]);
 
-  const fetchDiaryEntries = async () => {
-    if (!character) return;
-    
-    try {
-      const response = await fetch(`/api/characters/${character.id}/diary`);
-      if (response.ok) {
-        const entries = await response.json();
-        setDiaryEntries(entries);
-      }
-    } catch (error) {
-      console.error("Error fetching diary entries:", error);
-      toast.error("Failed to load diary entries");
-    }
+  const renderFieldError = (field: string) =>
+    errors[field] ? (
+      <p className="mt-1 text-sm text-destructive">{errors[field]}</p>
+    ) : null;
+
+  const updateFormState = <K extends keyof CharacterFormState>(
+    key: K,
+    value: CharacterFormState[K],
+  ) => {
+    setFormState((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Diary entry functions
-  const addDiaryEntry = async () => {
-    if (!entryFormData.description.trim() || !character) return;
-    
-    try {
-      const response = await fetch(`/api/characters/${character.id}/diary`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entryFormData),
-      });
+  const handleAbilityChange = (
+    key: (typeof abilityFields)[number]["key"],
+    value: number,
+  ) => {
+    updateFormState(key, Number.isFinite(value) ? value : 10);
+  };
 
-      if (response.ok) {
-        const newEntry = await response.json();
-        setDiaryEntries([newEntry, ...diaryEntries]);
-        setEntryFormData({
-          description: "",
-          date: new Date().toISOString().split('T')[0],
-          linkedEntities: [],
-          isImportant: false,
-        });
-        setIsAddingEntry(false);
-        toast.success("Diary entry added");
+  const updateClassEntry = (index: number, entry: ClassEntry) => {
+    updateFormState(
+      "classes",
+      formState.classes.map((existing, idx) => (idx === index ? entry : existing)),
+    );
+  };
+
+  const removeClassEntry = (index: number) => {
+    updateFormState(
+      "classes",
+      formState.classes.filter((_, idx) => idx !== index),
+    );
+  };
+
+  const handleImagesChange = (images: ImageInfo[]) => {
+    updateFormState("images", images);
+  };
+
+  const toggleDiaryExpand = (entryId: number) => {
+    setExpandedDiaryEntries((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(entryId)) {
+        updated.delete(entryId);
       } else {
-        toast.error("Failed to add diary entry");
+        updated.add(entryId);
       }
-    } catch (error) {
-      console.error("Error adding diary entry:", error);
-      toast.error("Failed to add diary entry");
-    }
+      return updated;
+    });
   };
 
-  const updateDiaryEntry = async (id: number) => {
-    if (!character) return;
-
-    try {
-      const response = await fetch(`/api/characters/${character.id}/diary/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entryFormData),
-      });
-
-      if (response.ok) {
-        const updatedEntry = await response.json();
-        setDiaryEntries(diaryEntries.map(entry =>
-          entry.id === id ? updatedEntry : entry
-        ));
-        setEditingEntryId(null);
-        setEntryFormData({
-          description: "",
-          date: new Date().toISOString().split('T')[0],
-          linkedEntities: [],
-          isImportant: false,
-        });
-        setIsAddingEntry(false);
-        toast.success("Diary entry updated");
-      } else {
-        toast.error("Failed to update diary entry");
-      }
-    } catch (error) {
-      console.error("Error updating diary entry:", error);
-      toast.error("Failed to update diary entry");
+  const highlightSearchTerms = (text: string, searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      return text;
     }
+    const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <mark key={`${part}-${index}`} className="rounded bg-yellow-200 px-0.5">
+          {part}
+        </mark>
+      ) : (
+        <span key={`${part}-${index}`}>{part}</span>
+      ),
+    );
   };
 
-  const deleteDiaryEntry = async (id: number) => {
-    if (!character || !confirm("Are you sure you want to delete this diary entry?")) return;
+  const filteredDiaryEntries = useMemo(() => {
+    return diaryEntries.filter((entry) => {
+      const matchesQuery =
+        !diarySearchQuery.trim() ||
+        entry.description.toLowerCase().includes(diarySearchQuery.toLowerCase()) ||
+        entry.linkedEntities?.some((entity) =>
+          entity.name.toLowerCase().includes(diarySearchQuery.toLowerCase()),
+        );
+
+      const matchesEntityFilter =
+        diaryEntityFilter.length === 0 ||
+        entry.linkedEntities?.some((entity) => diaryEntityFilter.includes(entity.type));
+
+      return matchesQuery && matchesEntityFilter;
+    });
+  }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
+
+  const handleDiaryDelete = async (entryId: number) => {
+    if (!character?.id) {
+      return;
+    }
+
+    const confirmed =
+      typeof window === "undefined" || window.confirm("Delete this diary entry?");
+    if (!confirmed) {
+      return;
+    }
 
     try {
-      const response = await fetch(`/api/characters/${character.id}/diary/${id}`, {
+      const response = await fetch(`/api/characters/${character.id}/diary/${entryId}`, {
         method: "DELETE",
       });
-
-      if (response.ok) {
-        setDiaryEntries(diaryEntries.filter(entry => entry.id !== id));
-        toast.success("Diary entry deleted");
-      } else {
-        toast.error("Failed to delete diary entry");
+      if (!response.ok) {
+        throw new Error("Failed to delete diary entry");
       }
+      setDiaryEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+      toast.success("Diary entry deleted");
     } catch (error) {
       console.error("Error deleting diary entry:", error);
       toast.error("Failed to delete diary entry");
     }
   };
 
-  const startEditEntry = (entry: DiaryEntry) => {
-    setEditingEntryId(entry.id);
-    setEntryFormData({
+  const startDiaryEdit = (entry: DiaryEntry) => {
+    setEditingDiaryId(entry.id);
+    setDiaryDraft({
       description: entry.description,
       date: entry.date,
-      linkedEntities: entry.linkedEntities,
-      isImportant: entry.isImportant,
+      linkedEntities: entry.linkedEntities ?? [],
+      isImportant: Boolean(entry.isImportant),
     });
-    setIsAddingEntry(true);
+    setShowDiaryForm(true);
   };
 
-  const cancelEntryForm = () => {
-    setIsAddingEntry(false);
-    setEditingEntryId(null);
-    setEntryFormData({
-      description: "",
-      date: new Date().toISOString().split('T')[0],
-      linkedEntities: [],
-      isImportant: false,
-    });
+  const resetDiaryForm = () => {
+    setEditingDiaryId(null);
+    setDiaryDraft(createDiaryDraft());
+    setShowDiaryForm(false);
+  };
+
+  const saveDiaryEntry = async () => {
+    if (!character?.id) {
+      toast.error("Save the character before adding diary entries.");
+      return;
+    }
+
+    if (!diaryDraft.description.trim()) {
+      toast.error("Diary description is required");
+      return;
+    }
+
+    const payload = {
+      ...diaryDraft,
+      linkedEntities: diaryDraft.linkedEntities,
+    };
+
+    const endpoint = editingDiaryId
+      ? `/api/characters/${character.id}/diary/${editingDiaryId}`
+      : `/api/characters/${character.id}/diary`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: editingDiaryId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save diary entry");
+      }
+
+      const savedEntry = (await response.json()) as DiaryEntry;
+      setDiaryEntries((prev) => {
+        if (editingDiaryId) {
+          return prev.map((entry) => (entry.id === editingDiaryId ? savedEntry : entry));
+        }
+        return [savedEntry, ...prev];
+      });
+
+      toast.success(editingDiaryId ? "Diary entry updated" : "Diary entry added");
+      resetDiaryForm();
+    } catch (error) {
+      console.error("Error saving diary entry:", error);
+      toast.error("Failed to save diary entry");
+    }
   };
 
   const addLinkedEntity = (entity: { id: string; type: string; name: string }) => {
-    const currentEntities = Array.isArray(entryFormData.linkedEntities) ? entryFormData.linkedEntities : [];
-    // Check if entity is already linked
-    if (currentEntities.some(e => e.id === entity.id && e.type === entity.type)) {
-      return;
-    }
-    setEntryFormData({
-      ...entryFormData,
-      linkedEntities: [...currentEntities, entity],
+    setDiaryDraft((prev) => {
+      const exists = prev.linkedEntities.some(
+        (linked) => linked.id === entity.id && linked.type === entity.type,
+      );
+      if (exists) {
+        return prev;
+      }
+      return {
+        ...prev,
+        linkedEntities: [...prev.linkedEntities, entity],
+      };
     });
     setIsEntitySelectorOpen(false);
   };
 
   const removeLinkedEntity = (entityId: string) => {
-    setEntryFormData({
-      ...entryFormData,
-      linkedEntities: entryFormData.linkedEntities.filter(e => e.id !== entityId),
-    });
+    setDiaryDraft((prev) => ({
+      ...prev,
+      linkedEntities: prev.linkedEntities.filter((entity) => entity.id !== entityId),
+    }));
   };
 
-  const addRelationship = () => {
-    updateFormData("npcRelationships", [
-      ...formData.npcRelationships,
-      { name: "", type: "", description: "" },
-    ]);
-  };
-
-  const updateRelationship = (
-    index: number,
-    field: "name" | "type" | "description",
-    value: string,
-  ) => {
-    const updated = formData.npcRelationships.map((rel, i) =>
-      i === index ? { ...rel, [field]: value } : rel,
-    );
-    updateFormData("npcRelationships", updated);
-  };
-
-  const removeRelationship = (index: number) => {
-    updateFormData(
-      "npcRelationships",
-      formData.npcRelationships.filter((_, i) => i !== index),
-    );
-  };
-
-  const removeWikiItem = async (wikiArticleId: number, contentType: string) => {
-    const itemKey = `${contentType}-${wikiArticleId}`;
-
-    // Prevent multiple simultaneous removals of the same item
-    if (removingItems.has(itemKey)) {
-      return;
-    }
-
-    setRemovingItems((prev) => new Set(prev).add(itemKey));
-
-    console.log("removeWikiItem called:", {
-      wikiArticleId,
-      contentType,
-      characterId: character?.id,
-    });
-
+  const handleManualMagicItemRemoval = async (magicItemId: number) => {
     if (!character?.id) {
-      console.error("Character ID is undefined");
-      setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
       return;
     }
 
-    try {
-      const response = await fetch(
-        `/api/wiki-articles/${wikiArticleId}/entities`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            entityType: "character",
-            entityId: character.id,
-          }),
-        },
-      );
-
-      console.log("API response status:", response.status);
-      console.log("API response ok:", response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error response:", errorText);
-
-        // Treat 404 as success (item already removed)
-        if (response.status === 404) {
-          console.log("Item already removed (404), treating as success");
-        } else {
-          throw new Error(`Failed to remove wiki item: ${errorText}`);
-        }
-      }
-
-      const result = response.ok ? await response.json() : null;
-      if (result) {
-        console.log("API success result:", result);
-      }
-
-      // Update local state based on content type
-      if (contentType === "spell") {
-        setWikiSpells((prev) =>
-          prev.filter((spell) => spell.id !== wikiArticleId),
-        );
-      } else if (contentType === "monster") {
-        setWikiMonsters((prev) =>
-          prev.filter((monster) => monster.id !== wikiArticleId),
-        );
-      } else if (contentType === "magic-item") {
-        setMagicItems((prev) =>
-          prev.filter((item) => item.id !== wikiArticleId),
-        );
-      } else {
-        // Handle other content types
-        setOtherWikiItems((prev) =>
-          prev.filter((item) => item.id !== wikiArticleId),
-        );
-      }
-    } catch (error) {
-      console.error("Error removing wiki item:", error);
-      toast.error("Failed to remove wiki item. Please try again.");
-    } finally {
-      setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
-    }
-  };
-
-  const removeDbMagicItem = async (magicItemId: number) => {
-    const itemKey = `db-magic-item-${magicItemId}`;
-
-    // Prevent multiple simultaneous removals of the same item
-    if (removingItems.has(itemKey)) {
+    const guardKey = `manual-${magicItemId}`;
+    if (removingItems.has(guardKey)) {
       return;
     }
 
-    setRemovingItems((prev) => new Set(prev).add(itemKey));
-
-    console.log("removeDbMagicItem called:", {
-      magicItemId,
-      characterId: character?.id,
-    });
-
-    if (!character?.id) {
-      console.error("Character ID is undefined");
-      setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
-      return;
-    }
+    setRemovingItems((prev) => new Set(prev).add(guardKey));
 
     try {
       const response = await fetch(
@@ -911,1340 +568,695 @@ export default function CharacterForm({
           method: "DELETE",
         },
       );
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error response:", errorText);
-        throw new Error(`Failed to unassign magic item: ${errorText}`);
+        throw new Error("Failed to unassign magic item");
       }
-
-      // Update local state - remove the item from dbMagicItems
-      setDbMagicItems((prev) =>
-        prev.filter((item) => item.id !== magicItemId),
-      );
-
-      toast.success("Magic item unassigned successfully!");
+      setManualMagicItems((prev) => prev.filter((item) => item.id !== magicItemId));
+      toast.success("Magic item unassigned");
     } catch (error) {
       console.error("Error unassigning magic item:", error);
-      toast.error("Failed to unassign magic item. Please try again.");
+      toast.error("Failed to unassign magic item");
     } finally {
       setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
+        const updated = new Set(prev);
+        updated.delete(guardKey);
+        return updated;
       });
     }
   };
 
-  // Helper function to highlight search terms
-  const highlightSearchTerms = (text: string, searchQuery: string) => {
-    if (!searchQuery.trim()) return text;
+  const handleWikiEntityRemoval = async (entityId: number, contentType: string) => {
+    if (!character?.id) {
+      return;
+    }
 
-    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
+    const guardKey = `${contentType}-${entityId}`;
+    if (removingItems.has(guardKey)) {
+      return;
+    }
 
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 px-0.5 rounded">
-          {part}
-        </mark>
-      ) : part
-    );
-  };
+    setRemovingItems((prev) => new Set(prev).add(guardKey));
 
-  // Handle clicking on linked entities
-  const handleEntityClick = (entity: { id: string; type: string; name: string }) => {
-    // Navigate to the appropriate entity page based on type
-    const entityRoutes: Record<string, string> = {
-      'character': `/campaigns/${campaignId}/characters/${entity.id}`,
-      'location': `/campaigns/${campaignId}/locations/${entity.id}`,
-      'session': `/campaigns/${campaignId}/sessions/${entity.id}`,
-      'quest': `/campaigns/${campaignId}/quests/${entity.id}`,
-      'magic-item': `/campaigns/${campaignId}/magic-items/${entity.id}`,
-      'adventure': `/campaigns/${campaignId}/adventures/${entity.id}`,
-    };
+    try {
+      const response = await fetch(`/api/wiki-articles/${entityId}/entities`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType: "character", entityId: character.id }),
+      });
 
-    const route = entityRoutes[entity.type];
-    if (route) {
-      router.push(route);
+      if (!response.ok && response.status !== 404) {
+        throw new Error("Failed to remove wiki entity");
+      }
+
+      setWikiEntities((prev) => prev.filter((entity) => entity.id !== entityId));
+      toast.success("Wiki entity removed");
+    } catch (error) {
+      console.error("Error removing wiki entity:", error);
+      toast.error("Failed to remove wiki entity");
+    } finally {
+      setRemovingItems((prev) => {
+        const updated = new Set(prev);
+        updated.delete(guardKey);
+        return updated;
+      });
     }
   };
 
-  // Filter diary entries based on search query and entity filter (client-side only)
-  const filteredDiaryEntries = useMemo(() => {
-    return diaryEntries.filter((entry) => {
-      // Content search filter
-      const contentMatches = !diarySearchQuery.trim() ||
-        entry.description?.toLowerCase().includes(diarySearchQuery.toLowerCase()) ||
-        entry.linkedEntities?.some(entity => entity.name.toLowerCase().includes(diarySearchQuery.toLowerCase()));
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
 
-      // Entity type filter
-      const entityMatches = diaryEntityFilter.length === 0 ||
-        entry.linkedEntities?.some(entity => diaryEntityFilter.includes(entity.type));
+    try {
+      const payload = new FormData();
+      const typeOption = characterTypeOptions.find(
+        (option) => option.value === formState.characterType,
+      );
+      const serverType = typeOption?.serverValue ?? "pc";
 
-      return contentMatches && entityMatches;
-    });
-  }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
+      payload.append("campaignId", String(formState.campaignId));
+      if (formState.adventureId) {
+        payload.append("adventureId", String(formState.adventureId));
+      }
+      payload.append("characterType", serverType);
+      payload.append("name", formState.name.trim());
+      payload.append("race", formState.race.trim());
+      payload.append("background", formState.background.trim());
+      payload.append("alignment", formState.alignment.trim());
+      payload.append("description", formState.description.trim());
+      payload.append("strength", String(formState.strength));
+      payload.append("dexterity", String(formState.dexterity));
+      payload.append("constitution", String(formState.constitution));
+      payload.append("intelligence", String(formState.intelligence));
+      payload.append("wisdom", String(formState.wisdom));
+      payload.append("charisma", String(formState.charisma));
+      payload.append("hitPoints", String(formState.hitPoints));
+      payload.append("maxHitPoints", String(formState.maxHitPoints));
+      payload.append("armorClass", String(formState.armorClass));
+      payload.append("classes", JSON.stringify(formState.classes));
+      payload.append("images", JSON.stringify(formState.images));
+
+      const result: ActionResult =
+        mode === "create"
+          ? await createCharacter(payload)
+          : character
+            ? await updateCharacter(character.id, payload)
+            : { success: false, message: "Character not found" };
+
+      if (!result?.success) {
+        if (result?.errors) {
+          const fieldErrors: Record<string, string> = {};
+          Object.entries(result.errors).forEach(([fieldName, messages]) => {
+            if (Array.isArray(messages) && messages.length > 0) {
+              fieldErrors[fieldName] = messages[0];
+            }
+          });
+          setErrors(fieldErrors);
+        }
+        toast.error(result?.message ?? "Failed to save character");
+        return;
+      }
+
+      toast.success(
+        mode === "create"
+          ? "Character created successfully"
+          : "Character updated successfully",
+      );
+      router.push(`/campaigns/${campaignId}/characters`);
+    } catch (error) {
+      console.error("Error saving character:", error);
+      toast.error("Failed to save character");
+      setErrors({ submit: "Failed to save character. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="abilities">Abilities</TabsTrigger>
-            <TabsTrigger value="diary">Diary</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
-            <TabsTrigger value="spells">Spells</TabsTrigger>
-            <TabsTrigger value="wiki">Wiki Entities</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
-          </TabsList>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsTrigger value="abilities">Abilities</TabsTrigger>
+          <TabsTrigger value="diary">Diary</TabsTrigger>
+          <TabsTrigger value="attachments">Attachments</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="basic" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData("name", e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="characterType">Type</Label>
-                    <Select
-                      defaultValue={formData.characterType}
-                      name="characterType"
-                      onValueChange={(value) =>
-                        updateFormData(
-                          "characterType",
-                          value as "player" | "npc",
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="player">Player Character</SelectItem>
-                        <SelectItem value="npc">NPC</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="race">Race</Label>
-                    <Input
-                      id="race"
-                      value={formData.race}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData("race", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="alignment">Alignment</Label>
-                    <Select
-                      value={formData.alignment}
-                      name="alignment"
-                      onValueChange={(value) =>
-                        updateFormData("alignment", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Lawful Good">Lawful Good</SelectItem>
-                        <SelectItem value="Neutral Good">
-                          Neutral Good
-                        </SelectItem>
-                        <SelectItem value="Chaotic Good">
-                          Chaotic Good
-                        </SelectItem>
-                        <SelectItem value="Lawful Neutral">
-                          Lawful Neutral
-                        </SelectItem>
-                        <SelectItem value="True Neutral">
-                          True Neutral
-                        </SelectItem>
-                        <SelectItem value="Chaotic Neutral">
-                          Chaotic Neutral
-                        </SelectItem>
-                        <SelectItem value="Lawful Evil">Lawful Evil</SelectItem>
-                        <SelectItem value="Neutral Evil">
-                          Neutral Evil
-                        </SelectItem>
-                        <SelectItem value="Chaotic Evil">
-                          Chaotic Evil
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
+        <TabsContent value="basic" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Classes & Levels</Label>
-                  <div className="space-y-2">
-                    {formData.classes.map((classInfo, index) => (
-                      <div key={index} className="flex gap-2 items-center">
-                        <Input
-                          placeholder="Class name"
-                          value={classInfo.name}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>,
-                          ) => {
-                            const updated = [...formData.classes];
-                            updated[index] = {
-                              ...updated[index],
-                              name: e.target.value,
-                            };
-                            updateFormData("classes", updated);
-                          }}
-                          className="flex-1"
-                        />
-                        <Input
-                          type="number"
-                          min="1"
-                          max="20"
-                          placeholder="Level"
-                          value={classInfo.level}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>,
-                          ) => {
-                            const updated = [...formData.classes];
-                            updated[index] = {
-                              ...updated[index],
-                              level: parseInt(e.target.value) || 1,
-                            };
-                            updateFormData("classes", updated);
-                          }}
-                          className="w-24"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const updated = formData.classes.filter(
-                              (_, i) => i !== index,
-                            );
-                            updateFormData("classes", updated);
-                          }}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        updateFormData("classes", [
-                          ...formData.classes,
-                          { name: "", level: 1 },
-                        ]);
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Class
-                    </Button>
-                  </div>
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={formState.name}
+                    onChange={(event) => updateFormState("name", event.target.value)}
+                    required
+                  />
+                  {renderFieldError("name")}
                 </div>
+                <div>
+                  <Label htmlFor="characterType">Type</Label>
+                  <Select
+                    value={formState.characterType}
+                    onValueChange={(value) =>
+                      updateFormState("characterType", value as CharacterFormState["characterType"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select character type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {characterTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="race">Race</Label>
+                  <Input
+                    id="race"
+                    value={formState.race}
+                    onChange={(event) => updateFormState("race", event.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="alignment">Alignment</Label>
+                  <Select
+                    value={formState.alignment}
+                    onValueChange={(value) => updateFormState("alignment", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select alignment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {alignmentOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="background">Background</Label>
+                  <Textarea
+                    id="background"
+                    value={formState.background}
+                    onChange={(event) => updateFormState("background", event.target.value)}
+                    rows={3}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
-                    value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      updateFormData("description", e.target.value)
-                    }
+                    value={formState.description}
+                    onChange={(event) => updateFormState("description", event.target.value)}
                     rows={3}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="abilities">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ability Scores &amp; Combat</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                {abilityFields.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label htmlFor={key}>{label}</Label>
+                    <Input
+                      id={key}
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={formState[key]}
+                      onChange={(event) =>
+                        handleAbilityChange(key, Number(event.target.value) || 10)
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label htmlFor="hitPoints">Current Hit Points</Label>
+                  <Input
+                    id="hitPoints"
+                    type="number"
+                    min={0}
+                    value={formState.hitPoints}
+                    onChange={(event) =>
+                      updateFormState("hitPoints", Number(event.target.value) || 0)
+                    }
+                  />
+                  {renderFieldError("hitPoints")}
+                </div>
+                <div>
+                  <Label htmlFor="maxHitPoints">Max Hit Points</Label>
+                  <Input
+                    id="maxHitPoints"
+                    type="number"
+                    min={0}
+                    value={formState.maxHitPoints}
+                    onChange={(event) =>
+                      updateFormState("maxHitPoints", Number(event.target.value) || 0)
+                    }
+                  />
+                  {renderFieldError("maxHitPoints")}
+                </div>
+                <div>
+                  <Label htmlFor="armorClass">Armor Class</Label>
+                  <Input
+                    id="armorClass"
+                    type="number"
+                    min={0}
+                    value={formState.armorClass}
+                    onChange={(event) =>
+                      updateFormState("armorClass", Number(event.target.value) || 10)
+                    }
+                  />
+                  {renderFieldError("armorClass")}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="diary" className="space-y-4">
+          {mode === "create" && !character?.id ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Save the character before adding diary entries.
               </CardContent>
             </Card>
-          </TabsContent>
+          ) : (
+            <>
+              <div className="flex justify-end">
+                {!showDiaryForm && (
+                  <Button type="button" size="sm" onClick={() => setShowDiaryForm(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add diary entry
+                  </Button>
+                )}
+              </div>
 
-          <TabsContent value="abilities" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ability Scores</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { key: "strength", label: "Strength" },
-                    { key: "dexterity", label: "Dexterity" },
-                    { key: "constitution", label: "Constitution" },
-                    { key: "intelligence", label: "Intelligence" },
-                    { key: "wisdom", label: "Wisdom" },
-                    { key: "charisma", label: "Charisma" },
-                  ].map(({ key, label }) => (
-                    <div key={key}>
-                      <Label htmlFor={key}>{label}</Label>
-                      <Input
-                        id={key}
-                        type="number"
-                        min="1"
-                        max="30"
-                        value={
-                          (formData[key as keyof FormData] as number) || 10
-                        }
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          updateFormData(
-                            key as keyof FormData,
-                            parseInt(e.target.value) || 10,
-                          )
+              {showDiaryForm && (
+                <Card className="border-primary/40">
+                  <CardHeader>
+                    <CardTitle>{editingDiaryId ? "Edit Diary Entry" : "New Diary Entry"}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="diary-date">Date</Label>
+                        <Input
+                          id="diary-date"
+                          type="date"
+                          value={diaryDraft.date}
+                          onChange={(event) =>
+                            setDiaryDraft((prev) => ({ ...prev, date: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <input
+                          id="diary-important"
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={diaryDraft.isImportant}
+                          onChange={(event) =>
+                            setDiaryDraft((prev) => ({
+                              ...prev,
+                              isImportant: event.target.checked,
+                            }))
+                          }
+                        />
+                        <Label htmlFor="diary-important" className="text-sm">
+                          Mark as important
+                        </Label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="diary-description">Notes *</Label>
+                      <Textarea
+                        id="diary-description"
+                        rows={4}
+                        value={diaryDraft.description}
+                        onChange={(event) =>
+                          setDiaryDraft((prev) => ({
+                            ...prev,
+                            description: event.target.value,
+                          }))
                         }
                       />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Combat Basics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="maxHitPoints">Max Hit Points</Label>
-                    <Input
-                      id="maxHitPoints"
-                      type="number"
-                      min="0"
-                      value={formData.maxHitPoints}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData(
-                          "maxHitPoints",
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="armorClass">Armor Class</Label>
-                    <Input
-                      id="armorClass"
-                      type="number"
-                      min="-20"
-                      value={formData.armorClass}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        updateFormData(
-                          "armorClass",
-                          parseInt(e.target.value) || 10,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="diary" className="space-y-4">
-            {/* Add Entry Button */}
-            {!isAddingEntry && (
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="button"
-                  onClick={() => setIsAddingEntry(true)}
-                  className="btn-sm"
-                  size="sm"
-                  variant="primary"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Diary Entry
-                </Button>
-              </div>
-            )}
-
-            {/* Entry Form */}
-            {isAddingEntry && (
-              <Card className="border-2 border-primary">
-                <CardHeader>
-                  <CardTitle>{editingEntryId ? 'Edit Entry' : 'New Diary Entry'}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label htmlFor="entryDate">Date</Label>
-                    <Input
-                      id="entryDate"
-                      type="date"
-                      value={entryFormData.date}
-                      onChange={(e) => setEntryFormData({ ...entryFormData, date: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="entryDescription">Notes *</Label>
-                    <Textarea
-                      id="entryDescription"
-                      value={entryFormData.description}
-                      onChange={(e) => setEntryFormData({ ...entryFormData, description: e.target.value })}
-                      rows={4}
-                      placeholder="What happened during this event..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.ctrlKey) {
-                          // Allow Ctrl+Enter to save
-                          return;
-                        }
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          // Prevent Enter from submitting form, but allow Shift+Enter for new lines
-                          e.preventDefault();
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Linked Entities</Label>
                     <div className="space-y-2">
-                      {Array.isArray(entryFormData.linkedEntities) && entryFormData.linkedEntities.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {entryFormData.linkedEntities.map((entity) => (
-                            <Badge key={`${entity.type}-${entity.id}`} variant="outline" className="text-xs">
-                              <span className="text-gray-500 mr-1">{entity.type}:</span>
+                      <Label>Linked entities</Label>
+                      {diaryDraft.linkedEntities.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {diaryDraft.linkedEntities.map((entity) => (
+                            <Badge
+                              key={`${entity.type}-${entity.id}`}
+                              variant="outline"
+                              className="gap-2"
+                            >
+                              <span className="text-xs uppercase text-muted-foreground">
+                                {entity.type.replace("-", " ")}
+                              </span>
                               {entity.name}
-                              <X 
-                                className="w-3 h-3 ml-1 cursor-pointer hover:text-red-500" 
+                              <button
+                                type="button"
                                 onClick={() => removeLinkedEntity(entity.id)}
-                              />
+                                aria-label="Remove linked entity"
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
                             </Badge>
                           ))}
                         </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No linked entities yet. Connect entries to characters, quests, or locations for quick reference.
+                        </p>
                       )}
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          onClick={() => setIsEntitySelectorOpen(true)}
-                          className="btn-sm"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Linked Entity
-                        </Button>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Link this entry to other elements from your campaign (sessions, locations, NPCs, magic items, quests, etc.)
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="entryImportant"
-                      className="checkbox checkbox-primary"
-                      checked={entryFormData.isImportant}
-                      onChange={(e) => setEntryFormData({ ...entryFormData, isImportant: e.target.checked })}
-                    />
-                    <Label htmlFor="entryImportant" className="cursor-pointer">
-                      Mark as important
-                    </Label>
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="sm"
-                      onClick={() => editingEntryId ? updateDiaryEntry(editingEntryId) : addDiaryEntry()}
-                      disabled={!entryFormData.description.trim()}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {editingEntryId ? 'Update' : 'Save'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={cancelEntryForm}
-                    >
-                      <EyeOff className="w-4 h-4" />
-                      Cancel
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Entity Selector Modal */}
-            <EntitySelectorModal
-              campaignId={campaignId}
-              isOpen={isEntitySelectorOpen}
-              onClose={() => setIsEntitySelectorOpen(false)}
-              onSelect={addLinkedEntity}
-              title="Add to Diary Entry"
-              selectLabel="Entity"
-              excludedEntities={entryFormData.linkedEntities}
-              sourceEntity={character ? { id: character.id.toString(), type: "character", name: character.name } : undefined}
-            />
-
-            {/* Search and Filter Controls */}
-            {diaryEntries.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                  <div className="flex flex-col space-y-4">
-                    {/* Search Bar */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        type="text"
-                        placeholder="Search diary entries..."
-                        value={diarySearchQuery}
-                        onChange={(e) => setDiarySearchQuery(e.target.value)}
-                        className="pl-10 pr-10 py-3 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
-                        aria-label="Search diary entries"
-                      />
-                      {diarySearchQuery && (
-                        <button
-                          onClick={() => setDiarySearchQuery("")}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          aria-label="Clear search"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEntitySelectorOpen(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add linked entity
+                      </Button>
                     </div>
 
-                    {/* Active Filters Display */}
-                    {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={resetDiaryForm}>
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={saveDiaryEntry}
+                        disabled={!diaryDraft.description.trim()}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {editingDiaryId ? "Update" : "Save"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-                        {/* Search term badge */}
+              <EntitySelectorModal
+                campaignId={campaignId}
+                isOpen={isEntitySelectorOpen}
+                onClose={() => setIsEntitySelectorOpen(false)}
+                onSelect={addLinkedEntity}
+                title="Link Entity"
+                selectLabel="Entity"
+                excludedEntities={diaryDraft.linkedEntities}
+                sourceEntity={
+                  character
+                    ? { id: character.id.toString(), type: "character", name: character.name }
+                    : undefined
+                }
+              />
+
+              {diaryLoading ? (
+                <Card>
+                  <CardContent className="space-y-3 py-6">
+                    {[1, 2, 3].map((skeleton) => (
+                      <div key={skeleton} className="h-20 animate-pulse rounded-md bg-muted" />
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : filteredDiaryEntries.length === 0 ? (
+                <Card>
+                  <CardContent className="py-10 text-center text-muted-foreground">
+                    {diaryEntries.length === 0
+                      ? "No diary entries yet. Add one to start chronicling their journey."
+                      : "No entries match your filters."}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="space-y-3">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={diarySearchQuery}
+                          onChange={(event) => setDiarySearchQuery(event.target.value)}
+                          placeholder="Search diary entries..."
+                          className="pl-9"
+                        />
                         {diarySearchQuery && (
-                          <Badge variant="default" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200">
-                            <Search className="w-3 h-3" />
-                            "{diarySearchQuery}"
-                            <X
-                              className="w-3 h-3 cursor-pointer ml-1"
-                              onClick={() => setDiarySearchQuery("")}
-                              aria-label="Remove search filter"
-                            />
-                          </Badge>
-                        )}
-
-                        {/* Entity type badges */}
-                        {diaryEntityFilter.map((entityType) => (
-                          <Badge
-                            key={entityType}
-                            variant="default"
-                            className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 hover:bg-green-200"
+                          <button
+                            type="button"
+                            aria-label="Clear search"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            onClick={() => setDiarySearchQuery("")}
                           >
-                            <Filter className="w-3 h-3" />
-                            {entityType.replace('-', ' ')}
-                            <X
-                              className="w-3 h-3 cursor-pointer ml-1"
-                              onClick={() => setDiaryEntityFilter(prev => prev.filter(type => type !== entityType))}
-                              aria-label={`Remove ${entityType} filter`}
-                            />
-                          </Badge>
-                        ))}
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
 
-                        {/* Clear all button */}
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const entityTypes = new Set<string>();
+                          diaryEntries.forEach((entry) => {
+                            entry.linkedEntities?.forEach((entity) => entityTypes.add(entity.type));
+                          });
+                          return Array.from(entityTypes)
+                            .sort()
+                            .map((entityType) => {
+                              const selected = diaryEntityFilter.includes(entityType);
+                              return (
+                                <button
+                                  key={entityType}
+                                  type="button"
+                                  className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors ${
+                                    selected
+                                      ? "border-primary bg-primary/10 text-primary"
+                                      : "border-border text-muted-foreground hover:bg-muted"
+                                  }`}
+                                  onClick={() =>
+                                    setDiaryEntityFilter((prev) =>
+                                      selected
+                                        ? prev.filter((type) => type !== entityType)
+                                        : [...prev, entityType],
+                                    )
+                                  }
+                                >
+                                  <Filter className="h-3 w-3" />
+                                  {entityType.replace("-", " ")}
+                                </button>
+                              );
+                            });
+                        })()}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-2">
+                    {filteredDiaryEntries
+                      .slice()
+                      .sort((a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime(),
+                      )
+                      .map((entry, index) => (
+                        <Card key={entry.id}>
+                          <CardContent className="py-2">
+                            <DiaryEntryCard
+                              entry={entry}
+                              isFirst={index === 0}
+                              onEdit={() => startDiaryEdit(entry)}
+                              onDelete={() => handleDiaryDelete(entry.id)}
+                              isTextExpanded={expandedDiaryEntries.has(entry.id)}
+                              onToggleTextExpanded={toggleDiaryExpand}
+                              onEntityClick={(entity) => {
+                                const routes: Record<string, string> = {
+                                  character: `/campaigns/${campaignId}/characters/${entity.id}`,
+                                  location: `/campaigns/${campaignId}/locations/${entity.id}`,
+                                  session: `/campaigns/${campaignId}/sessions/${entity.id}`,
+                                  quest: `/campaigns/${campaignId}/quests/${entity.id}`,
+                                  "magic-item": `/campaigns/${campaignId}/magic-items/${entity.id}`,
+                                  adventure: `/campaigns/${campaignId}/adventures/${entity.id}`,
+                                };
+                                const route = routes[entity.type];
+                                if (route) {
+                                  router.push(route);
+                                }
+                              }}
+                              highlightSearchTerms={highlightSearchTerms}
+                              searchQuery={diarySearchQuery}
+                            />
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="attachments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Assigned Magic Items</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {manualMagicItems.length === 0 ? (
+                <div className="py-10 text-center text-muted-foreground">
+                  <Sparkles className="mx-auto mb-3 h-10 w-10" />
+                  No magic items assigned to this character yet.
+                </div>
+              ) : (
+                manualMagicItems.map((item) => {
+                  const guardKey = `manual-${item.id}`;
+                  const isRemoving = removingItems.has(guardKey);
+                  return (
+                    <Card key={item.id} className="border border-emerald-200">
+                      <CardContent className="relative py-4">
+                        <div className="pr-8">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-lg font-semibold text-foreground">
+                              {item.name}
+                            </span>
+                            {item.rarity && (
+                              <Badge variant="outline" className="text-xs">
+                                {item.rarity}
+                              </Badge>
+                            )}
+                            {item.type && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.type}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {item.source && <p>Source: {item.source}</p>}
+                            {item.assignedAt && (
+                              <p>Assigned: {formatUIDate(item.assignedAt)}</p>
+                            )}
+                          </div>
+                          {item.description && (
+                            <div className="mt-2">
+                              <MarkdownRenderer content={item.description} className="prose-sm" />
+                            </div>
+                          )}
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setDiarySearchQuery("");
-                            setDiaryEntityFilter([]);
-                          }}
-                          className="text-xs text-gray-500 hover:text-gray-700 h-6 px-2"
+                          disabled={isRemoving}
+                          onClick={() => handleManualMagicItemRemoval(item.id)}
+                          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                          aria-label="Unassign magic item"
                         >
-                          Clear all
+                          <Trash2 className="w-3 h-3" />
                         </Button>
-                      </div>
-                    )}
-
-                    {/* Entity Filter Section */}
-                    <div className="border-t border-gray-100 pt-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Filter by entity type:</span>
-
-                        {/* Quick filter buttons for common entity types */}
-                        {(() => {
-                          const allEntityTypes = new Set<string>();
-                          diaryEntries.forEach(entry => {
-                            entry.linkedEntities?.forEach(entity => {
-                              allEntityTypes.add(entity.type);
-                            });
-                          });
-
-                          const commonTypes = ['character', 'location', 'session', 'quest', 'magic-item'];
-                          const availableTypes = Array.from(allEntityTypes).sort();
-
-                          return availableTypes.map((entityType) => {
-                            const isSelected = diaryEntityFilter.includes(entityType);
-                            return (
-                              <button
-                                type="button"
-                                key={entityType}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setDiaryEntityFilter(prev => prev.filter(type => type !== entityType));
-                                  } else {
-                                    setDiaryEntityFilter(prev => [...prev, entityType]);
-                                  }
-                                }}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ${
-                                  isSelected
-                                    ? 'bg-blue-100 text-blue-800 border border-blue-300 shadow-sm'
-                                    : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:border-gray-300'
-                                }`}
-                                aria-label={`${isSelected ? 'Remove' : 'Add'} ${entityType} filter`}
-                              >
-                                {entityType.replace('-', ' ')}
-                              </button>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                </div>
-              </div>
-            )}
-
-            {/* Diary Entries List */}
-            <div className="space-y-2">
-              {filteredDiaryEntries.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <div className="text-gray-400 mb-4">
-                    <Search className="w-12 h-12 mx-auto opacity-50" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {diaryEntries.length === 0 ? "No diary entries yet" : "No matching entries"}
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    {diaryEntries.length === 0
-                      ? "Start documenting your character's journey by adding your first diary entry."
-                      : "Try adjusting your search terms or filters to find what you're looking for."
-                    }
-                  </p>
-                  {diaryEntries.length > 0 && (diarySearchQuery || diaryEntityFilter.length > 0) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setDiarySearchQuery("");
-                        setDiaryEntityFilter([]);
-                      }}
-                      className="text-sm"
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {filteredDiaryEntries.map((entry, index) => {
-                    const entryId = `diary-${entry.id}`;
-                    const isTextExpanded = expandedTexts.has(entry.id);
-                    const description = entry.description || 'Untitled Entry';
-                    
-                    // Check if text needs truncation (more than 2 lines worth of content)
-                    const needsTruncation = description.length > 150 || description.split('\n').length > 2;
-                    
-                    return (
-                      <div
-                        key={entry.id}
-                        className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        {/* Entry Row */}
-                        <div className="flex items-start gap-3">
-                          {/* Date Chip */}
-                          <div className="flex-shrink-0">
-                            <Badge variant="warning" className="text-xs px-2 py-1">
-                              {new Date(entry.date).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </Badge>
-                          </div>
-
-                          {/* Main Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                {/* Description with line clamping */}
-                                <div className="relative">
-                                  <p className={`text-sm text-gray-900 leading-relaxed ${
-                                    !isTextExpanded && needsTruncation ? 'line-clamp-2' : ''
-                                  }`}>
-                                    {highlightSearchTerms(description, diarySearchQuery)}
-                                  </p>
-                                  
-                                  {/* Show more/less toggle */}
-                                  {needsTruncation && (
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleTextExpanded(entry.id)}
-                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
-                                    >
-                                      {isTextExpanded ? 'Show less' : 'Show more'}
-                                    </button>
-                                  )}
-                                </div>
-
-                                {/* Linked Entities */}
-                                {entry.linkedEntities && entry.linkedEntities.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2">
-                                    {entry.linkedEntities.map((entity) => (
-                                      <Badge
-                                        key={`${entity.type}-${entity.id}`}
-                                        variant="outline"
-                                        className="text-xs px-1.5 py-0.5 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                                        onClick={() => handleEntityClick(entity)}
-                                      >
-                                        <span className="capitalize text-xs">{entity.type.replace('-', ' ')}</span>
-                                        <span className="font-medium ml-1">{entity.name}</span>
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Important Badge */}
-                                {entry.isImportant && (
-                                  <Badge variant="warning" className="text-xs mt-2">
-                                    ⭐ Important
-                                  </Badge>
-                                )}
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => startEditEntry(entry)}
-                                  className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                                  aria-label="Edit diary entry"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
-            </div>
-          </TabsContent>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="items" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Manual Items</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {formData.items.length === 0 ? (
-                  <div className="text-center py-8 px-4">
-                    <div className="text-gray-400 mb-4">
-                      <Package className="w-12 h-12 mx-auto opacity-50" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No manual items yet
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      Add custom items that don't exist in the wiki or database.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {formData.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 mb-1">
-                              {item.title || `Item ${index + 1}`}
-                            </h4>
-                            {item.description && (
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openItemModal(index)}
-                              className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                              aria-label="Edit item"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => openItemModal()}
-                  className="w-full"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Manual Item
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-green-600">
-                  🪄 Assigned Magic Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {dbMagicItems.length === 0 ? (
-                  <div className="text-center py-8 px-4">
-                    <div className="text-gray-400 mb-4">
-                      <Sparkles className="w-12 h-12 mx-auto opacity-50" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No magic items assigned
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      Assign magic items from the database to this character.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {dbMagicItems.map((item) => {
-                      const itemId = `db-magic-${item.id}`;
-                      const isExpanded = expandedItems?.has(itemId) || false;
-                      return (
-                        <div
-                          key={item.id}
-                          className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-medium text-gray-900">
-                                  {item.name}
-                                </h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {item.rarity || "Unknown"}
-                                </Badge>
-                              </div>
-                              
-                              <div className="text-sm text-gray-600 space-y-1">
-                                {item.type && (
-                                  <p><strong>Type:</strong> {item.type}</p>
-                                )}
-                                {item.source && (
-                                  <p><strong>Source:</strong> {item.source}</p>
-                                )}
-                                {item.assignedAt && (
-                                  <p><strong>Assigned:</strong> {formatUIDate(item.assignedAt)}</p>
-                                )}
-                              </div>
-
-                              {item.description && (
-                                <>
-                                  {!isExpanded && item.description.length > 100 && (
-                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                                      {item.description.substring(0, 100)}...
-                                    </p>
-                                  )}
-                                  {isExpanded && (
-                                    <div className="mt-2">
-                                      <MarkdownRenderer
-                                        content={item.description}
-                                        className="prose-sm"
-                                      />
-                                    </div>
-                                  )}
-                                  {item.description.length > 100 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleExpanded(itemId)}
-                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
-                                    >
-                                      {isExpanded ? 'Show less' : 'Show more'}
-                                    </button>
-                                  )}
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeDbMagicItem(item.id)}
-                                disabled={removingItems.has(`db-magic-item-${item.id}`)}
-                                className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                                aria-label="Unassign magic item"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-purple-600">
-                  💎 Magic Items from Wiki
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {magicItems.length === 0 ? (
-                  <div className="text-center py-8 px-4">
-                    <div className="text-gray-400 mb-4">
-                      <Gem className="w-12 h-12 mx-auto opacity-50" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No wiki magic items
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      Import magic items from the wiki to assign them here.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {magicItems.map((item) => {
-                      const itemId = `magic-${item.id}`;
-                      const isExpanded = expandedItems?.has(itemId) || false;
-                      return (
-                        <div
-                          key={item.id}
-                          className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-medium text-gray-900">
-                                  {item.name}
-                                </h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {item.rarity}
-                                </Badge>
-                              </div>
-                              
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <p><strong>Type:</strong> {item.type}</p>
-                              </div>
-
-                              {item.description && (
-                                <>
-                                  {!isExpanded && item.description.length > 100 && (
-                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                                      {item.description.substring(0, 100)}...
-                                    </p>
-                                  )}
-                                  {isExpanded && (
-                                    <div className="mt-2">
-                                      <WikiContent
-                                        content={item.description}
-                                        importedFrom={item.importedFrom}
-                                        className="prose-sm"
-                                      />
-                                    </div>
-                                  )}
-                                  {item.description.length > 100 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleExpanded(itemId)}
-                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
-                                    >
-                                      {isExpanded ? 'Show less' : 'Show more'}
-                                    </button>
-                                  )}
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  removeWikiItem(item.id, "magic-item")
-                                }
-                                disabled={removingItems.has(
-                                  `magic-item-${item.id}`,
-                                )}
-                                className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                                aria-label="Unassign magic item"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="images" className="space-y-4">
-            <ImageManager
-              entityType="characters"
-              entityId={character?.id || 0}
-              currentImages={formData.images}
-              onImagesChange={handleImagesChange}
-            />
-          </TabsContent>
-
-          <TabsContent value="spells" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Manual Known Spells</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Known Spells</Label>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      placeholder="Add spell..."
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addToArray(
-                            "spells",
-                            (e.target as HTMLInputElement).value,
-                          );
-                          (e.target as HTMLInputElement).value = "";
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        const input = e.currentTarget
-                          .previousElementSibling as HTMLInputElement;
-                        addToArray("spells", input.value);
-                        input.value = "";
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {formData.spells.map((spell, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {spell}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeFromArray("spells", index)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-blue-600">
-                  📚 Spells from Wiki
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {wikiSpells.length > 0 ? (
-                  <div className="space-y-3">
-                    {wikiSpells.map((spell) => {
-                      const itemId = `spell-${spell.id}`;
-                      const isExpanded = expandedItems?.has(itemId) || false;
-                      return (
-                        <div
-                          key={spell.id}
-                          className="border border-blue-200 bg-blue-50 rounded-lg"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div
-                              className="flex items-center gap-2 p-3 cursor-pointer hover:bg-blue-100 transition-colors flex-1"
-                              onClick={() => toggleExpanded(itemId)}
-                            >
-                              <h4 className="font-semibold text-blue-800">
-                                {spell.name}
-                              </h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                  Level {spell.level}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-blue-600" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 text-blue-600" />
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="neutral"
-                              className="gap-2 mr-3 mt-3"
-                              size="sm"
-                              onClick={() => removeWikiItem(spell.id, "spell")}
-                              disabled={removingItems.has(`spell-${spell.id}`)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Unassign
-                            </Button>
-                          </div>
-                          <div className="px-3 pb-1 mb-2">
-                            <p className="text-sm text-gray-600 mb-1">
-                              <strong>School:</strong> {spell.school}
-                            </p>
-                          </div>
-                          {isExpanded && spell.description && (
-                            <div className="px-3 pb-3">
-                              <MarkdownRenderer
-                                content={spell.description}
-                                className="prose-sm"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No spells assigned from wiki imports
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="wiki" className="space-y-4">
-            {(() => {
-              // Combine all wiki entities from local state for the WikiEntitiesDisplay
-              const allWikiEntities = [
-                ...wikiSpells.map((spell) => ({
-                  id: spell.id,
-                  title: spell.name,
-                  contentType: "spell" as const,
-                  wikiUrl: undefined,
-                  description: spell.description,
-                  parsedData: { level: spell.level, school: spell.school },
-                  relationshipType: "prepared" as const,
-                  relationshipData: {
-                    isPrepared: spell.isPrepared,
-                    isKnown: spell.isKnown,
-                  },
-                })),
-                ...wikiMonsters.map((monster) => ({
-                  id: monster.id,
-                  title: monster.name,
-                  contentType: "monster" as const,
-                  wikiUrl: undefined,
-                  description: monster.description,
-                  parsedData: {
-                    type: monster.type,
-                    challengeRating: monster.challengeRating,
-                  },
-                  relationshipType: monster.relationshipType,
-                  relationshipData: {},
-                })),
-                ...magicItems.map((item) => ({
-                  id: item.id,
-                  title: item.name,
-                  contentType: "magic-item" as const,
-                  wikiUrl: undefined,
-                  description: item.description,
-                  parsedData: { rarity: item.rarity, type: item.type },
-                  relationshipType: "owned" as const,
-                  relationshipData: {},
-                })),
-                ...otherWikiItems.map((item) => ({
-                  id: item.id,
-                  title: item.name,
-                  contentType: item.contentType as "other",
-                  wikiUrl: undefined,
-                  description: item.description,
-                  parsedData: {},
-                  relationshipType: undefined,
-                  relationshipData: {},
-                })),
-              ];
-
-              return allWikiEntities.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Wiki Entities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {wikiEntities.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No wiki entities linked to this character.
+                </p>
+              ) : (
                 <WikiEntitiesDisplay
-                  wikiEntities={allWikiEntities}
+                  wikiEntities={wikiEntities}
                   entityType="character"
-                  entityId={character?.id || 0}
-                  showImportMessage={true}
-                  onRemoveEntity={removeWikiItem}
-                  isEditable={true}
+                  entityId={character?.id ?? 0}
+                  showImportMessage
+                  onRemoveEntity={handleWikiEntityRemoval}
+                  isEditable
                   removingItems={removingItems}
                 />
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <p>No wiki entities assigned to this character.</p>
-                  <p>
-                    Use the Wiki Import page to add entities to this character.
-                  </p>
-                </div>
-              );
-            })()}
-          </TabsContent>
-        </Tabs>
+              )}
+            </CardContent>
+          </Card>
 
-        {errors.submit && (
-          <div className="text-red-500 text-center">{errors.submit}</div>
-        )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Images</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImageManager
+                entityType="characters"
+                entityId={character?.id ?? 0}
+                currentImages={formState.images}
+                onImagesChange={handleImagesChange}
+              />
+              {mode === "create" && !character?.id && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Save the character to start uploading images.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-        <div className="flex justify-end gap-4">
-          <Button type="submit" disabled={isSubmitting} variant="primary" size="sm">
-            <Save className="w-4 h-4 mr-2" />
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create"
-                : "Update"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            onClick={() => router.back()}
-            disabled={isSubmitting}
-            size="sm"
-          >
-            <EyeOff className="w-4 h-4" />
-            Cancel
-          </Button>
-        </div>
-      </form>
-
-      {/* Item Modal */}
-      {isItemModalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={closeItemModal}
-        >
-          <div
-            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                {editingItemIndex !== null ? "Edit Item" : "Add New Item"}
-              </h3>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={closeItemModal}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="itemTitle">Title</Label>
-                <Input
-                  id="itemTitle"
-                  value={itemFormData.title}
-                  onChange={(e) =>
-                    setItemFormData((prev) => ({
-                      ...prev,
-                      title: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter item title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="itemDescription">Description</Label>
-                <Textarea
-                  id="itemDescription"
-                  value={itemFormData.description}
-                  onChange={(e) =>
-                    setItemFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter item description"
-                  rows={4}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="gap-2"
-                onClick={closeItemModal}
-                size="sm"
-              >
-                <EyeOff className="w-4 h-4" />
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={saveItem}
-                disabled={!itemFormData.title.trim()}
-                size="sm"
-              >
-                {editingItemIndex !== null ? "Update Item" : "Add Item"}
-              </Button>
-            </div>
-          </div>
-        </div>
+      {errors.submit && (
+        <p className="text-center text-sm text-destructive">{errors.submit}</p>
       )}
-    </>
+
+      <div className="flex justify-end gap-3">
+        <Button type="submit" disabled={isSubmitting} size="sm" variant="secondary">
+          <Save className="mr-2 h-4 w-4" />
+          {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Update"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isSubmitting}
+          onClick={() => router.back()}
+          size="sm"
+        >
+          <EyeOff className="mr-2 h-4 w-4" />
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }

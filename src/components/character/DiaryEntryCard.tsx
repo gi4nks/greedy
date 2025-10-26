@@ -3,7 +3,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Edit, Star } from "lucide-react";
+import { Calendar, Edit, Star, Trash2 } from "lucide-react";
 
 interface DiaryEntry {
   id: number;
@@ -17,6 +17,7 @@ interface DiaryEntryCardProps {
   entry: DiaryEntry;
   isFirst?: boolean;
   onEdit?: () => void;
+  onDelete?: () => void;
   isTextExpanded?: boolean;
   onToggleTextExpanded?: (entryId: number) => void;
   onEntityClick?: (entity: { id: string; type: string; name: string }) => void;
@@ -28,6 +29,7 @@ export default function DiaryEntryCard({
   entry, 
   isFirst = false, 
   onEdit,
+  onDelete,
   isTextExpanded = false,
   onToggleTextExpanded,
   onEntityClick,
@@ -49,7 +51,7 @@ export default function DiaryEntryCard({
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all duration-200"
+      className="bg-white border border-gray-200 rounded-md p-2 shadow-sm hover:shadow-md transition-all duration-200"
     >
       {/* Entry Row */}
       <div className="flex items-start gap-3">
@@ -110,18 +112,32 @@ export default function DiaryEntryCard({
             </div>
 
             {/* Action Buttons */}
-            {onEdit && (
+            {(onEdit || onDelete) && (
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onEdit}
-                  className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                  aria-label="Edit diary entry"
-                >
-                  <Edit className="w-3 h-3" />
-                </Button>
+                {onEdit && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onEdit}
+                    className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                    aria-label="Edit diary entry"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onDelete}
+                    className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                    aria-label="Delete diary entry"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             )}
           </div>

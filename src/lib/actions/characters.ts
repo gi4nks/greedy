@@ -14,10 +14,8 @@ const CreateCharacterSchema = z.object({
   characterType: z.enum(["pc", "npc", "monster"]).default("pc"),
   name: z.string().min(1, "Name is required"),
   race: z.string().nullable().optional(),
-  level: z.number().min(1).max(20).optional(),
   background: z.string().nullable().optional(),
   alignment: z.string().nullable().optional(),
-  experience: z.number().min(0).default(0),
   strength: z.number().min(1).max(30).default(10),
   dexterity: z.number().min(1).max(30).default(10),
   constitution: z.number().min(1).max(30).default(10),
@@ -27,33 +25,10 @@ const CreateCharacterSchema = z.object({
   hitPoints: z.number().min(0).default(0),
   maxHitPoints: z.number().min(0).default(0),
   armorClass: z.number().min(0).default(10),
-  initiative: z.number().default(0),
-  speed: z.number().min(0).default(30),
-  proficiencyBonus: z.number().min(0).max(10).default(2),
-  savingThrows: z.array(z.string()).default([]),
-  skills: z.array(z.string()).default([]),
-  equipment: z.array(z.string()).default([]),
-  weapons: z.array(z.string()).default([]),
-  spells: z.array(z.string()).default([]),
-  spellcastingAbility: z.string().nullable().optional(),
-  spellSaveDc: z.number().nullable().optional(),
-  spellAttackBonus: z.number().nullable().optional(),
-  personalityTraits: z.string().nullable().optional(),
-  ideals: z.string().nullable().optional(),
-  bonds: z.string().nullable().optional(),
-  flaws: z.string().nullable().optional(),
-  backstory: z.string().nullable().optional(),
-  role: z.string().nullable().optional(),
-  npcRelationships: z
-    .array(
-      z.object({ name: z.string(), type: z.string(), description: z.string() }),
-    )
-    .default([]),
   classes: z
     .array(z.object({ name: z.string(), level: z.number() }))
     .default([]),
   description: z.string().nullable().optional(),
-  tags: z.array(z.string()).default([]),
   images: z
     .array(
       z.object({
@@ -78,9 +53,6 @@ export async function createCharacter(
     race: formData.get("race"),
     background: formData.get("background"),
     alignment: formData.get("alignment"),
-    experience: formData.get("experience")
-      ? Number(formData.get("experience"))
-      : 0,
     strength: formData.get("strength") ? Number(formData.get("strength")) : 10,
     dexterity: formData.get("dexterity")
       ? Number(formData.get("dexterity"))
@@ -102,51 +74,10 @@ export async function createCharacter(
     armorClass: formData.get("armorClass")
       ? Number(formData.get("armorClass"))
       : 10,
-    initiative: formData.get("initiative")
-      ? Number(formData.get("initiative"))
-      : 0,
-    speed: formData.get("speed") ? Number(formData.get("speed")) : 30,
-    proficiencyBonus: formData.get("proficiencyBonus")
-      ? Number(formData.get("proficiencyBonus"))
-      : 2,
-    savingThrows: formData.get("savingThrows")
-      ? JSON.parse(formData.get("savingThrows") as string)
-      : [],
-    skills: formData.get("skills")
-      ? JSON.parse(formData.get("skills") as string)
-      : [],
-    equipment: formData.get("equipment")
-      ? JSON.parse(formData.get("equipment") as string)
-      : [],
-    weapons: formData.get("weapons")
-      ? JSON.parse(formData.get("weapons") as string)
-      : [],
-    spells: formData.get("spells")
-      ? JSON.parse(formData.get("spells") as string)
-      : [],
-    spellcastingAbility: formData.get("spellcastingAbility"),
-    spellSaveDc: formData.get("spellSaveDc")
-      ? Number(formData.get("spellSaveDc"))
-      : undefined,
-    spellAttackBonus: formData.get("spellAttackBonus")
-      ? Number(formData.get("spellAttackBonus"))
-      : undefined,
-    personalityTraits: formData.get("personalityTraits"),
-    ideals: formData.get("ideals"),
-    bonds: formData.get("bonds"),
-    flaws: formData.get("flaws"),
-    backstory: formData.get("backstory"),
-    role: formData.get("role"),
-    npcRelationships: formData.get("npcRelationships")
-      ? JSON.parse(formData.get("npcRelationships") as string)
-      : [],
     classes: formData.get("classes")
       ? JSON.parse(formData.get("classes") as string)
       : [],
     description: formData.get("description"),
-    tags: formData.get("tags")
-      ? JSON.parse(formData.get("tags") as string)
-      : [],
     images: formData.get("images")
       ? JSON.parse(formData.get("images") as string)
       : [],
@@ -164,14 +95,7 @@ export async function createCharacter(
   try {
     await db.insert(characters).values({
       ...characterData,
-      savingThrows: JSON.stringify(characterData.savingThrows),
-      skills: JSON.stringify(characterData.skills),
-      equipment: JSON.stringify(characterData.equipment),
-      weapons: JSON.stringify(characterData.weapons),
-      spells: JSON.stringify(characterData.spells),
-      npcRelationships: JSON.stringify(characterData.npcRelationships),
       classes: JSON.stringify(characterData.classes),
-      tags: JSON.stringify(characterData.tags),
       images: JSON.stringify(characterData.images),
     });
 
@@ -202,9 +126,6 @@ export async function updateCharacter(
     race: formData.get("race"),
     background: formData.get("background"),
     alignment: formData.get("alignment"),
-    experience: formData.get("experience")
-      ? Number(formData.get("experience"))
-      : 0,
     strength: formData.get("strength") ? Number(formData.get("strength")) : 10,
     dexterity: formData.get("dexterity")
       ? Number(formData.get("dexterity"))
@@ -226,51 +147,10 @@ export async function updateCharacter(
     armorClass: formData.get("armorClass")
       ? Number(formData.get("armorClass"))
       : 10,
-    initiative: formData.get("initiative")
-      ? Number(formData.get("initiative"))
-      : 0,
-    speed: formData.get("speed") ? Number(formData.get("speed")) : 30,
-    proficiencyBonus: formData.get("proficiencyBonus")
-      ? Number(formData.get("proficiencyBonus"))
-      : 2,
-    savingThrows: formData.get("savingThrows")
-      ? JSON.parse(formData.get("savingThrows") as string)
-      : [],
-    skills: formData.get("skills")
-      ? JSON.parse(formData.get("skills") as string)
-      : [],
-    equipment: formData.get("equipment")
-      ? JSON.parse(formData.get("equipment") as string)
-      : [],
-    weapons: formData.get("weapons")
-      ? JSON.parse(formData.get("weapons") as string)
-      : [],
-    spells: formData.get("spells")
-      ? JSON.parse(formData.get("spells") as string)
-      : [],
-    spellcastingAbility: formData.get("spellcastingAbility"),
-    spellSaveDc: formData.get("spellSaveDc")
-      ? Number(formData.get("spellSaveDc"))
-      : undefined,
-    spellAttackBonus: formData.get("spellAttackBonus")
-      ? Number(formData.get("spellAttackBonus"))
-      : undefined,
-    personalityTraits: formData.get("personalityTraits"),
-    ideals: formData.get("ideals"),
-    bonds: formData.get("bonds"),
-    flaws: formData.get("flaws"),
-    backstory: formData.get("backstory"),
-    role: formData.get("role"),
-    npcRelationships: formData.get("npcRelationships")
-      ? JSON.parse(formData.get("npcRelationships") as string)
-      : [],
     classes: formData.get("classes")
       ? JSON.parse(formData.get("classes") as string)
       : [],
     description: formData.get("description"),
-    tags: formData.get("tags")
-      ? JSON.parse(formData.get("tags") as string)
-      : [],
     images: formData.get("images")
       ? JSON.parse(formData.get("images") as string)
       : [],
@@ -290,14 +170,7 @@ export async function updateCharacter(
       .update(characters)
       .set({
         ...characterData,
-        savingThrows: JSON.stringify(characterData.savingThrows),
-        skills: JSON.stringify(characterData.skills),
-        equipment: JSON.stringify(characterData.equipment),
-        weapons: JSON.stringify(characterData.weapons),
-        spells: JSON.stringify(characterData.spells),
-        npcRelationships: JSON.stringify(characterData.npcRelationships),
         classes: JSON.stringify(characterData.classes),
-        tags: JSON.stringify(characterData.tags),
         images: JSON.stringify(characterData.images),
         updatedAt: new Date().toISOString(),
       })

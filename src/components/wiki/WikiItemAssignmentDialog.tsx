@@ -1,23 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   BookOpen,
-  Users,
-  MapPin,
-  Calendar,
-  User,
   X,
   EyeOff,
 } from "lucide-react";
@@ -28,6 +17,7 @@ import {
   getAssignableEntities,
   getCategoryDisplayInfo,
 } from "@/lib/utils/wiki-categories";
+import { DependentSelect } from "@/components/ui/dependent-select";
 
 interface WikiItemAssignmentDialogProps {
   itemId: number;
@@ -74,6 +64,7 @@ export function WikiItemAssignmentDialog({
     setLoading(true);
     try {
       const entitiesData = await getAssignableEntities(campaignId);
+      console.log("Loaded entities:", entitiesData);
       setEntities(entitiesData);
     } catch (error) {
       console.error("Failed to load entities:", error);
@@ -104,40 +95,27 @@ export function WikiItemAssignmentDialog({
     }
   };
 
-  const getEntityIcon = (type: AssignableEntity) => {
-    switch (type) {
-      case "character":
-        return <User className="w-4 h-4" />;
-      case "npc":
-        return <Users className="w-4 h-4" />;
-      case "session":
-        return <Calendar className="w-4 h-4" />;
-      case "location":
-        return <MapPin className="w-4 h-4" />;
-      case "campaign":
-        return <BookOpen className="w-4 h-4" />;
-      default:
-        return <Plus className="w-4 h-4" />;
-    }
-  };
-
-  const getCurrentEntityList = () => {
-    switch (selectedEntityType) {
-      case "character":
-        return entities.characters.map((c) => ({ id: c.id, name: c.name }));
-      case "npc":
-        return entities.npcs.map((n) => ({ id: n.id, name: n.name }));
-      case "session":
-        return entities.sessions.map((s) => ({
-          id: s.id,
-          name: `Session ${s.sessionNumber}: ${s.title}`,
-        }));
-      case "location":
-        return entities.locations.map((l) => ({ id: l.id, name: l.name }));
-      default:
-        return [];
-    }
-  };
+  const currentEntityList = useMemo(() => {
+    const list = (() => {
+      switch (selectedEntityType) {
+        case "character":
+          return entities.characters.map((c) => ({ id: c.id, name: c.name }));
+        case "npc":
+          return entities.npcs.map((n) => ({ id: n.id, name: n.name }));
+        case "session":
+          return entities.sessions.map((s) => ({
+            id: s.id,
+            name: `Session ${s.sessionNumber}: ${s.title}`,
+          }));
+        case "location":
+          return entities.locations.map((l) => ({ id: l.id, name: l.name }));
+        default:
+          return [];
+      }
+    })();
+    console.log(`Current entity list for ${selectedEntityType}:`, list);
+    return list;
+  }, [selectedEntityType, entities]);
 
   return (
     <>
@@ -174,73 +152,21 @@ export function WikiItemAssignmentDialog({
                 <p className="text-sm text-base-content/70">{itemTitle}</p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assign to:</label>
-                <Select
-                  name="entityType"
-                  value={selectedEntityType}
-                  onValueChange={(value) => {
-                    setSelectedEntityType(value as AssignableEntity);
-                    setSelectedEntityId(null);
-                    setSelectedEntityName("");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="character">
-                      <div className="flex items-center gap-2">
-                        {getEntityIcon("character")}
-                        Character
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="npc">
-                      <div className="flex items-center gap-2">
-                        {getEntityIcon("npc")}
-                        NPC
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="session">
-                      <div className="flex items-center gap-2">
-                        {getEntityIcon("session")}
-                        Session
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="location">
-                      <div className="flex items-center gap-2">
-                        {getEntityIcon("location")}
-                        Location
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select {selectedEntityType}:</label>
-                <Select
-                  name="entityId"
-                  value={selectedEntityId?.toString() || ""}
-                  onValueChange={(value) => {
-                    const id = parseInt(value);
-                    setSelectedEntityId(id);
-                    const entity = getCurrentEntityList().find((e) => e.id === id);
-                    setSelectedEntityName(entity?.name || "");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Choose a ${selectedEntityType}...`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getCurrentEntityList().map((entity) => (
-                      <SelectItem key={entity.id} value={entity.id.toString()}>
-                        {entity.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <DependentSelect
+                entityType={selectedEntityType}
+                entities={entities}
+                selectedEntityId={selectedEntityId}
+                onEntityTypeChange={(type) => {
+                  setSelectedEntityType(type as AssignableEntity);
+                  setSelectedEntityId(null);
+                  setSelectedEntityName("");
+                }}
+                onEntityIdChange={(id, name) => {
+                  setSelectedEntityId(id);
+                  setSelectedEntityName(name);
+                }}
+                loading={loading}
+              />
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Notes (optional):</label>
@@ -254,7 +180,7 @@ export function WikiItemAssignmentDialog({
             </CardContent>
 
             <CardFooter>
-              <Button onClick={handleAssign} disabled={!selectedEntityId || loading} variant="primary">
+              <Button onClick={handleAssign} disabled={!selectedEntityId || loading} variant="secondary">
                 <Plus className="w-4 h-4" />
                 Assign
               </Button>

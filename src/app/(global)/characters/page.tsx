@@ -20,7 +20,6 @@ async function getCharacters() {
       name: characters.name,
       race: characters.race,
       classes: characters.classes,
-      level: characters.level,
       characterType: characters.characterType,
       description: characters.description,
       createdAt: characters.createdAt,

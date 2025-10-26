@@ -23,6 +23,8 @@ import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { formatDisplayDate } from "@/lib/utils/date";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { deleteCampaign } from "@/lib/actions/campaigns";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface CampaignData {
   id: number;
@@ -69,7 +71,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
               <h3 className="text-lg font-semibold">Delete Campaign</h3>
             </div>
             <p className="text-base-content/70 mb-6">
-              Are you sure you want to delete "{campaign.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{campaign.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <Button
@@ -92,7 +94,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
         </div>
       )}
 
-      <div className="container mx-auto p-6 max-w-7xl min-h-screen flex flex-col">
+      <PageContainer className="min-h-screen flex flex-col">
         {/* Breadcrumb */}
         <DynamicBreadcrumb
           campaignId={campaignId}
@@ -103,51 +105,51 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
         <div className="flex flex-col">
           {/* Campaign Header */}
           <div className="flex-shrink-0 mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold">{campaign.title}</h1>
-                <div className="flex items-center gap-4 mt-2">
-                  <Badge
-                    variant={campaign.status === "active" ? "default" : "secondary"}
+            <PageHeader
+              title={campaign.title}
+              actions={
+                <div className="flex gap-2">
+                  <Link href={`/campaigns/${campaignId}/edit`}>
+                    <Button variant="secondary" className="gap-2" size="sm">
+                      <Edit className="w-4 h-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowDeleteConfirm(true)}
                   >
-                    {campaign.status || "active"}
-                  </Badge>
-                  {campaign.gameEditionName && (
-                    <Badge variant="outline">
-                      {campaign.gameEditionName}
-                      {campaign.gameEditionVersion &&
-                      !campaign.gameEditionName.includes(
-                        campaign.gameEditionVersion,
-                      )
-                        ? ` ${campaign.gameEditionVersion}`
-                        : ""}
-                    </Badge>
-                  )}
-                  {campaign.startDate && (
-                    <div className="flex items-center gap-1 text-sm text-base-content/70">
-                      <Calendar className="w-4 h-4" />
-                      Started {formatDisplayDate(campaign.startDate)}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Link href={`/campaigns/${campaignId}/edit`}>
-                  <Button variant="secondary" className="gap-2" size="sm">
-                    <Edit className="w-4 h-4" />
-                    Edit
+                    <Trash2 className="w-4 h-4" />
+                    Delete
                   </Button>
-                </Link>
-                <Button
-                  variant="neutral"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </Button>
-              </div>
+                </div>
+              }
+            />
+            <div className="flex items-center gap-4 mt-2">
+              <Badge
+                variant={campaign.status === "active" ? "default" : "secondary"}
+              >
+                {campaign.status || "active"}
+              </Badge>
+              {campaign.gameEditionName && (
+                <Badge variant="outline">
+                  {campaign.gameEditionName}
+                  {campaign.gameEditionVersion &&
+                  !campaign.gameEditionName.includes(
+                    campaign.gameEditionVersion,
+                  )
+                    ? ` ${campaign.gameEditionVersion}`
+                    : ""}
+                </Badge>
+              )}
+              {campaign.startDate && (
+                <div className="flex items-center gap-1 text-sm text-base-content/70">
+                  <Calendar className="w-4 h-4" />
+                  Started {formatDisplayDate(campaign.startDate)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -165,7 +167,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
           <Link href={`/campaigns/${campaignId}/adventures`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <BookOpen className="w-8 h-8 mx-auto mb-3 text-orange-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Adventures</h3>
@@ -177,7 +179,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/sessions`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <Play className="w-8 h-8 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Sessions</h3>
@@ -189,7 +191,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/quests`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <CheckCircle className="w-8 h-8 mx-auto mb-3 text-emerald-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Quests</h3>
@@ -201,7 +203,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/characters`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <Users className="w-8 h-8 mx-auto mb-3 text-green-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Characters</h3>
@@ -211,7 +213,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/locations`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <MapPin className="w-8 h-8 mx-auto mb-3 text-purple-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Locations</h3>
@@ -223,7 +225,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/relations`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <LinkIcon className="w-8 h-8 mx-auto mb-3 text-fuchsia-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Relations</h3>
@@ -235,7 +237,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
           </Link>
 
           <Link href={`/campaigns/${campaignId}/network`} className="group">
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
                 <Share2 className="w-8 h-8 mx-auto mb-3 text-indigo-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Network</h3>
@@ -246,7 +248,7 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
         </div>
-      </div>
+      </PageContainer>
     </>
   );
 }
