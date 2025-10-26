@@ -384,6 +384,10 @@ export default function CharacterForm({
     );
   };
 
+  const addClassEntry = () => {
+    updateFormState("classes", [...formState.classes, { name: "", level: 1 }]);
+  };
+
   const handleImagesChange = (images: ImageInfo[]) => {
     updateFormState("images", images);
   };
@@ -768,6 +772,78 @@ export default function CharacterForm({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Classes Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Classes & Levels</Label>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={addClassEntry}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Class
+                  </Button>
+                </div>
+
+                {formState.classes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No classes added yet. Add a class to define the character's progression.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {formState.classes.map((classEntry, index) => (
+                      <div key={index} className="flex items-end gap-3">
+                        <div className="flex-1">
+                          <Label htmlFor={`class-${index}`} className="text-sm font-medium">
+                            Class
+                          </Label>
+                          <Input
+                            id={`class-${index}`}
+                            value={classEntry.name}
+                            onChange={(event) => {
+                              updateClassEntry(index, { ...classEntry, name: event.target.value });
+                            }}
+                            placeholder="Enter class name"
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div className="w-20">
+                          <Label htmlFor={`level-${index}`} className="text-sm font-medium">
+                            Level
+                          </Label>
+                          <Input
+                            id={`level-${index}`}
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={classEntry.level}
+                            onChange={(event) => {
+                              const level = Math.max(1, Math.min(20, Number(event.target.value) || 1));
+                              updateClassEntry(index, { ...classEntry, level });
+                            }}
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeClassEntry(index)}
+                          className="text-gray-400 hover:text-gray-600 p-1 h-8 w-8 mb-1"
+                          aria-label="Remove class"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
