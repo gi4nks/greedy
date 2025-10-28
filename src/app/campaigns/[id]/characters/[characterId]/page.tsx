@@ -3,15 +3,20 @@ import { notFound } from "next/navigation";
 import { getCharacterWithAllEntities } from "@/lib/db/queries";
 import CharacterDetail from "@/components/character/CharacterDetail";
 import CharacterStats from "@/components/character/CharacterStats";
-import CharacterDiary from "@/components/character/CharacterDiary";
-import CharacterHeroHeader from "@/components/character/CharacterHeroHeader";
-import { Skeleton } from "@/components/ui/skeleton";
-import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import CollapsibleSection from "@/components/ui/collapsible-section";
-import CharacterDiaryWrapper from "@/components/character/CharacterDiaryWrapper";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/ui/page-header";
+import { EntitySidebar } from "@/components/ui/entity-sidebar";
+import CharacterDiaryWrapper from "@/components/character/CharacterDiaryWrapper";
+import EntityRelationships from "@/components/ui/entity-relationships";
+import { getEntityRelationships } from "@/lib/actions/relationships";
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+import { EntityDetailSkeleton, CharacterDetailSkeleton, CharacterStatsSkeleton } from "@/components/ui/loading-skeleton";
+import { Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface CharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -46,93 +51,89 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
     notFound();
   }
 
+  // Fetch relationships
+  const relationships = await getEntityRelationships(characterId, "character", campaignId);
+
   return (
-    <PageContainer>
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={character.campaign?.title || undefined}
-        sectionItems={[
-          { label: "Characters", href: `/campaigns/${campaignId}/characters` },
-          { label: character.name },
-        ]}
-      />
-
-      {/* Hero Header */}
-      <CharacterHeroHeader
-        character={character}
-        campaignId={campaignId}
-      />
-
-      {/* Character Details */}
-      <CollapsibleSection title="Character Details" className="mb-6">
-        <Suspense fallback={<CharacterDetailSkeleton />}>
-          <CharacterDetail character={character} />
-        </Suspense>
-      </CollapsibleSection>
-
-      {/* Stats & Abilities */}
-      <CollapsibleSection title="Stats & Abilities" className="mb-6" defaultExpanded={false}>
-        <Suspense fallback={<CharacterStatsSkeleton />}>
-          <CharacterStats character={character} />
-        </Suspense>
-      </CollapsibleSection>
-
-      {/* Character Journey - Central Feature */}
-      <CharacterDiaryWrapper characterId={character.id} campaignId={campaignId} />
-
-      {/* Images */}
-      <div className="mt-8">
-        <EntityImageCarousel
-          images={parseImagesJson(character.images)}
-          entityType="characters"
-          className="max-w-2xl mx-auto"
+    <EntityErrorBoundary entityType="character">
+      <PageContainer>
+        <PageHeader
+          breadcrumb={{
+            campaignId: campaignId,
+            campaignTitle: character.campaign?.title || undefined,
+            sectionItems: [
+              { label: "Characters", href: `/campaigns/${campaignId}/characters` },
+              { label: character.name },
+            ],
+          }}
+          title={character.name}
+          subtitle={character.description || undefined}
+          actions={
+            <Link href={`/campaigns/${campaignId}/characters/${characterId}/edit`}>
+              <Button variant="secondary" size="sm" className="gap-2">
+                <Edit className="w-4 h-4" />
+                Edit
+              </Button>
+            </Link>
+          }
         />
-      </div>
-    </PageContainer>
-  );
-}
 
-function CharacterDetailSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <Skeleton className="h-4 w-full mb-2" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      </div>
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </div>
-    </div>
-  );
-}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Character Details */}
+            <CollapsibleSection title="Character Details" defaultExpanded={true}>
+              <Suspense fallback={<CharacterDetailSkeleton />}>
+                <CharacterDetail character={character} />
+              </Suspense>
+            </CollapsibleSection>
 
-function CharacterStatsSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full" />
-      ))}
-    </div>
-  );
-}
+            {/* Stats & Abilities */}
+            <CollapsibleSection title="Stats & Abilities" defaultExpanded={false}>
+              <Suspense fallback={<CharacterStatsSkeleton />}>
+                <CharacterStats character={character} />
+              </Suspense>
+            </CollapsibleSection>
 
-function CharacterDiarySkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="animate-pulse">
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-base-300 rounded-lg"></div>
-          ))}
+            {/* Character Journey - Central Feature */}
+            <CharacterDiaryWrapper
+              characterId={character.id}
+              campaignId={campaignId}
+            />
+
+            {/* Images */}
+            <CollapsibleSection title="Images" defaultExpanded={false}>
+              <EntityImageCarousel
+                images={parseImagesJson(character.images)}
+                entityType="characters"
+                className="max-w-2xl mx-auto"
+              />
+            </CollapsibleSection>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <EntitySidebar
+              metadata={{
+                createdAt: character.createdAt,
+                updatedAt: character.updatedAt,
+                campaign: character.campaign ? {
+                  id: character.campaign.id,
+                  title: character.campaign.title,
+                } : null,
+              }}
+            />
+
+            <EntityRelationships
+              entityId={character.id.toString()}
+              entityType="character"
+              relationships={relationships}
+              campaignId={campaignId.toString()}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </EntityErrorBoundary>
   );
 }
 

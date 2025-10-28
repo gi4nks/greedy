@@ -2,20 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { relations } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod";
-
-// Schema for creating a relation
-const createRelationSchema = z.object({
-  campaignId: z.number(),
-  sourceEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
-  sourceEntityId: z.number(),
-  targetEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
-  targetEntityId: z.number(),
-  relationType: z.string().min(1),
-  description: z.string().optional(),
-  bidirectional: z.boolean().optional().default(false),
-  metadata: z.any().optional(),
-});
+import { RelationSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 // GET /api/relations?campaignId=X - List all relations for a campaign
 export async function GET(request: NextRequest) {
@@ -50,7 +37,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const validatedData = createRelationSchema.parse(body);
+    const validation = validateRequestBody(RelationSchema, body);
+
+    if (!validation.success) {
+      return NextResponse.json(validation, { status: 400 });
+    }
+
+    const validatedData = validation.data;
 
     // Check if relation already exists (prevent duplicates)
     const existingRelation = await db
@@ -70,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     if (existingRelation.length > 0) {
       return NextResponse.json(
-        { error: "Relation already exists" },
+        { success: false, error: "Relation already exists" },
         { status: 409 }
       );
     }
@@ -90,18 +83,11 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json(newRelation, { status: 201 });
+    return NextResponse.json({ success: true, data: newRelation }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid data", details: error.issues },
-        { status: 400 }
-      );
-    }
-
     console.error("Error creating relation:", error);
     return NextResponse.json(
-      { error: "Failed to create relation" },
+      { success: false, error: "Failed to create relation" },
       { status: 500 }
     );
   }

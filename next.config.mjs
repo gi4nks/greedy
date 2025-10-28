@@ -14,14 +14,6 @@ const nextConfig = {
   // External packages for server components (moved from experimental)
   serverExternalPackages: ["better-sqlite3"],
 
-  // Ignore TypeScript and ESLint errors during build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   // Webpack configuration for better-sqlite3 and path resolution
   webpack: (config, { isServer }) => {
     if (isServer) {

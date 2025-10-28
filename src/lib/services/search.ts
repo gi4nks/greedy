@@ -9,7 +9,7 @@ import {
   quests,
   magicItems,
 } from "@/lib/db/schema";
-import { eq, sql, and, gte, lte, like, desc, asc, SQL } from "drizzle-orm";
+import { eq, sql, and, gte, lte, desc, asc, SQL } from "drizzle-orm";
 
 export interface SearchResult {
   id: number;
@@ -122,77 +122,31 @@ export class SearchService {
     try {
       const results: SearchResult[] = [];
       const { entityTypes, dateRange, tags, sortBy = "relevance" } = filters;
+      const searchLower = query.toLowerCase();
 
-      // Helper function to apply common filters
-      // Helper function to apply common filters
-      const applyFilters = (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        baseQuery: any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        table: any,
-        textFields: string[],
-      ) => {
-        const conditions: SQL[] = [];
-
-        // Text search conditions
-        const textConditions = textFields.map((field) =>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          like((table as any)[field], `%${query}%`),
-        );
-        conditions.push(sql`(${sql.join(textConditions, sql` OR `)})`);
-
-        return baseQuery.where(and(...conditions));
-      };
-
-      // Helper function to apply sorting
-      // Helper function to apply sorting
-      const applySorting = (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        query: any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        table: any,
-      ) => {
-        switch (sortBy) {
-          case "date_desc":
-            // Skip date sorting for now due to missing createdAt columns
-            return query;
-          case "date_asc":
-            // Skip date sorting for now due to missing createdAt columns
-            return query;
-          case "title_asc":
-            return query.orderBy(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              asc((table as any).title ?? (table as any).name),
-            );
-          case "title_desc":
-            return query.orderBy(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              desc((table as any).title ?? (table as any).name),
-            );
-          default: // relevance - no specific ordering
-            return query;
-        }
+      // Helper function to check if text matches search query
+      const matchesSearch = (text: string | null | undefined): boolean => {
+        if (!text) return false;
+        return String(text).toLowerCase().includes(searchLower);
       };
 
       // Search campaigns
       if (!entityTypes || entityTypes.includes("campaign")) {
-        let campaignQuery = db.select().from(campaigns);
-        campaignQuery = applyFilters(campaignQuery, campaigns, [
-          "title",
-          "description",
-        ]);
-        campaignQuery = applySorting(campaignQuery, campaigns);
-
-        const campaignResults = await campaignQuery.limit(limit);
+        const campaignResults = await db.select().from(campaigns);
+        const filtered = campaignResults.filter(
+          (c) =>
+            matchesSearch(c.title) ||
+            matchesSearch(c.description),
+        );
 
         results.push(
-          ...campaignResults.map((c) => ({
+          ...filtered.map((c) => ({
             id: c.id,
             entityType: "campaign" as const,
             title: c.title,
             description: c.description || undefined,
             campaignId: c.id,
-            tags: [], // TODO: Parse c.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -201,23 +155,21 @@ export class SearchService {
 
       // Search adventures
       if (!entityTypes || entityTypes.includes("adventure")) {
-        let adventureQuery = db.select().from(adventures);
-        adventureQuery = applyFilters(adventureQuery, adventures, [
-          "title",
-          "description",
-        ]);
-        adventureQuery = applySorting(adventureQuery, adventures);
-
-        const adventureResults = await adventureQuery.limit(limit);
+        const adventureResults = await db.select().from(adventures);
+        const filtered = adventureResults.filter(
+          (a) =>
+            matchesSearch(a.title) ||
+            matchesSearch(a.description),
+        );
 
         results.push(
-          ...adventureResults.map((a) => ({
+          ...filtered.map((a) => ({
             id: a.id,
             entityType: "adventure" as const,
             title: a.title,
             description: a.description || undefined,
             campaignId: a.campaignId || undefined,
-            tags: [], // TODO: Parse a.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -226,27 +178,29 @@ export class SearchService {
 
       // Search sessions
       if (!entityTypes || entityTypes.includes("session")) {
-        let sessionQuery = db
+        const sessionResults = await db
           .select({
             session: sessions,
             campaignId: adventures.campaignId,
           })
           .from(sessions)
           .leftJoin(adventures, eq(sessions.adventureId, adventures.id));
-        sessionQuery = applyFilters(sessionQuery, sessions, ["title", "text"]);
-        sessionQuery = applySorting(sessionQuery, sessions);
-
-        const sessionResults = await sessionQuery.limit(limit);
+        
+        const filtered = sessionResults.filter(
+          (s) =>
+            matchesSearch(s.session.title) ||
+            matchesSearch(s.session.text),
+        );
 
         results.push(
-          ...sessionResults.map((s) => ({
+          ...filtered.map((s) => ({
             id: s.session.id,
             entityType: "session" as const,
             title: s.session.title,
             description: s.session.text || undefined,
             campaignId: s.campaignId || undefined,
             adventureId: s.session.adventureId || undefined,
-            tags: [], // TODO: Parse s.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -255,29 +209,25 @@ export class SearchService {
 
       // Search characters
       if (!entityTypes || entityTypes.includes("character")) {
-        let characterQuery = db.select().from(characters);
-        characterQuery = applyFilters(characterQuery, characters, [
-          "name",
-          "description",
-          "backstory",
-          "personalityTraits",
-          "ideals",
-          "bonds",
-          "flaws",
-        ]);
-        characterQuery = applySorting(characterQuery, characters);
-
-        const characterResults = await characterQuery.limit(limit);
+        const characterResults = await db.select().from(characters);
+        const filtered = characterResults.filter(
+          (c) =>
+            matchesSearch(c.name) ||
+            matchesSearch(c.description) ||
+            matchesSearch(c.race) ||
+            matchesSearch(c.background) ||
+            matchesSearch(c.alignment),
+        );
 
         results.push(
-          ...characterResults.map((c) => ({
+          ...filtered.map((c) => ({
             id: c.id,
             entityType: "character" as const,
             title: c.name,
             description: c.description || undefined,
             campaignId: c.campaignId || undefined,
             adventureId: c.adventureId || undefined,
-            tags: [], // TODO: Parse c.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -286,63 +236,61 @@ export class SearchService {
 
       // Search NPCs
       if (!entityTypes || entityTypes.includes("npc")) {
-        let npcQuery = db
+        const npcResults = await db
           .select({
             npc: npcs,
             campaignId: adventures.campaignId,
           })
           .from(npcs)
           .leftJoin(adventures, eq(npcs.adventureId, adventures.id));
-        npcQuery = applyFilters(npcQuery, npcs, [
-          "name",
-          "description",
-          "role",
-        ]);
-        npcQuery = applySorting(npcQuery, npcs);
-
-        const npcResults = await npcQuery.limit(limit);
+        
+        const filtered = npcResults.filter(
+          (n) =>
+            matchesSearch(n.npc.name) ||
+            matchesSearch(n.npc.description) ||
+            matchesSearch(n.npc.role),
+        );
 
         results.push(
-          ...npcResults.map((n) => ({
+          ...filtered.map((n) => ({
             id: n.npc.id,
             entityType: "npc" as const,
             title: n.npc.name,
             description: n.npc.description || undefined,
             campaignId: n.campaignId || undefined,
             adventureId: n.npc.adventureId || undefined,
-            tags: [], // TODO: Parse n.tags when column exists
+            tags: [],
             relevanceScore: 1,
-            createdAt: new Date().toISOString(), // TODO: Use n.createdAt when column exists
+            createdAt: new Date().toISOString(),
           })),
         );
       }
 
       // Search locations
       if (!entityTypes || entityTypes.includes("location")) {
-        let locationQuery = db
+        const locationResults = await db
           .select({
             location: locations,
             campaignId: adventures.campaignId,
           })
           .from(locations)
           .leftJoin(adventures, eq(locations.adventureId, adventures.id));
-        locationQuery = applyFilters(locationQuery, locations, [
-          "name",
-          "description",
-        ]);
-        locationQuery = applySorting(locationQuery, locations);
-
-        const locationResults = await locationQuery.limit(limit);
+        
+        const filtered = locationResults.filter(
+          (l) =>
+            matchesSearch(l.location.name) ||
+            matchesSearch(l.location.description),
+        );
 
         results.push(
-          ...locationResults.map((l) => ({
+          ...filtered.map((l) => ({
             id: l.location.id,
             entityType: "location" as const,
             title: l.location.name,
             description: l.location.description || undefined,
             campaignId: l.campaignId || undefined,
             adventureId: l.location.adventureId || undefined,
-            tags: [], // TODO: Parse l.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -351,27 +299,29 @@ export class SearchService {
 
       // Search quests
       if (!entityTypes || entityTypes.includes("quest")) {
-        let questQuery = db
+        const questResults = await db
           .select({
             quest: quests,
             campaignId: adventures.campaignId,
           })
           .from(quests)
           .leftJoin(adventures, eq(quests.adventureId, adventures.id));
-        questQuery = applyFilters(questQuery, quests, ["title", "description"]);
-        questQuery = applySorting(questQuery, quests);
-
-        const questResults = await questQuery.limit(limit);
+        
+        const filtered = questResults.filter(
+          (q) =>
+            matchesSearch(q.quest.title) ||
+            matchesSearch(q.quest.description),
+        );
 
         results.push(
-          ...questResults.map((q) => ({
+          ...filtered.map((q) => ({
             id: q.quest.id,
             entityType: "quest" as const,
             title: q.quest.title,
             description: q.quest.description || undefined,
             campaignId: q.campaignId || undefined,
             adventureId: q.quest.adventureId || undefined,
-            tags: [], // TODO: Parse q.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
@@ -380,33 +330,35 @@ export class SearchService {
 
       // Search magic items
       if (!entityTypes || entityTypes.includes("magic_item")) {
-        let magicItemQuery = db.select().from(magicItems);
-        magicItemQuery = applyFilters(magicItemQuery, magicItems, [
-          "name",
-          "description",
-        ]);
-        magicItemQuery = applySorting(magicItemQuery, magicItems);
-
-        const magicItemResults = await magicItemQuery.limit(limit);
+        const magicItemResults = await db.select().from(magicItems);
+        const filtered = magicItemResults.filter(
+          (m) =>
+            matchesSearch(m.name) ||
+            matchesSearch(m.description),
+        );
 
         results.push(
-          ...magicItemResults.map((m) => ({
+          ...filtered.map((m) => ({
             id: m.id,
             entityType: "magic_item" as const,
             title: m.name,
             description: m.description || undefined,
-            tags: [], // TODO: Parse m.tags when implemented
+            tags: [],
             relevanceScore: 1,
             createdAt: new Date().toISOString(),
           })),
         );
       }
 
-      // Sort by relevance if no specific sorting was applied
-      if (sortBy === "relevance") {
-        results.sort(
-          (a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0),
-        );
+      // Sort results
+      if (sortBy === "date_desc") {
+        results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      } else if (sortBy === "date_asc") {
+        results.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      } else if (sortBy === "title_asc") {
+        results.sort((a, b) => a.title.localeCompare(b.title));
+      } else if (sortBy === "title_desc") {
+        results.sort((a, b) => b.title.localeCompare(a.title));
       }
 
       return results.slice(0, limit);

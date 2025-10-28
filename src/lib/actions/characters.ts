@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { characters } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ActionResult } from "@/lib/types/api";
 
@@ -41,8 +40,9 @@ const CreateCharacterSchema = z.object({
 });
 
 export async function createCharacter(
-  formData: FormData,
-): Promise<ActionResult> {
+  prevState: { success: boolean; error?: string },
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
   const validatedFields = CreateCharacterSchema.safeParse({
     campaignId: Number(formData.get("campaignId")),
     adventureId: formData.get("adventureId")
@@ -86,7 +86,7 @@ export async function createCharacter(
   if (!validatedFields.success) {
     return {
       success: false,
-      errors: validatedFields.error.flatten().fieldErrors,
+      error: "Validation failed. Please check your input.",
     };
   }
 
@@ -107,15 +107,16 @@ export async function createCharacter(
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to create character.",
+      error: "Database Error: Failed to create character.",
     };
   }
 }
 
 export async function updateCharacter(
   id: number,
-  formData: FormData,
-): Promise<ActionResult> {
+  prevState: { success: boolean; error?: string },
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
   const validatedFields = CreateCharacterSchema.safeParse({
     campaignId: Number(formData.get("campaignId")),
     adventureId: formData.get("adventureId")
@@ -159,7 +160,7 @@ export async function updateCharacter(
   if (!validatedFields.success) {
     return {
       success: false,
-      errors: validatedFields.error.flatten().fieldErrors,
+      error: "Validation failed. Please check your input.",
     };
   }
 
@@ -181,7 +182,7 @@ export async function updateCharacter(
   } catch (_error) {
     return {
       success: false,
-      message: "Database Error: Failed to update character.",
+      error: "Database Error: Failed to update character.",
     };
   }
 }

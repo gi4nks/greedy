@@ -12,6 +12,14 @@ const updateRelationSchema = z.object({
   metadata: z.any().optional(),
 });
 
+type RelationUpdateData = {
+  relationType?: string;
+  description?: string;
+  bidirectional?: boolean;
+  metadata?: string | null;
+  updatedAt: string;
+};
+
 // GET /api/relations/[id] - Get a specific relation
 export async function GET(
   request: NextRequest,
@@ -84,7 +92,7 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {
+    const updateData: RelationUpdateData = {
       updatedAt: new Date().toISOString(),
     };
 

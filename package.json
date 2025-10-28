@@ -14,6 +14,7 @@
     "migrate": "tsx scripts/migrate-from-backend.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-select": "^2.2.6",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.19",
@@ -38,6 +39,7 @@
     "react-dom": "19.1.0",
     "react-force-graph": "^1.48.1",
     "react-force-graph-2d": "^1.29.0",
+    "react-hook-form": "^7.65.0",
     "react-markdown": "^10.1.0",
     "recharts": "^3.2.1",
     "rehype-highlight": "^7.0.2",

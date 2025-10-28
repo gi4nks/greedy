@@ -3,7 +3,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Edit, Star, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 
 interface DiaryEntry {
   id: number;
@@ -15,7 +15,6 @@ interface DiaryEntry {
 
 interface DiaryEntryCardProps {
   entry: DiaryEntry;
-  isFirst?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   isTextExpanded?: boolean;
@@ -27,7 +26,6 @@ interface DiaryEntryCardProps {
 
 export default function DiaryEntryCard({ 
   entry, 
-  isFirst = false, 
   onEdit,
   onDelete,
   isTextExpanded = false,

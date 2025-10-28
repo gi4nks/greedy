@@ -10,8 +10,9 @@ import {
   EditionAwareImportService,
   GameEdition,
 } from "../../../lib/services/edition-aware-import";
-import { DnD5eToolsService } from "../../../lib/services/dnd5e-tools";
 import * as Open5eAPI from "../../../lib/services/open5e-api";
+import { ParsedSpell, ParsedMonster, ParsedMagicItem, ParsedRace, ParsedClass } from "../../../lib/types/parsed-entities";
+import { SpellData, MonsterData, MagicItemData } from "../../../lib/services/wiki-data";
 import { Campaign } from "../../../lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
@@ -43,7 +44,6 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../components/ui/tabs";
 import { Label } from "../../../components/ui/label";
-import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiContent from "@/components/ui/wiki-content";
 
 interface FeedbackMessage {
@@ -842,14 +842,14 @@ export default function WikiImport() {
                                     const fullContent = fullContentArticles.get(
                                       article.id,
                                     );
-                                    let parsedData = {};
+                                    let parsedData: ParsedSpell | ParsedMonster | ParsedMagicItem | ParsedRace | ParsedClass | SpellData | MonsterData | MagicItemData | Record<string, unknown> = {};
 
                                     // For Open5e items, parse based on category
                                     if (article.id >= 5000000 && fullContent) {
                                       if (article.url.includes("/items/")) {
                                         const items = await Open5eAPI.searchOpen5eMagicItems(article.title);
                                         const item = items.find(
-                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                          (result: Open5eAPI.Open5eMagicItem) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (item) {
                                           parsedData = Open5eAPI.parseOpen5eMagicItemForImport(item);
@@ -857,7 +857,7 @@ export default function WikiImport() {
                                       } else if (article.url.includes("/spells/")) {
                                         const spells = await Open5eAPI.searchOpen5eSpells(article.title);
                                         const spell = spells.find(
-                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                          (result: Open5eAPI.Open5eSpell) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (spell) {
                                           parsedData = Open5eAPI.parseOpen5eSpellForImport(spell);
@@ -865,7 +865,7 @@ export default function WikiImport() {
                                       } else if (article.url.includes("/monsters/")) {
                                         const monsters = await Open5eAPI.searchOpen5eMonsters(article.title);
                                         const monster = monsters.find(
-                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                          (result: Open5eAPI.Open5eMonster) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (monster) {
                                           parsedData = Open5eAPI.parseOpen5eMonsterForImport(monster);
@@ -873,7 +873,7 @@ export default function WikiImport() {
                                       } else if (article.url.includes("/races/")) {
                                         const races = await Open5eAPI.searchOpen5eRaces(article.title);
                                         const race = races.find(
-                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                          (result: Open5eAPI.Open5eRace) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (race) {
                                           parsedData = Open5eAPI.parseOpen5eRaceForImport(race);
@@ -881,7 +881,7 @@ export default function WikiImport() {
                                       } else if (article.url.includes("/classes/")) {
                                         const classes = await Open5eAPI.searchOpen5eClasses(article.title);
                                         const cls = classes.find(
-                                          (result: any) => result.name.toLowerCase() === article.title.toLowerCase()
+                                          (result: Open5eAPI.Open5eClass) => result.name.toLowerCase() === article.title.toLowerCase()
                                         );
                                         if (cls) {
                                           parsedData = Open5eAPI.parseOpen5eClassForImport(cls);
@@ -1040,47 +1040,52 @@ async function loadOpen5eContent(article: WikiArticle): Promise<WikiArticleDetai
     // Determine the content type from the URL pattern
     let contentType: "spell" | "monster" | "magic-item" | "race" | "class" | null = null;
     let formattedContent = "";
-    let parsedData: any = null;
+    let parsedData: ParsedSpell | ParsedMonster | ParsedMagicItem | ParsedRace | ParsedClass | null = null;
 
     if (article.url.includes("/spells/")) {
       contentType = "spell";
       const spells = await Open5eAPI.searchOpen5eSpells(article.title);
       const spell = spells.find((s) => s.name.toLowerCase() === article.title.toLowerCase());
       if (spell) {
-        parsedData = Open5eAPI.parseOpen5eSpellForImport(spell);
-        formattedContent = formatSpellContent(parsedData);
+        const spellData = Open5eAPI.parseOpen5eSpellForImport(spell);
+        parsedData = spellData;
+        formattedContent = formatSpellContent(spellData);
       }
     } else if (article.url.includes("/monsters/")) {
       contentType = "monster";
       const monsters = await Open5eAPI.searchOpen5eMonsters(article.title);
       const monster = monsters.find((m) => m.name.toLowerCase() === article.title.toLowerCase());
       if (monster) {
-        parsedData = Open5eAPI.parseOpen5eMonsterForImport(monster);
-        formattedContent = formatMonsterContent(parsedData);
+        const monsterData = Open5eAPI.parseOpen5eMonsterForImport(monster);
+        parsedData = monsterData;
+        formattedContent = formatMonsterContent(monsterData);
       }
     } else if (article.url.includes("/items/")) {
       contentType = "magic-item";
       const items = await Open5eAPI.searchOpen5eMagicItems(article.title);
       const item = items.find((i) => i.name.toLowerCase() === article.title.toLowerCase());
       if (item) {
-        parsedData = Open5eAPI.parseOpen5eMagicItemForImport(item);
-        formattedContent = formatMagicItemContent(parsedData);
+        const itemData = Open5eAPI.parseOpen5eMagicItemForImport(item);
+        parsedData = itemData;
+        formattedContent = formatMagicItemContent(itemData);
       }
     } else if (article.url.includes("/races/")) {
       contentType = "race";
       const races = await Open5eAPI.searchOpen5eRaces(article.title);
       const race = races.find((r) => r.name.toLowerCase() === article.title.toLowerCase());
       if (race) {
-        parsedData = Open5eAPI.parseOpen5eRaceForImport(race);
-        formattedContent = formatRaceContent(parsedData);
+        const raceData = Open5eAPI.parseOpen5eRaceForImport(race);
+        parsedData = raceData;
+        formattedContent = formatRaceContent(raceData);
       }
     } else if (article.url.includes("/classes/")) {
       contentType = "class";
       const classes = await Open5eAPI.searchOpen5eClasses(article.title);
       const cls = classes.find((c) => c.name.toLowerCase() === article.title.toLowerCase());
       if (cls) {
-        parsedData = Open5eAPI.parseOpen5eClassForImport(cls);
-        formattedContent = formatClassContent(parsedData);
+        const classData = Open5eAPI.parseOpen5eClassForImport(cls);
+        parsedData = classData;
+        formattedContent = formatClassContent(classData);
       }
     }
 
@@ -1120,7 +1125,7 @@ async function loadOpen5eContent(article: WikiArticle): Promise<WikiArticleDetai
  * Format spell content for display
  * Works with both DnD5eToolsService and Open5eAPI parsed spells
  */
-function formatSpellContent(spell: any): string {
+function formatSpellContent(spell: ParsedSpell): string {
   return `## ${spell.name}
 
 **Level:** ${spell.level}
@@ -1137,7 +1142,7 @@ ${spell.description}`;
  * Format monster content for display
  * Works with both DnD5eToolsService and Open5eAPI parsed monsters
  */
-function formatMonsterContent(monster: any): string {
+function formatMonsterContent(monster: ParsedMonster): string {
   return `## ${monster.name}
 
 **Size:** ${monster.size}
@@ -1164,7 +1169,7 @@ ${monster.description}`;
  * Format magic item content for display
  * Works with both DnD5eToolsService and Open5eAPI parsed items
  */
-function formatMagicItemContent(item: any): string {
+function formatMagicItemContent(item: ParsedMagicItem): string {
   const attunement = item.requiresAttunement ? " (requires attunement)" : "";
   return `## ${item.name}
 
@@ -1178,10 +1183,10 @@ ${item.description}`;
  * Format race content for display
  * Works with both DnD5eToolsService and Open5eAPI parsed races
  */
-function formatRaceContent(race: any): string {
+function formatRaceContent(race: ParsedRace): string {
   const abilityText = race.abilityBonuses ? `**Ability Bonuses:** ${race.abilityBonuses}` : "";
   const speed = typeof race.speed === "string" ? race.speed : "Unknown";
-  
+
   return `## ${race.name}
 
 ${race.speed ? `**Speed:** ${speed}` : ""}
@@ -1189,15 +1194,13 @@ ${race.speed ? `**Speed:** ${speed}` : ""}
 ${abilityText}
 
 ${race.description || "No description available."}`;
-}
-
-/**
+}/**
  * Format class content for display
  * Works with both DnD5eToolsService and Open5eAPI parsed classes
  */
-function formatClassContent(cls: any): string {
+function formatClassContent(cls: ParsedClass): string {
   const hitDie = cls.hitDice || "Unknown";
-  
+
   return `## ${cls.name}
 
 **Hit Die:** ${hitDie}

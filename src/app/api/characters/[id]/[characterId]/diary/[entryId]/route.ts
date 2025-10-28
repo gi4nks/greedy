@@ -18,6 +18,18 @@ const updateDiaryEntrySchema = z.object({
   isImportant: z.boolean().optional(),
 });
 
+type DiaryEntryUpdateData = {
+  description?: string;
+  date?: string;
+  linkedEntities?: Array<{
+    id: string;
+    type: string;
+    name: string;
+  }>;
+  isImportant?: boolean;
+  updatedAt?: string;
+};
+
 // PUT /api/characters/[id]/diary/[entryId] - Update a diary entry
 export async function PUT(
   request: NextRequest,
@@ -30,7 +42,7 @@ export async function PUT(
     
     const validatedData = updateDiaryEntrySchema.parse(body);
 
-    const updateData: any = {};
+    const updateData: DiaryEntryUpdateData = {};
     if (validatedData.description !== undefined) updateData.description = validatedData.description;
     if (validatedData.date !== undefined) updateData.date = validatedData.date;
     if (validatedData.linkedEntities !== undefined) updateData.linkedEntities = validatedData.linkedEntities;

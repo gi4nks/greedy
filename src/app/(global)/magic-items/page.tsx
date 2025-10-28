@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,6 +17,8 @@ import { campaigns, magicItems, wikiArticles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/utils/logger";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { PageContainer } from "../../../components/layout/PageContainer";
+import { PageHeader } from "../../../components/layout/PageHeader";
 
 function parseJsonColumn<T>(value: unknown): T | null {
   if (typeof value !== "string" || value.trim() === "") {
@@ -169,27 +171,22 @@ export default async function MagicItemsPage({
   ]);
 
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Magic Items" }]} />
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <Sparkles className="w-8 h-8" />
-          <div>
-            <h1 className="text-3xl font-bold">Magic Items</h1>
-            <p className="text-base-content/70 mt-2">
-              Manage and track magical gear across your campaigns
-            </p>
-          </div>
-        </div>
-        <Link href="/magic-items/new">
-          <Button className="gap-2" variant="primary" size="sm">
-            <Plus className="w-4 h-4" />
-            Create
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Magic Items"
+        description="Manage and track magical gear across your campaigns"
+        actions={
+          <Link href="/magic-items/new">
+            <Button className="gap-2" variant="primary" size="sm">
+              <Plus className="w-4 h-4" />
+              Create
+            </Button>
+          </Link>
+        }
+      />
 
       <div className="mb-3">
         <Suspense fallback={null}>
@@ -203,6 +200,6 @@ export default async function MagicItemsPage({
       </div>
 
       <MagicItemsList items={items} />
-    </div>
+    </PageContainer>
   );
 }

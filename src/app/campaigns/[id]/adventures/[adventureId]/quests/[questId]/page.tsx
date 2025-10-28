@@ -1,30 +1,24 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import {
-  campaigns,
-  quests,
-  adventures,
-  gameEditions,
-  wikiArticleEntities,
-  wikiArticles,
-  magicItems,
-  magicItemAssignments,
-} from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Target, Edit, Calendar, User, Flag, AlertTriangle, CheckCircle, Clock, Play } from "lucide-react";
-import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { Target, Calendar, User, Flag, AlertTriangle, CheckCircle, Clock, Play, Edit } from "lucide-react";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
-import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
-import { formatDate, formatUIDate } from "@/lib/utils/date";
+import { formatUIDate } from "@/lib/utils/date";
+import DiaryWrapper from "@/components/ui/diary-wrapper";
+import CollapsibleSection from "@/components/ui/collapsible-section";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/ui/page-header";
+import { EntitySidebar } from "@/components/ui/entity-sidebar";
+
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
+import { getQuestById } from "@/lib/actions/entities";
 
 interface QuestPageProps {
   params: Promise<{ id: string; adventureId: string; questId: string }>;
@@ -56,70 +50,6 @@ interface QuestData {
     gameEditionVersion: string | null;
   };
   wikiEntities: WikiEntity[];
-}
-
-async function getQuestData(campaignId: number, adventureId: number, questId: number): Promise<QuestData | null> {
-  // Get quest with related data
-  const questResult = await db
-    .select({
-      quest: quests,
-      adventure: {
-        id: adventures.id,
-        title: adventures.title,
-        campaignId: adventures.campaignId,
-      },
-      campaign: {
-        id: campaigns.id,
-        title: campaigns.title,
-        gameEditionName: gameEditions.name,
-        gameEditionVersion: gameEditions.version,
-      },
-    })
-    .from(quests)
-    .leftJoin(adventures, eq(quests.adventureId, adventures.id))
-    .leftJoin(campaigns, eq(adventures.campaignId, campaigns.id))
-    .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-    .where(eq(quests.id, questId))
-    .limit(1);
-
-  if (!questResult[0]) return null;
-
-  const { quest, adventure, campaign } = questResult[0];
-
-  // Verify quest belongs to the specified adventure and campaign
-  if (quest.adventureId !== adventureId || adventure?.campaignId !== campaignId) {
-    return null;
-  }
-
-  // Get wiki entities
-  const wikiEntitiesResult = await db
-    .select({
-      id: wikiArticles.id,
-      title: wikiArticles.title,
-      contentType: wikiArticles.contentType,
-      wikiUrl: wikiArticles.wikiUrl,
-    })
-    .from(wikiArticleEntities)
-    .innerJoin(wikiArticles, eq(wikiArticleEntities.wikiArticleId, wikiArticles.id))
-    .where(
-      and(
-        eq(wikiArticleEntities.entityType, "quest"),
-        eq(wikiArticleEntities.entityId, questId)
-      )
-    );
-
-  // Transform null wikiUrl to undefined to match WikiEntity interface
-  const transformedWikiEntities = wikiEntitiesResult.map(entity => ({
-    ...entity,
-    wikiUrl: entity.wikiUrl || undefined,
-  }));
-
-  return {
-    ...quest,
-    adventure,
-    campaign,
-    wikiEntities: transformedWikiEntities,
-  };
 }
 
 function getStatusIcon(status: string | null) {
@@ -171,291 +101,180 @@ export default async function QuestPage({
   const adventureId = parseInt(resolvedParams.adventureId);
   const questId = parseInt(resolvedParams.questId);
 
-  const questData = await getQuestData(campaignId, adventureId, questId);
+  const questData = await getQuestById(questId);
 
-  if (!questData) {
+  if (!questData || questData.adventureId !== adventureId || questData.adventure?.campaignId !== campaignId) {
     notFound();
   }
 
   const images = parseImagesJson(questData.images);
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={questData.campaign.title || "Campaign"}
-        sectionItems={[
-          {
-            label: "Adventures",
-            href: `/campaigns/${campaignId}/adventures`,
-          },
-          {
-            label: questData.adventure?.title || "Adventure",
-            href: `/campaigns/${campaignId}/adventures/${adventureId}`,
-          },
-          {
-            label: "Quests",
-            href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
-          },
-          { label: questData.title },
-        ]}
-      />
+    <EntityErrorBoundary entityType="quest">
+      <PageContainer>
+        <PageHeader
+          breadcrumb={{
+            campaignId: campaignId,
+            campaignTitle: questData.campaign.title || "Campaign",
+            sectionItems: [
+              {
+                label: "Adventures",
+                href: `/campaigns/${campaignId}/adventures`,
+              },
+              {
+                label: questData.adventure?.title || "Adventure",
+                href: `/campaigns/${campaignId}/adventures/${adventureId}`,
+              },
+              {
+                label: "Quests",
+                href: `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+              },
+              { label: questData.title },
+            ],
+          }}
+          title={questData.title}
+          actions={
+            <Link href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}/edit`}>
+              <Button variant="secondary" size="sm" className="gap-2">
+                <Edit className="w-4 h-4" />
+                Edit
+              </Button>
+            </Link>
+          }
+        />
 
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          {getStatusIcon(questData.status)}
-          <div>
-            <h1 className="text-3xl font-bold">{questData.title}</h1>
-            <p className="text-base-content/70">
-              Quest in {questData.adventure?.title || "Unknown Adventure"}
-            </p>
+        <div className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+            <Suspense fallback={<EntityDetailSkeleton />}>
+              <QuestDetail questData={questData} images={images} />
+            </Suspense>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <EntitySidebar
+              metadata={{
+                createdAt: questData.createdAt,
+                updatedAt: questData.updatedAt,
+                campaign: questData.campaign ? {
+                  id: questData.campaign.id || 0,
+                  title: questData.campaign.title || "",
+                } : null,
+              }}
+            />
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Quest Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quest Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {questData.description && (
-                <div>
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <div className="prose prose-sm max-w-none">
-                    <MarkdownRenderer content={questData.description} />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Status</div>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(questData.status)}
-                    <span className="capitalize">{questData.status || "Unknown"}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Priority</div>
-                  <Badge className={getPriorityColor(questData.priority)}>
-                    {questData.priority || "Unknown"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Type</div>
-                  <div className="flex items-center gap-2">
-                    {getTypeIcon(questData.type)}
-                    <span className="capitalize">{questData.type || "Unknown"}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Assigned To</div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span>{questData.assignedTo || "Unassigned"}</span>
-                  </div>
-                </div>
-              </div>
-
-              {questData.dueDate && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Due Date</div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{formatUIDate(questData.dueDate)}</span>
-                  </div>
-                </div>
-              )}
-
-              {Array.isArray(questData.tags) && questData.tags.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-base-content/70">Tags</div>
-                  <div className="flex flex-wrap gap-2">
-                    {questData.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Images */}
-          {images.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Images</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EntityImageCarousel
-                  images={images}
-                  entityType="quests"
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Wiki Items */}
-          {questData.wikiEntities.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Wiki References</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WikiEntitiesDisplay
-                  wikiEntities={questData.wikiEntities}
-                  entityType="quest"
-                  entityId={questData.id}
-                  showImportMessage={false}
-                  isEditable={false}
-                />
-              </CardContent>
-            </Card>
-          )}
         </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link
-                href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${questId}/edit`}
-              >
-                <Button className="w-full gap-2" variant="secondary" size="sm">
-                  <Edit className="w-4 h-4" />
-                  Edit Quest
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Metadata</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-base-content/70">Created</div>
-                <div className="text-sm">{formatUIDate(questData.createdAt)}</div>
-              </div>
-
-              {questData.updatedAt && questData.updatedAt !== questData.createdAt && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Last Updated</div>
-                  <div className="text-sm">{formatUIDate(questData.updatedAt)}</div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <div className="text-sm font-medium text-base-content/70">Campaign</div>
-                <Link
-                  href={`/campaigns/${campaignId}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  {questData.campaign.title || "Campaign"}
-                </Link>
-              </div>
-
-              {questData.campaign?.gameEditionName && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-base-content/70">Game Edition</div>
-                  <div className="text-sm">
-                    {questData.campaign.gameEditionName}
-                    {questData.campaign.gameEditionVersion && ` (${questData.campaign.gameEditionVersion})`}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+      </PageContainer>
+    </EntityErrorBoundary>
   );
 }
 
-function QuestPageSkeleton() {
+function QuestDetail({ questData, images }: { questData: QuestData; images: ImageInfo[] }) {
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Skeleton className="h-8 w-8 rounded-lg" />
-          <Skeleton className="h-6 w-48" />
-        </div>
-        <Skeleton className="h-8 w-64 mb-2" />
-        <Skeleton className="h-4 w-96" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-6 w-32 mb-4" />
-              <div className="space-y-4">
-                <Skeleton className="h-20 w-full" />
-                <div className="grid grid-cols-4 gap-4">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
+    <div className="space-y-6">
+      {/* Quest Details */}
+      <CollapsibleSection title="Quest Details" defaultExpanded={true}>
+        <div className="space-y-4">
+          {questData.description && (
+            <div>
+              <h3 className="font-semibold mb-2">Description</h3>
+              <div className="prose prose-sm max-w-none">
+                <MarkdownRenderer content={questData.description} />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          )}
 
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-6 w-24 mb-4" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-6 w-20 mb-4" />
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-base-content/70">Status</div>
+              <div className="flex items-center gap-2">
+                {getStatusIcon(questData.status)}
+                <span className="capitalize">{questData.status || "Unknown"}</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-base-content/70">Priority</div>
+              <Badge className={getPriorityColor(questData.priority)}>
+                {questData.priority || "Unknown"}
+              </Badge>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-base-content/70">Type</div>
+              <div className="flex items-center gap-2">
+                {getTypeIcon(questData.type)}
+                <span className="capitalize">{questData.type || "Unknown"}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-base-content/70">Assigned To</div>
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>{questData.assignedTo || "Unassigned"}</span>
+              </div>
+            </div>
+          </div>
+
+          {questData.dueDate && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-base-content/70">Due Date</div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{formatUIDate(questData.dueDate)}</span>
+              </div>
+            </div>
+          )}
+
+          {Array.isArray(questData.tags) && questData.tags.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-base-content/70">Tags</div>
+              <div className="flex flex-wrap gap-2">
+                {questData.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </CollapsibleSection>
+
+      {/* Images */}
+      {images.length > 0 && (
+        <CollapsibleSection title="Images" defaultExpanded={false}>
+          <EntityImageCarousel
+            images={images}
+            entityType="quests"
+          />
+        </CollapsibleSection>
+      )}
+
+      {/* Wiki Items */}
+      {questData.wikiEntities.length > 0 && (
+        <CollapsibleSection title="Wiki References" defaultExpanded={false}>
+          <WikiEntitiesDisplay
+            wikiEntities={questData.wikiEntities}
+            entityType="quest"
+            entityId={questData.id}
+            showImportMessage={false}
+            isEditable={false}
+          />
+        </CollapsibleSection>
+      )}
+
+      {/* Diary */}
+      <DiaryWrapper
+        entityType="quest"
+        entityId={questData.id}
+        campaignId={parseInt(questData.campaign.id?.toString() || "0")}
+        title="Quest Diary"
+      />
     </div>
   );
-}
-
-// Generate metadata for SEO
-export async function generateMetadata({
-  params,
-}: QuestPageProps) {
-  const resolvedParams = await params;
-  const questId = parseInt(resolvedParams.questId);
-
-  const quest = await db
-    .select()
-    .from(quests)
-    .where(eq(quests.id, questId))
-    .limit(1);
-
-  return {
-    title: quest[0] ? `${quest[0].title} | Quest` : "Quest",
-    description: quest[0]?.description || `View quest details`,
-  };
 }

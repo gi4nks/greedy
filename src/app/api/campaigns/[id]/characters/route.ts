@@ -3,15 +3,6 @@ import { db } from "@/lib/db";
 import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
-type CampaignCharacterRow = {
-  id: number;
-  characterType: string | null;
-  name: string;
-  race: string | null;
-  level: number | null;
-  role: string | null;
-};
-
 type MagicItemSummary = {
   id: number;
   assignmentId: number;

@@ -19,6 +19,37 @@ interface Entity {
     subtype?: string;
 }
 
+interface Character {
+    id: number;
+    name: string;
+    characterType?: string;
+}
+
+interface NPC {
+    id: number;
+    name: string;
+}
+
+interface Location {
+    id: number;
+    name: string;
+}
+
+interface Adventure {
+    id: number;
+    title: string;
+}
+
+interface Session {
+    id: number;
+    title: string;
+}
+
+interface Quest {
+    id: number;
+    title: string;
+}
+
 interface EntitySelectorModalProps {
     campaignId: number;
     isOpen: boolean;
@@ -28,6 +59,7 @@ interface EntitySelectorModalProps {
     selectLabel?: string;
     excludedEntities?: Array<{ id: string; type: string }>;
     sourceEntity?: { id: string; type: string; name: string };
+    filterTypes?: string[];
 }
 
 const ENTITY_TYPES = [
@@ -48,6 +80,7 @@ export default function EntitySelectorModal({
     selectLabel = "Entity",
     excludedEntities = [],
     sourceEntity,
+    filterTypes,
 }: EntitySelectorModalProps) {
     const [entities, setEntities] = useState<Entity[]>([]);
     const [selectedEntity, setSelectedEntity] = useState("");
@@ -69,7 +102,7 @@ export default function EntitySelectorModal({
             const allEntities: Entity[] = [];
 
             if (charactersRes.ok) {
-                const characters: any[] = await charactersRes.json();
+                const characters: Character[] = await charactersRes.json();
                 // Separate PCs and NPCs from the characters table
                 characters.forEach((character) => {
                     if (character.characterType === 'pc' || !character.characterType) {
@@ -81,29 +114,29 @@ export default function EntitySelectorModal({
             }
 
             if (npcsRes.ok) {
-                const npcs: any[] = await npcsRes.json();
+                const npcs: NPC[] = await npcsRes.json();
                 // Add NPCs from the separate NPCs table
                 allEntities.push(...npcs.map((npc) => ({ id: npc.id, name: npc.name, type: "npc" })));
             }
 
             if (locationsRes.ok) {
-                const locations: any[] = await locationsRes.json();
-                allEntities.push(...locations.map((l: any) => ({ id: l.id, name: l.name, type: "location" })));
+                const locations: Location[] = await locationsRes.json();
+                allEntities.push(...locations.map((l) => ({ id: l.id, name: l.name, type: "location" })));
             }
 
             if (adventuresRes.ok) {
-                const adventures: any[] = await adventuresRes.json();
-                allEntities.push(...adventures.map((a: any) => ({ id: a.id, name: a.title, type: "adventure" })));
+                const adventures: Adventure[] = await adventuresRes.json();
+                allEntities.push(...adventures.map((a) => ({ id: a.id, name: a.title, type: "adventure" })));
             }
 
             if (sessionsRes.ok) {
-                const sessions: any[] = await sessionsRes.json();
-                allEntities.push(...sessions.map((s: any) => ({ id: s.id, name: s.title, type: "session" })));
+                const sessions: Session[] = await sessionsRes.json();
+                allEntities.push(...sessions.map((s) => ({ id: s.id, name: s.title, type: "session" })));
             }
 
             if (questsRes.ok) {
-                const quests: any[] = await questsRes.json();
-                allEntities.push(...quests.map((q: any) => ({ id: q.id, name: q.title, type: "quest" })));
+                const quests: Quest[] = await questsRes.json();
+                allEntities.push(...quests.map((q) => ({ id: q.id, name: q.title, type: "quest" })));
             }
 
             // Deduplicate entities based on id and effective type (subtype || type)
@@ -164,7 +197,25 @@ export default function EntitySelectorModal({
         return isInExcludedList || isSourceEntity;
     };
 
-    const availableEntities = entities.filter(e => !isEntityExcluded(e));
+    const availableEntities = entities.filter(e => {
+        // Filter by allowed types if filterTypes is provided
+        if (filterTypes && filterTypes.length > 0) {
+            const entityType = e.subtype || e.type;
+            if (!filterTypes.includes(entityType)) {
+                return false;
+            }
+        }
+
+        // Exclude entities that are already linked to the current diary entry
+        const isInExcludedList = Array.isArray(excludedEntities) && excludedEntities.some(
+            excluded => excluded.id === e.id.toString() && excluded.type === (e.subtype || e.type)
+        );
+
+        // Exclude the source entity (the entity from which this modal was opened)
+        const isSourceEntity = sourceEntity && sourceEntity.id === e.id.toString() && sourceEntity.type === (e.subtype || e.type);
+
+        return !isInExcludedList && !isSourceEntity;
+    });
 
     if (!isOpen) return null;
 

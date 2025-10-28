@@ -4,6 +4,8 @@ import { campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import CampaignPageClient from "./campaign-page-client";
 
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+
 interface CampaignData {
   id: number;
   gameEditionId: number | null;
@@ -45,5 +47,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     notFound();
   }
 
-  return <CampaignPageClient campaign={campaign} campaignId={campaignId} />;
+  return (
+    <EntityErrorBoundary entityType="campaign">
+      <CampaignPageClient campaign={campaign} campaignId={campaignId} />
+    </EntityErrorBoundary>
+  );
 }

@@ -5,6 +5,7 @@ import * as d3 from "d3";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertError } from "@/components/ui/error-message";
 import { cn } from "@/lib/utils";
 
 type GraphNode = {
@@ -521,9 +522,7 @@ export function EntityNetwork({ campaignId }: EntityNetworkProps) {
               </Button>
             </div>
             {error && (
-              <div className="rounded-lg bg-error/10 p-4 text-sm text-error">
-                {error}
-              </div>
+              <AlertError message={error} />
             )}
           </CardHeader>
 

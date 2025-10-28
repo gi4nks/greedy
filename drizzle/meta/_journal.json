@@ -50,6 +50,20 @@
       "when": 1760169600000,
       "tag": "0006_cross_campaign_magic_items",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1760170000000,
+      "tag": "0007_add_relations_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1760170200000,
+      "tag": "0010_add_tags_to_characters",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,6 @@
 import { Character, Adventure, Campaign } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import EquipmentDisplay from "@/components/ui/equipment-display";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";

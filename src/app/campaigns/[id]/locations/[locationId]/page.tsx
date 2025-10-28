@@ -1,30 +1,26 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import {
-  campaigns,
-  locations,
-  adventures,
-  gameEditions,
-  wikiArticleEntities,
-  wikiArticles,
-  magicItems,
-  magicItemAssignments,
-} from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Edit, Building, Mountain, Trees } from "lucide-react";
-import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { MapPin, Edit } from "lucide-react";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
-import { formatDate, formatUIDate } from "@/lib/utils/date";
+import { formatDate } from "@/lib/utils/date";
+import DiaryWrapper from "@/components/ui/diary-wrapper";
+import CollapsibleSection from "@/components/ui/collapsible-section";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/ui/page-header";
+import { EntitySidebar } from "@/components/ui/entity-sidebar";
+import EntityRelationships from "@/components/ui/entity-relationships";
+import { getEntityRelationships } from "@/lib/actions/relationships";
+
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
+import { getLocationById } from "@/lib/actions/entities";
 
 interface LocationPageProps {
   params: Promise<{ id: string; locationId: string }>;
@@ -63,114 +59,13 @@ interface LocationData {
     notes: string | null;
     assignedAt: string | null;
   }[];
-}
-
-async function getLocation(locationId: number) {
-  const [location] = await db
-    .select({
-      id: locations.id,
-      campaignId: locations.campaignId,
-      adventureId: locations.adventureId,
-      name: locations.name,
-      description: locations.description,
-      tags: locations.tags,
-      images: locations.images,
-      createdAt: locations.createdAt,
-      updatedAt: locations.updatedAt,
-      adventure: {
-        id: adventures.id,
-        title: adventures.title,
-        campaignId: adventures.campaignId,
-      },
-    })
-    .from(locations)
-    .leftJoin(adventures, eq(locations.adventureId, adventures.id))
-    .where(eq(locations.id, locationId))
-    .limit(1);
-
-  if (!location) return null;
-
-  // Get campaign info directly from location's campaignId
-  const campaign = location.campaignId
-    ? await db
-        .select({
-          id: campaigns.id,
-          title: campaigns.title,
-          gameEditionName: gameEditions.name,
-          gameEditionVersion: gameEditions.version,
-        })
-        .from(campaigns)
-        .leftJoin(gameEditions, eq(campaigns.gameEditionId, gameEditions.id))
-        .where(eq(campaigns.id, location.campaignId))
-        .limit(1)
-        .then((result) => result[0] || null)
-    : null;
-
-  // Get wiki entities for this location
-  const wikiEntitiesData = await db
-    .select({
-      id: wikiArticles.id,
-      title: wikiArticles.title,
-      contentType: wikiArticles.contentType,
-      rawContent: wikiArticles.rawContent,
-      parsedData: wikiArticles.parsedData,
-      wikiUrl: wikiArticles.wikiUrl,
-      importedFrom: wikiArticles.importedFrom,
-      relationshipType: wikiArticleEntities.relationshipType,
-      relationshipData: wikiArticleEntities.relationshipData,
-    })
-    .from(wikiArticleEntities)
-    .innerJoin(
-      wikiArticles,
-      eq(wikiArticleEntities.wikiArticleId, wikiArticles.id),
-    )
-    .where(
-      and(
-        eq(wikiArticleEntities.entityType, "location"),
-        eq(wikiArticleEntities.entityId, locationId),
-      ),
-    );
-
-  // Map rawContent to description for frontend compatibility
-  const wikiEntities: WikiEntity[] = wikiEntitiesData.map((entity) => ({
-    id: entity.id,
-    title: entity.title,
-    contentType: entity.contentType,
-    description: entity.rawContent || "", // Map rawContent to description
-    parsedData: entity.parsedData,
-    wikiUrl: entity.wikiUrl || undefined,
-    importedFrom: entity.importedFrom,
-    relationshipType: entity.relationshipType || undefined,
-    relationshipData: entity.relationshipData,
-  }));
-
-  const magicItemsForLocation = await db
-    .select({
-      assignmentId: magicItemAssignments.id,
-      magicItemId: magicItems.id,
-      name: magicItems.name,
-      rarity: magicItems.rarity,
-      type: magicItems.type,
-      description: magicItems.description,
-      source: magicItemAssignments.source,
-      notes: magicItemAssignments.notes,
-      assignedAt: magicItemAssignments.assignedAt,
-    })
-    .from(magicItemAssignments)
-    .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
-    .where(
-      and(
-        eq(magicItemAssignments.entityType, "location"),
-        eq(magicItemAssignments.entityId, locationId),
-      ),
-    );
-
-  return {
-    ...location,
-    campaign,
-    wikiEntities,
-    magicItems: magicItemsForLocation,
-  };
+  linkedQuests: {
+    id: number;
+    title: string;
+    status: string | null;
+    type: string | null;
+    relationType: string;
+  }[];
 }
 
 export default async function LocationPage({ params }: LocationPageProps) {
@@ -178,159 +73,168 @@ export default async function LocationPage({ params }: LocationPageProps) {
   const locationId = parseInt(resolvedParams.locationId);
   const campaignId = parseInt(resolvedParams.id);
 
-  const location = await getLocation(locationId);
+  const location = await getLocationById(locationId);
 
   if (!location || !location.campaignId || location.campaignId !== campaignId) {
     notFound();
   }
 
-  // Parse tags
-  let tags: string[] = [];
-  try {
-    tags =
-      typeof location.tags === "string"
-        ? JSON.parse(location.tags)
-        : location.tags || [];
-  } catch {
-    tags = [];
-  }
-
-  // Determine location icon based on tags or name
-  const getLocationIcon = () => {
-    const name = location.name?.toLowerCase() || "";
-    const locationTags = tags.map((t) => t.toLowerCase());
-
-    if (
-      locationTags.includes("city") ||
-      locationTags.includes("town") ||
-      name.includes("city") ||
-      name.includes("town")
-    ) {
-      return Building;
-    }
-    if (
-      locationTags.includes("mountain") ||
-      locationTags.includes("peak") ||
-      name.includes("mountain") ||
-      name.includes("peak")
-    ) {
-      return Mountain;
-    }
-    if (
-      locationTags.includes("forest") ||
-      locationTags.includes("woods") ||
-      name.includes("forest") ||
-      name.includes("woods")
-    ) {
-      return Trees;
-    }
-    return MapPin;
-  };
-
-  const LocationIcon = getLocationIcon();
+  // Fetch relationships for this location
+  const relationships = await getEntityRelationships(locationId.toString(), "location");
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb
-        campaignId={campaignId}
-        campaignTitle={location.campaign?.title}
-        sectionItems={[
-          { label: "Locations", href: `/campaigns/${campaignId}/locations` },
-          { label: location.name },
-        ]}
-      />
+    <EntityErrorBoundary entityType="location">
+      <PageContainer>
+        <PageHeader
+          breadcrumb={{
+            campaignId: campaignId,
+            campaignTitle: location.campaign?.title || undefined,
+            sectionItems: [
+              { label: "Locations", href: `/campaigns/${campaignId}/locations` },
+              { label: location.name },
+            ],
+          }}
+          title={location.name}
+          subtitle={location.description || undefined}
+          actions={
+            <Link href={`/campaigns/${campaignId}/locations/${locationId}/edit`}>
+              <Button variant="secondary" size="sm" className="gap-2">
+                <Edit className="w-4 h-4" />
+                Edit
+              </Button>
+            </Link>
+          }
+        />
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <LocationIcon className="w-8 h-8 text-green-500" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{location.name}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-base-content/70">
-                  {location.campaign?.title}
-                </span>
-                {location.adventure && (
-                  <>
-                    <span className="text-base-content/70">•</span>
-                    <span className="text-base-content/70">
-                      {location.adventure.title}
-                    </span>
-                  </>
-                )}
-              </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            <Suspense fallback={<EntityDetailSkeleton />}>
+              <LocationDetail location={location} />
+            </Suspense>
           </div>
 
-          <Link href={`/campaigns/${campaignId}/locations/${locationId}/edit`}>
-            <Button variant="secondary" className="gap-2">
-              <Edit className="w-4 h-4" />
-              Edit
-            </Button>
-          </Link>
-        </div>
-      </div>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <EntitySidebar
+              metadata={{
+                createdAt: location.createdAt,
+                updatedAt: location.updatedAt,
+                campaign: location.campaign ? {
+                  id: location.campaign.id,
+                  title: location.campaign.title,
+                } : null,
+              }}
+            />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Suspense fallback={<LocationDetailSkeleton />}>
-            <LocationDetail location={location} />
-          </Suspense>
-        </div>
+            {/* Assigned Magic Items */}
+            {location.magicItems.length > 0 && (
+              <div className="card bg-base-100 shadow-sm">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">Magic Items</h3>
+                  <div className="space-y-3">
+                    {location.magicItems.slice(0, 3).map((item) => (
+                      <div key={item.assignmentId} className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <div className="flex gap-1 mt-1">
+                            {item.rarity && (
+                              <Badge variant="outline" className="text-xs">
+                                {item.rarity}
+                              </Badge>
+                            )}
+                            {item.type && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.type}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {location.magicItems.length > 3 && (
+                      <p className="text-xs text-base-content/60">
+                        +{location.magicItems.length - 3} more items
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
-        <div>
-          <Suspense fallback={<LocationInfoSkeleton />}>
-            <LocationInfo location={location} />
-          </Suspense>
+            {/* Linked Quests */}
+            {location.linkedQuests.length > 0 && (
+              <div className="card bg-base-100 shadow-sm">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">Linked Quests</h3>
+                  <div className="space-y-3">
+                    {location.linkedQuests.slice(0, 3).map((quest) => (
+                      <div key={quest.id} className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{quest.title}</p>
+                          <div className="flex gap-1 mt-1">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {quest.status || "active"}
+                            </Badge>
+                            {quest.type && (
+                              <Badge variant="secondary" className="text-xs capitalize">
+                                {quest.type}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {location.linkedQuests.length > 3 && (
+                      <p className="text-xs text-base-content/60">
+                        +{location.linkedQuests.length - 3} more quests
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <EntityRelationships
+              entityId={location.id.toString()}
+              entityType="location"
+              relationships={relationships}
+              campaignId={campaignId.toString()}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </EntityErrorBoundary>
   );
 }
 
 function LocationDetail({ location }: { location: LocationData }) {
   return (
     <div className="space-y-6">
+      {/* Description */}
       {location.description && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MarkdownRenderer
-              content={location.description}
-              className="prose-sm"
-            />
-          </CardContent>
-        </Card>
+        <CollapsibleSection title="Description" defaultExpanded={true}>
+          <MarkdownRenderer
+            content={location.description}
+            className="prose-sm"
+          />
+        </CollapsibleSection>
       )}
 
-      {/* Image Carousel */}
-      <EntityImageCarousel
-        images={parseImagesJson(location.images)}
-        entityType="locations"
-        className="max-w-2xl mx-auto"
-      />
+      {/* Images */}
+      <CollapsibleSection title="Images" defaultExpanded={false}>
+        <EntityImageCarousel
+          images={parseImagesJson(location.images)}
+          entityType="locations"
+          className="max-w-2xl mx-auto"
+        />
+      </CollapsibleSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Magic Items</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {location.magicItems.length > 0 ? (
-            location.magicItems.map((item) => (
+      {/* Magic Items */}
+      <CollapsibleSection title="Magic Items" defaultExpanded={false}>
+        {location.magicItems.length > 0 ? (
+          <div className="space-y-4">
+            {location.magicItems.map((item) => (
               <div
                 key={item.assignmentId}
                 className="rounded-lg border border-base-200 p-4"
@@ -385,37 +289,40 @@ function LocationDetail({ location }: { location: LocationData }) {
                   </div>
                 )}
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-base-content/70">
-              No magic items assigned to this location.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-base-content/70">
+            No magic items assigned to this location.
+          </p>
+        )}
+      </CollapsibleSection>
 
       {/* Wiki Entities */}
       {location.wikiEntities && location.wikiEntities.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Wiki Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WikiEntitiesDisplay
-              wikiEntities={location.wikiEntities}
-              entityType="location"
-              entityId={location.id}
-              showImportMessage={false}
-              isEditable={false}
-            />
-          </CardContent>
-        </Card>
+        <CollapsibleSection title="Wiki Items" defaultExpanded={false}>
+          <WikiEntitiesDisplay
+            wikiEntities={location.wikiEntities}
+            entityType="location"
+            entityId={location.id}
+            showImportMessage={false}
+            isEditable={false}
+          />
+        </CollapsibleSection>
       )}
+
+      {/* Location Diary */}
+      <DiaryWrapper
+        entityType="location"
+        entityId={location.id}
+        campaignId={location.campaignId!}
+        title="Location Diary"
+      />
 
       {!location.description &&
         (!location.wikiEntities || location.wikiEntities.length === 0) && (
-          <Card>
-            <CardContent className="py-12 text-center">
+          <CollapsibleSection title="Getting Started" defaultExpanded={true}>
+            <div className="text-center py-8">
               <MapPin className="w-12 h-12 mx-auto text-base-content/70 mb-4" />
               <h3 className="text-lg font-medium mb-2">
                 No description available
@@ -431,113 +338,17 @@ function LocationDetail({ location }: { location: LocationData }) {
                   Edit
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </CollapsibleSection>
         )}
     </div>
-  );
-}
-
-function LocationInfo({ location }: { location: LocationData }) {
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Location Info</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <div className="text-sm font-medium text-base-content/70">
-              Campaign
-            </div>
-            <div className="text-sm">
-              {location.campaign?.title || "Unknown"}
-            </div>
-          </div>
-
-          {location.adventure && (
-            <div>
-              <div className="text-sm font-medium text-base-content/70">
-                Adventure
-              </div>
-              <div className="text-sm">{location.adventure.title}</div>
-            </div>
-          )}
-
-          {location.createdAt && (
-            <div>
-              <div className="text-sm font-medium text-base-content/70">
-                Created
-              </div>
-              <div className="text-sm">
-                {formatUIDate(location.createdAt)}
-              </div>
-            </div>
-          )}
-
-          {location.updatedAt && location.updatedAt !== location.createdAt && (
-            <div>
-              <div className="text-sm font-medium text-base-content/70">
-                Last Updated
-              </div>
-              <div className="text-sm">
-                {formatUIDate(location.updatedAt)}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Future: Add related characters, quests, sessions, etc. */}
-    </div>
-  );
-}
-
-function LocationDetailSkeleton() {
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-24" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-20" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-16 w-full" />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function LocationInfoSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-24" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i}>
-            <Skeleton className="h-4 w-16 mb-1" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        ))}
-      </CardContent>
-    </Card>
   );
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: LocationPageProps) {
   const resolvedParams = await params;
-  const location = await getLocation(parseInt(resolvedParams.locationId));
+  const location = await getLocationById(parseInt(resolvedParams.locationId));
 
   return {
     title: location

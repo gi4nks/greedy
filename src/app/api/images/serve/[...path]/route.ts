@@ -50,7 +50,7 @@ export async function GET(
     }
 
     // Return file with appropriate headers
-    return new NextResponse(fileBuffer as any, {
+    return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000', // Cache for 1 year

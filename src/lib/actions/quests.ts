@@ -35,7 +35,7 @@ export async function getQuest(id: number) {
 
 export async function createQuest(
   formData: FormData,
-): Promise<ActionResult<Quest>> {
+): Promise<{ success: boolean; error?: string }> {
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const adventureId = formData.get("adventureId")
@@ -83,19 +83,19 @@ export async function createQuest(
     }
 
     // The redirect will be handled by the form component based on context
-    return { success: true, data: newQuest };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to create quest.",
+      error: "Database Error: Failed to create quest.",
     };
   }
 }
 
 export async function updateQuest(
   formData: FormData,
-): Promise<ActionResult<Quest>> {
+): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -146,12 +146,12 @@ export async function updateQuest(
     }
 
     // The redirect will be handled by the form component based on context
-    return { success: true, data: updatedQuest };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to update quest.",
+      error: "Database Error: Failed to update quest.",
     };
   }
 }
@@ -162,7 +162,7 @@ export async function deleteQuest(
 ): Promise<ActionResult> {
   try {
     await db.delete(quests).where(eq(quests.id, id));
-    // Note: Since quests are now adventure-scoped, we don't revalidate a global path
+    revalidatePath(`/campaigns/${campaignId}/quests`);
     return { success: true };
   } catch (error) {
     console.error("Database error:", error);

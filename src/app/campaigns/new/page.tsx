@@ -29,14 +29,12 @@ interface GameEdition {
   publisher: string;
 }
 
-import { ActionResult } from "../../../lib/types/api";
-
 export default function NewCampaignPage() {
   const router = useRouter();
   const [gameEditions, setGameEditions] = useState<GameEdition[]>([]);
   const [state, formAction, isPending] = useActionState(
     createCampaign,
-    undefined as ActionResult<{ id: number }> | undefined,
+    undefined as { success: boolean; error?: string } | undefined,
   );
 
   // Fetch available game editions
@@ -59,12 +57,9 @@ export default function NewCampaignPage() {
   // Handle form submission success/error
   useEffect(() => {
     console.log("🔍 State changed:", state);
-    if (state?.success === false && state?.message) {
-      console.error("❌ Error:", state.message);
-      toast.error(state.message);
-    } else if (state?.success === false && state?.errors) {
-      console.error("❌ Validation errors:", state.errors);
-      toast.error("Please check the form for errors");
+    if (state?.success === false && state?.error) {
+      console.error("❌ Error:", state.error);
+      toast.error(state.error);
     } else if (state?.success === true) {
       console.log("✅ Success! Redirecting...");
       toast.success("Campaign created successfully!");

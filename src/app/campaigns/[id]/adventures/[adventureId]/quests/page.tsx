@@ -3,21 +3,11 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { campaigns, quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { formatUIDate } from "@/lib/utils/date";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Plus,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Flag,
-  Star,
-  Edit,
-  View,
-} from "lucide-react";
+import { Plus, CheckCircle } from "lucide-react";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import QuestCard from "@/components/quests/QuestCard";
 
 interface AdventureQuestsPageProps {
   params: Promise<{ id: string; adventureId: string }>;
@@ -64,43 +54,6 @@ async function getQuestsForAdventure(adventureId: number) {
     .orderBy(quests.createdAt);
 
   return questsList;
-}
-
-function getStatusIcon(status: string) {
-  switch (status) {
-    case "completed":
-      return <CheckCircle className="w-4 h-4 text-green-500" />;
-    case "active":
-      return <Clock className="w-4 h-4 text-blue-500" />;
-    case "failed":
-      return <AlertTriangle className="w-4 h-4 text-red-500" />;
-    default:
-      return <Clock className="w-4 h-4 text-base-content/70" />;
-  }
-}
-
-function getPriorityIcon(priority: string) {
-  switch (priority) {
-    case "high":
-      return <Flag className="w-4 h-4 text-red-500" />;
-    case "medium":
-      return <Flag className="w-4 h-4 text-yellow-500" />;
-    case "low":
-      return <Flag className="w-4 h-4 text-green-500" />;
-    default:
-      return <Flag className="w-4 h-4 text-base-content/70" />;
-  }
-}
-
-function getTypeIcon(type: string) {
-  switch (type) {
-    case "main":
-      return <Star className="w-4 h-4 text-yellow-500" />;
-    case "side":
-      return <Clock className="w-4 h-4 text-blue-500" />;
-    default:
-      return <Clock className="w-4 h-4 text-base-content/70" />;
-  }
 }
 
 export default async function AdventureQuestsPage({
@@ -180,80 +133,12 @@ export default async function AdventureQuestsPage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {questsList.map((quest) => (
-              <Card
+              <QuestCard
                 key={quest.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(quest.status || "active")}
-                      <Badge
-                        variant={
-                          quest.status === "completed" ? "default" : "secondary"
-                        }
-                      >
-                        {quest.status || "active"}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {getPriorityIcon(quest.priority || "medium")}
-                      {getTypeIcon(quest.type || "main")}
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg line-clamp-2">
-                    {quest.title}
-                  </CardTitle>
-                </CardHeader>
-
-                <CardContent>
-                  {quest.description && (
-                    <p className="text-sm text-base-content/70 mb-3 line-clamp-3">
-                      {quest.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between text-xs text-base-content/70 mb-3">
-                    <span className="capitalize">
-                      {quest.type || "main"} quest
-                    </span>
-                    <span className="capitalize">
-                      {quest.priority || "medium"} priority
-                    </span>
-                  </div>
-
-                  {quest.dueDate && (
-                    <div className="flex items-center gap-1 text-xs text-base-content/70 mb-3">
-                      <Clock className="w-3 h-3" />
-                      Due: {formatUIDate(quest.dueDate)}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${quest.id}`}
-                      className="flex-1"
-                    >
-                      <Button
-                        variant="warning"
-                        className="gap-2 w-full"
-                        size="sm"
-                      >
-                        <View className="w-4 h-4" />
-                        View Details
-                      </Button>
-                    </Link>
-                    <Link
-                      href={`/campaigns/${campaignId}/adventures/${adventureId}/quests/${quest.id}/edit`}
-                    >
-                      <Button variant="secondary" className="gap-2" size="sm">
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+                quest={quest}
+                campaignId={campaignId}
+                adventureId={adventureId}
+              />
             ))}
           </div>
         )}

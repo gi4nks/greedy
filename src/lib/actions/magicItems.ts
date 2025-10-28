@@ -152,6 +152,7 @@ export async function getMagicItemsWithAssignments(
       description: magicItems.description,
       properties: magicItems.properties,
       attunementRequired: magicItems.attunementRequired,
+      tags: magicItems.tags,
       images: magicItems.images,
       createdAt: magicItems.createdAt,
       updatedAt: magicItems.updatedAt,
@@ -226,6 +227,7 @@ export async function getMagicItemsWithAssignments(
         typeof parsedData?.attunementRequired === "boolean"
           ? parsedData.attunementRequired
           : null,
+      tags: null, // Wiki items don't have tags
       images: parsedData?.images ?? null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -741,6 +743,7 @@ export interface UpsertMagicItemInput {
   type?: string | null;
   description?: string | null;
   properties?: Record<string, unknown> | null;
+  tags?: string[] | null;
   attunementRequired?: boolean;
   images?: unknown;
 }
@@ -756,6 +759,7 @@ export async function createMagicItem(
       type: input.type ?? null,
       description: input.description ?? null,
       properties: input.properties ? JSON.stringify(input.properties) : null,
+      tags: input.tags ? JSON.stringify(input.tags) : null,
       attunementRequired: input.attunementRequired ?? false,
       images: input.images ? JSON.stringify(input.images) : null,
     })
@@ -776,6 +780,7 @@ export async function updateMagicItem(
       type: input.type ?? null,
       description: input.description ?? null,
       properties: input.properties ? JSON.stringify(input.properties) : null,
+      tags: input.tags ? JSON.stringify(input.tags) : null,
       attunementRequired: input.attunementRequired ?? false,
       images: input.images ? JSON.stringify(input.images) : null,
       updatedAt: new Date().toISOString(),
@@ -1149,6 +1154,7 @@ const MagicItemFormSchema = z.object({
   rarity: z.string().max(255).optional(),
   description: z.string().optional(),
   properties: z.string().optional(),
+  tags: z.string().optional(),
   images: z.string().optional(),
 });
 
@@ -1177,15 +1183,15 @@ function parsePropertiesInput(value?: string): {
 }
 
 export async function createMagicItemAction(
-  _: MagicItemFormState | undefined,
   formData: FormData,
-): Promise<ActionResult<MagicItem>> {
+): Promise<{ success: boolean; error?: string; data?: MagicItem }> {
   const rawValues = {
     name: (formData.get("name") as string | null) ?? "",
     type: (formData.get("type") as string | null) ?? "",
     rarity: (formData.get("rarity") as string | null) ?? "",
     description: (formData.get("description") as string | null) ?? "",
     properties: (formData.get("properties") as string | null) ?? "",
+    tags: (formData.get("tags") as string | null) ?? "",
     images: (formData.get("images") as string | null) ?? "",
   };
 
@@ -1195,16 +1201,15 @@ export async function createMagicItemAction(
     rarity: rawValues.rarity.trim() || undefined,
     description: rawValues.description.trim() || undefined,
     properties: rawValues.properties.trim() || undefined,
+    tags: rawValues.tags.trim() || undefined,
     images: rawValues.images.trim() || undefined,
   };
 
   const parsed = MagicItemFormSchema.safeParse(normalized);
 
   if (!parsed.success) {
-    return {
-      success: false,
-      errors: parsed.error.flatten().fieldErrors,
-    };
+    const errorMessage = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0] || "Validation failed";
+    return { success: false, error: errorMessage };
   }
 
   const { properties: parsedProperties, error } = parsePropertiesInput(
@@ -1212,10 +1217,19 @@ export async function createMagicItemAction(
   );
 
   if (error) {
-    return {
-      success: false,
-      errors: { properties: [error] },
-    };
+    return { success: false, error };
+  }
+
+  let parsedTags: string[] | null = null;
+  if (parsed.data.tags) {
+    try {
+      const parsedTagData = JSON.parse(parsed.data.tags);
+      if (Array.isArray(parsedTagData) && parsedTagData.every(item => typeof item === 'string')) {
+        parsedTags = parsedTagData;
+      }
+    } catch (error) {
+      console.warn("Failed to parse tags input", error);
+    }
   }
 
   const attunementRequired = formData.get("attunementRequired") === "on";
@@ -1236,6 +1250,7 @@ export async function createMagicItemAction(
       rarity: parsed.data.rarity ?? null,
       description: parsed.data.description ?? null,
       properties: parsedProperties,
+      tags: parsedTags,
       attunementRequired,
       images: parsedImages,
     });
@@ -1246,24 +1261,20 @@ export async function createMagicItemAction(
     console.error("Failed to create magic item", caught);
     return {
       success: false,
-      message: "Failed to create magic item. Please try again.",
+      error: "Failed to create magic item. Please try again.",
     };
   }
 }
 
 export async function updateMagicItemAction(
-  _: MagicItemFormState | undefined,
   formData: FormData,
-): Promise<ActionResult<MagicItem>> {
+): Promise<{ success: boolean; error?: string; data?: MagicItem }> {
   const idValue = formData.get("id");
   const itemId =
     typeof idValue === "string" ? Number.parseInt(idValue, 10) : Number.NaN;
 
   if (!Number.isFinite(itemId)) {
-    return {
-      success: false,
-      message: "Invalid magic item identifier.",
-    };
+    return { success: false, error: "Invalid magic item identifier." };
   }
 
   const rawValues = {
@@ -1272,6 +1283,7 @@ export async function updateMagicItemAction(
     rarity: (formData.get("rarity") as string | null) ?? "",
     description: (formData.get("description") as string | null) ?? "",
     properties: (formData.get("properties") as string | null) ?? "",
+    tags: (formData.get("tags") as string | null) ?? "",
     images: (formData.get("images") as string | null) ?? "",
   };
 
@@ -1281,16 +1293,15 @@ export async function updateMagicItemAction(
     rarity: rawValues.rarity.trim() || undefined,
     description: rawValues.description.trim() || undefined,
     properties: rawValues.properties.trim() || undefined,
+    tags: rawValues.tags.trim() || undefined,
     images: rawValues.images.trim() || undefined,
   };
 
   const parsed = MagicItemFormSchema.safeParse(normalized);
 
   if (!parsed.success) {
-    return {
-      success: false,
-      errors: parsed.error.flatten().fieldErrors,
-    };
+    const errorMessage = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0] || "Validation failed";
+    return { success: false, error: errorMessage };
   }
 
   const { properties: parsedProperties, error } = parsePropertiesInput(
@@ -1298,10 +1309,19 @@ export async function updateMagicItemAction(
   );
 
   if (error) {
-    return {
-      success: false,
-      errors: { properties: [error] },
-    };
+    return { success: false, error };
+  }
+
+  let parsedTags: string[] | null = null;
+  if (parsed.data.tags) {
+    try {
+      const parsedTagData = JSON.parse(parsed.data.tags);
+      if (Array.isArray(parsedTagData) && parsedTagData.every(item => typeof item === 'string')) {
+        parsedTags = parsedTagData;
+      }
+    } catch (error) {
+      console.warn("Failed to parse tags input", error);
+    }
   }
 
   const attunementRequired = formData.get("attunementRequired") === "on";
@@ -1322,15 +1342,13 @@ export async function updateMagicItemAction(
       rarity: parsed.data.rarity ?? null,
       description: parsed.data.description ?? null,
       properties: parsedProperties,
+      tags: parsedTags,
       attunementRequired,
       images: parsedImages,
     });
 
     if (!updated) {
-      return {
-        success: false,
-        message: "Magic item not found or could not be updated.",
-      };
+      return { success: false, error: "Magic item not found or could not be updated." };
     }
 
     revalidatePath("/magic-items");
@@ -1340,17 +1358,15 @@ export async function updateMagicItemAction(
     console.error("Failed to update magic item", caught);
     return {
       success: false,
-      message: "Failed to update magic item. Please try again.",
+      error: "Failed to update magic item. Please try again.",
     };
   }
-
-  return { success: true };
 }
 
 export async function deleteMagicItemAction(
   _: MagicItemFormState | undefined,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<{ success: boolean; error?: string }> {
   const idValue = formData.get("id");
   const itemId =
     typeof idValue === "string" ? Number.parseInt(idValue, 10) : Number.NaN;
@@ -1358,7 +1374,7 @@ export async function deleteMagicItemAction(
   if (!Number.isFinite(itemId)) {
     return {
       success: false,
-      message: "Invalid magic item identifier.",
+      error: "Invalid magic item identifier.",
     };
   }
 
@@ -1395,7 +1411,7 @@ export async function deleteMagicItemAction(
       } else {
         return {
           success: false,
-          message: "Magic item not found.",
+          error: "Magic item not found.",
         };
       }
     }
@@ -1406,7 +1422,7 @@ export async function deleteMagicItemAction(
     console.error("Failed to delete magic item", caught);
     return {
       success: false,
-      message: "Failed to delete magic item. Please try again.",
+      error: "Failed to delete magic item. Please try again.",
     };
   }
 }

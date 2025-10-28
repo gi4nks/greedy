@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { InlineError } from "@/components/ui/error-message";
 import type { MagicItemAssignableEntity } from "@/lib/magicItems/shared";
 import { Trash2 } from "lucide-react";
 
@@ -64,7 +65,7 @@ export function UnassignMagicItemButton({
         <Trash2 className="w-4 h-4" />
         {isPending ? "Removing…" : "Unassign"}
       </Button>
-      {error && <span className="text-xs text-error">{error}</span>}
+      <InlineError message={error} />
     </div>
   );
 }

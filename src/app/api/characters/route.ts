@@ -4,18 +4,6 @@ import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/utils/logger";
 
-type CharacterRow = {
-  id: number;
-  name: string;
-  race: string | null;
-  level: number | null;
-  role: string | null;
-  campaignId: number | null;
-  adventureId: number | null;
-  characterType: string | null;
-  equipment: unknown;
-};
-
 type MagicItemSummary = {
   id: number;
   assignmentId: number;
@@ -29,19 +17,6 @@ type MagicItemSummary = {
   assignedAt: string | null;
   campaignId: number | null;
 };
-
-function parseEquipment(equipment: unknown): string[] {
-  if (typeof equipment === "string") {
-    try {
-      const parsed = JSON.parse(equipment);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-
-  return Array.isArray(equipment) ? equipment : [];
-}
 
 export async function GET() {
   try {

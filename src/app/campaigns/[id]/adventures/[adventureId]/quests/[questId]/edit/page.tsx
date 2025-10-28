@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { quests, adventures, campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import QuestForm from "@/components/quest/QuestForm";
-import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target } from "lucide-react";
@@ -126,7 +125,7 @@ export default async function EditAdventureQuestPage({
           ]}
         />
 
-        <div className="mb-6">
+        <div className="mb-3">
           <div className="flex items-center gap-3">
             <Target className="w-8 h-8" />
             <div>

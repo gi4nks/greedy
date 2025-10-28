@@ -3,10 +3,7 @@ import { db } from "@/lib/db";
 import { wikiArticles, wikiArticleEntities } from "@/lib/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { logger } from "@/lib/utils/logger";
-import {
-  CreateWikiArticleSchema,
-  validateRequestBody,
-} from "@/lib/validation/schemas";
+import { CreateWikiArticleSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 // GET /api/wiki-articles - Get all wiki articles with their entity relationships
 export async function GET() {
@@ -82,7 +79,7 @@ export async function POST(request: NextRequest) {
     const validation = validateRequestBody(CreateWikiArticleSchema, body);
 
     if (!validation.success) {
-      return NextResponse.json(validation.error, { status: 400 });
+      return NextResponse.json(validation, { status: 400 });
     }
 
     const validatedData = validation.data;
@@ -101,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     if (existingArticle.length > 0) {
       // Return existing article
-      return NextResponse.json(existingArticle[0]);
+      return NextResponse.json({ success: true, data: existingArticle[0] });
     }
 
     // Create new article
@@ -117,11 +114,11 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json(newArticle, { status: 201 });
+    return NextResponse.json({ success: true, data: newArticle }, { status: 201 });
   } catch (error) {
     logger.error("Error creating wiki article", error);
     return NextResponse.json(
-      { error: "Failed to create wiki article" },
+      { success: false, error: "Failed to create wiki article" },
       { status: 500 },
     );
   }

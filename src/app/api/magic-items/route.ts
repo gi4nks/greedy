@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getMagicItemsWithAssignments,
-  createMagicItem,
   type MagicItemFilters,
 } from "@/lib/actions/magicItems";
 import { logger } from "@/lib/utils/logger";
-import {
-  CreateMagicItemSchema,
-  validateRequestBody,
-} from "@/lib/validation/schemas";
 
 // GET /api/magic-items - Get all magic items with their assignments
 export async function GET(request: NextRequest) {
@@ -32,28 +27,6 @@ export async function GET(request: NextRequest) {
     logger.error("Error fetching magic items", error);
     return NextResponse.json(
       { error: "Failed to fetch magic items" },
-      { status: 500 },
-    );
-  }
-}
-
-// POST /api/magic-items - Create a new magic item
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validation = validateRequestBody(CreateMagicItemSchema, body);
-
-    if (!validation.success) {
-      return NextResponse.json(validation.error, { status: 400 });
-    }
-
-    const validatedData = validation.data;
-    const newItem = await createMagicItem(validatedData);
-    return NextResponse.json(newItem, { status: 201 });
-  } catch (error) {
-    logger.error("Error creating magic item", error);
-    return NextResponse.json(
-      { error: "Failed to create magic item" },
       { status: 500 },
     );
   }

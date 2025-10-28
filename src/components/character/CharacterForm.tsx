@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState } from "react";
 import type { Adventure, Campaign, Character } from "@/lib/db/schema";
 import { createCharacter, updateCharacter } from "@/lib/actions/characters";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { CharacterFormSchema, type CharacterFormData, type DiaryEntryFormData } from "@/lib/forms";
+import { validateFormData } from "@/lib/forms/validation";
+import { useImageManagement } from "@/lib/utils/imageFormUtils";
+import { useWikiItemManagement } from "@/lib/utils/wikiUtils";
+import { TabbedEntityForm, FormSection, FormGrid, DynamicArrayField } from "@/lib/forms";
+import { FormField } from "@/components/ui/form-components";
 import {
   Select,
   SelectContent,
@@ -22,31 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Edit,
-  EyeOff,
-  Filter,
-  Plus,
-  Save,
-  Search,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
 import EntitySelectorModal from "@/components/ui/entity-selector-modal";
 import { ImageManager } from "@/components/ui/image-manager";
-import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
-import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
-import { formatUIDate } from "@/lib/utils/date";
-import DiaryEntryCard from "@/components/character/DiaryEntryCard";
 import type { WikiEntity } from "@/lib/types/wiki";
-import type { ActionResult } from "@/lib/types/api";
+import DiaryEntryCard from "@/components/character/DiaryEntryCard";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface MagicItemSummary {
   id: number;
@@ -70,11 +47,8 @@ interface DiaryEntry {
   isImportant?: boolean;
 }
 
-interface DiaryEntryDraft {
-  description: string;
-  date: string;
+interface DiaryEntryDraft extends DiaryEntryFormData {
   linkedEntities: { id: string; type: string; name: string }[];
-  isImportant: boolean;
 }
 
 interface CharacterFormProps {
@@ -83,6 +57,7 @@ interface CharacterFormProps {
     campaign?: Campaign | null;
     magicItems?: MagicItemSummary[];
     wikiEntities?: WikiEntity[];
+    diaryEntries?: DiaryEntry[];
   };
   campaignId: number;
   adventureId?: number;
@@ -90,33 +65,10 @@ interface CharacterFormProps {
 }
 
 interface ClassEntry {
+  id?: string | number;
   name: string;
   level: number;
 }
-
-interface CharacterFormState {
-  name: string;
-  race: string;
-  background: string;
-  alignment: string;
-  description: string;
-  characterType: "player" | "npc" | "monster";
-  campaignId: number;
-  adventureId?: number;
-  strength: number;
-  dexterity: number;
-  constitution: number;
-  intelligence: number;
-  wisdom: number;
-  charisma: number;
-  hitPoints: number;
-  maxHitPoints: number;
-  armorClass: number;
-  classes: ClassEntry[];
-  images: ImageInfo[];
-}
-
-const DEFAULT_ALIGNMENT = "True Neutral";
 
 const abilityFields = [
   { key: "strength", label: "Strength" },
@@ -127,159 +79,29 @@ const abilityFields = [
   { key: "charisma", label: "Charisma" },
 ] as const;
 
-const alignmentOptions = [
-  "Lawful Good",
-  "Neutral Good",
-  "Chaotic Good",
-  "Lawful Neutral",
-  "True Neutral",
-  "Chaotic Neutral",
-  "Lawful Evil",
-  "Neutral Evil",
-  "Chaotic Evil",
+const alignmentOptions: Array<{
+  label: string;
+  value: "Lawful Good" | "Neutral Good" | "Chaotic Good" | "Lawful Neutral" | "True Neutral" | "Chaotic Neutral" | "Lawful Evil" | "Neutral Evil" | "Chaotic Evil";
+}> = [
+  { label: "Lawful Good", value: "Lawful Good" },
+  { label: "Neutral Good", value: "Neutral Good" },
+  { label: "Chaotic Good", value: "Chaotic Good" },
+  { label: "Lawful Neutral", value: "Lawful Neutral" },
+  { label: "True Neutral", value: "True Neutral" },
+  { label: "Chaotic Neutral", value: "Chaotic Neutral" },
+  { label: "Lawful Evil", value: "Lawful Evil" },
+  { label: "Neutral Evil", value: "Neutral Evil" },
+  { label: "Chaotic Evil", value: "Chaotic Evil" },
 ];
 
 const characterTypeOptions: Array<{
   label: string;
-  value: "player" | "npc" | "monster";
-  serverValue: "pc" | "npc" | "monster";
+  value: "pc" | "npc" | "monster";
 }> = [
-  { label: "Player Character", value: "player", serverValue: "pc" },
-  { label: "NPC", value: "npc", serverValue: "npc" },
-  { label: "Monster", value: "monster", serverValue: "monster" },
+  { label: "Player Character", value: "pc" },
+  { label: "NPC", value: "npc" },
+  { label: "Monster", value: "monster" },
 ];
-
-function parseStringArray(value: unknown): string[] {
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed)
-        ? parsed.filter((item): item is string => typeof item === "string")
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-
-  return [];
-}
-
-function parseClasses(value: unknown): ClassEntry[] {
-  if (!value) {
-    return [];
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed)
-        ? parsed
-            .filter(
-              (item): item is ClassEntry =>
-                Boolean(
-                  item &&
-                    typeof item === "object" &&
-                    "name" in item &&
-                    "level" in item,
-                ),
-            )
-            .map((item) => ({
-              name: String(
-                (item as { name?: unknown }).name ?? "",
-              ).trim(),
-              level:
-                Number((item as { level?: unknown }).level ?? 1) > 0
-                  ? Number((item as { level?: unknown }).level ?? 1)
-                  : 1,
-            }))
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .filter(
-        (item): item is ClassEntry =>
-          Boolean(
-            item &&
-              typeof item === "object" &&
-              "name" in item &&
-              "level" in item,
-          ),
-      )
-      .map((item) => ({
-        name: String((item as { name?: unknown }).name ?? "").trim(),
-        level:
-          Number((item as { level?: unknown }).level ?? 1) > 0
-            ? Number((item as { level?: unknown }).level ?? 1)
-            : 1,
-      }));
-  }
-
-  return [];
-}
-
-function mapCharacterToState(
-  campaignId: number,
-  adventureId: number | undefined,
-  character?: CharacterFormProps["character"],
-): CharacterFormState {
-  if (!character) {
-    return {
-      name: "",
-      race: "",
-      background: "",
-      alignment: DEFAULT_ALIGNMENT,
-      description: "",
-      characterType: "player",
-      campaignId,
-      adventureId,
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
-      hitPoints: 0,
-      maxHitPoints: 0,
-      armorClass: 10,
-      classes: [],
-      images: [],
-    };
-  }
-
-  const typeOption = characterTypeOptions.find(
-    (option) => option.serverValue === (character.characterType ?? "pc"),
-  );
-
-  return {
-    name: character.name ?? "",
-    race: character.race ?? "",
-    background: character.background ?? "",
-    alignment: character.alignment ?? DEFAULT_ALIGNMENT,
-    description: character.description ?? "",
-    characterType: typeOption?.value ?? "player",
-    campaignId,
-    adventureId: character.adventureId ?? adventureId,
-    strength: character.strength ?? 10,
-    dexterity: character.dexterity ?? 10,
-    constitution: character.constitution ?? 10,
-    intelligence: character.intelligence ?? 10,
-    wisdom: character.wisdom ?? 10,
-    charisma: character.charisma ?? 10,
-    hitPoints: character.hitPoints ?? 0,
-    maxHitPoints: character.maxHitPoints ?? 0,
-    armorClass: character.armorClass ?? 10,
-    classes: parseClasses(character.classes),
-    images: parseImagesJson(character.images),
-  };
-}
 
 function createDiaryDraft(): DiaryEntryDraft {
   return {
@@ -296,238 +118,102 @@ export default function CharacterForm({
   adventureId,
   mode,
 }: CharacterFormProps) {
-  const router = useRouter();
-  const [formState, setFormState] = useState<CharacterFormState>(() =>
-    mapCharacterToState(campaignId, adventureId, character),
-  );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
-  const [diaryLoading, setDiaryLoading] = useState(mode === "edit");
+
+  // Form state
+  const [formData, setFormData] = useState<CharacterFormData>(() => ({
+    name: character?.name || "",
+    race: character?.race || "",
+    background: character?.background || "",
+    alignment: (character?.alignment as "Lawful Good" | "Neutral Good" | "Chaotic Good" | "Lawful Neutral" | "True Neutral" | "Chaotic Neutral" | "Lawful Evil" | "Neutral Evil" | "Chaotic Evil") || "True Neutral",
+    description: character?.description || "",
+    characterType: (character?.characterType as "pc" | "npc" | "monster") || "pc",
+    campaignId,
+    adventureId: character?.adventureId || adventureId,
+    strength: character?.strength || 10,
+    dexterity: character?.dexterity || 10,
+    constitution: character?.constitution || 10,
+    intelligence: character?.intelligence || 10,
+    wisdom: character?.wisdom || 10,
+    charisma: character?.charisma || 10,
+    hitPoints: character?.hitPoints || 0,
+    maxHitPoints: character?.maxHitPoints || 0,
+    armorClass: character?.armorClass || 10,
+    classes: character?.classes ? JSON.parse(character.classes as string) : [],
+    images: parseImagesJson(character?.images),
+  }));
+
+  // Diary state
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(character?.diaryEntries || []);
   const [showDiaryForm, setShowDiaryForm] = useState(false);
   const [editingDiaryId, setEditingDiaryId] = useState<number | null>(null);
   const [diaryDraft, setDiaryDraft] = useState<DiaryEntryDraft>(createDiaryDraft);
-  const [diarySearchQuery, setDiarySearchQuery] = useState("");
-  const [diaryEntityFilter, setDiaryEntityFilter] = useState<string[]>([]);
-  const [expandedDiaryEntries, setExpandedDiaryEntries] = useState<Set<number>>(new Set());
   const [isEntitySelectorOpen, setIsEntitySelectorOpen] = useState(false);
-  const [manualMagicItems, setManualMagicItems] = useState<MagicItemSummary[]>(
-    character?.magicItems ?? [],
-  );
-  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(
-    character?.wikiEntities ?? [],
-  );
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (character) {
-      setManualMagicItems(character.magicItems ?? []);
-      setWikiEntities(character.wikiEntities ?? []);
-    }
-  }, [character]);
+  // Shared hooks
+  const imageManagement = useImageManagement(parseImagesJson(character?.images));
+  const wikiManagement = useWikiItemManagement(character?.wikiEntities || []);
 
-  useEffect(() => {
-    if (mode !== "edit" || !character?.id) {
-      setDiaryLoading(false);
-      return;
-    }
+  // Form action
+  const createOrUpdateCharacter = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
+    try {
+      // Validate form data
+      const rawData = Object.fromEntries(formData.entries());
+      const validation = validateFormData(CharacterFormSchema, {
+        ...rawData,
+        campaignId: parseInt(rawData.campaignId as string),
+        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
+        strength: parseInt(rawData.strength as string),
+        dexterity: parseInt(rawData.dexterity as string),
+        constitution: parseInt(rawData.construction as string),
+        intelligence: parseInt(rawData.intelligence as string),
+        wisdom: parseInt(rawData.wisdom as string),
+        charisma: parseInt(rawData.charisma as string),
+        hitPoints: parseInt(rawData.hitPoints as string),
+        maxHitPoints: parseInt(rawData.maxHitPoints as string),
+        armorClass: parseInt(rawData.armorClass as string),
+        classes: JSON.parse(rawData.classes as string),
+        images: rawData.images ? JSON.parse(rawData.images as string) : [],
+      });
 
-    const fetchDiaryEntries = async () => {
-      try {
-        const response = await fetch(`/api/characters/${character.id}/diary`);
-        if (!response.ok) {
-          throw new Error("Failed to load diary entries");
-        }
-        const entries = (await response.json()) as DiaryEntry[];
-        setDiaryEntries(entries);
-      } catch (error) {
-        console.error("Error fetching diary entries:", error);
-        toast.error("Failed to load diary entries");
-      } finally {
-        setDiaryLoading(false);
+      if (!validation.success) {
+        return { success: false, error: Object.values(validation.errors)[0] };
       }
-    };
 
-    void fetchDiaryEntries();
-  }, [mode, character?.id]);
-
-  const renderFieldError = (field: string) =>
-    errors[field] ? (
-      <p className="mt-1 text-sm text-destructive">{errors[field]}</p>
-    ) : null;
-
-  const updateFormState = <K extends keyof CharacterFormState>(
-    key: K,
-    value: CharacterFormState[K],
-  ) => {
-    setFormState((prev) => ({ ...prev, [key]: value }));
+      if (mode === "edit" && character?.id) {
+        return await updateCharacter(character.id, prevState, formData);
+      } else {
+        return await createCharacter(prevState, formData);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      return { success: false, error: "An unexpected error occurred" };
+    }
   };
 
-  const handleAbilityChange = (
-    key: (typeof abilityFields)[number]["key"],
-    value: number,
-  ) => {
-    updateFormState(key, Number.isFinite(value) ? value : 10);
+  // Helper functions
+  const updateFormData = <K extends keyof CharacterFormData>(key: K, value: CharacterFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   const updateClassEntry = (index: number, entry: ClassEntry) => {
-    updateFormState(
-      "classes",
-      formState.classes.map((existing, idx) => (idx === index ? entry : existing)),
-    );
+    const newClasses = [...formData.classes];
+    newClasses[index] = entry;
+    updateFormData("classes", newClasses);
   };
 
   const removeClassEntry = (index: number) => {
-    updateFormState(
-      "classes",
-      formState.classes.filter((_, idx) => idx !== index),
-    );
+    updateFormData("classes", formData.classes.filter((_: ClassEntry, idx: number) => idx !== index));
   };
 
   const addClassEntry = () => {
-    updateFormState("classes", [...formState.classes, { name: "", level: 1 }]);
+    updateFormData("classes", [...formData.classes, { name: "", level: 1 }]);
   };
 
-  const handleImagesChange = (images: ImageInfo[]) => {
-    updateFormState("images", images);
-  };
-
-  const toggleDiaryExpand = (entryId: number) => {
-    setExpandedDiaryEntries((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(entryId)) {
-        updated.delete(entryId);
-      } else {
-        updated.add(entryId);
-      }
-      return updated;
-    });
-  };
-
-  const highlightSearchTerms = (text: string, searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      return text;
-    }
-    const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`(${escaped})`, "gi");
-    const parts = text.split(regex);
-
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <mark key={`${part}-${index}`} className="rounded bg-yellow-200 px-0.5">
-          {part}
-        </mark>
-      ) : (
-        <span key={`${part}-${index}`}>{part}</span>
-      ),
-    );
-  };
-
-  const filteredDiaryEntries = useMemo(() => {
-    return diaryEntries.filter((entry) => {
-      const matchesQuery =
-        !diarySearchQuery.trim() ||
-        entry.description.toLowerCase().includes(diarySearchQuery.toLowerCase()) ||
-        entry.linkedEntities?.some((entity) =>
-          entity.name.toLowerCase().includes(diarySearchQuery.toLowerCase()),
-        );
-
-      const matchesEntityFilter =
-        diaryEntityFilter.length === 0 ||
-        entry.linkedEntities?.some((entity) => diaryEntityFilter.includes(entity.type));
-
-      return matchesQuery && matchesEntityFilter;
-    });
-  }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
-
-  const handleDiaryDelete = async (entryId: number) => {
-    if (!character?.id) {
-      return;
-    }
-
-    const confirmed =
-      typeof window === "undefined" || window.confirm("Delete this diary entry?");
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/characters/${character.id}/diary/${entryId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete diary entry");
-      }
-      setDiaryEntries((prev) => prev.filter((entry) => entry.id !== entryId));
-      toast.success("Diary entry deleted");
-    } catch (error) {
-      console.error("Error deleting diary entry:", error);
-      toast.error("Failed to delete diary entry");
-    }
-  };
-
-  const startDiaryEdit = (entry: DiaryEntry) => {
-    setEditingDiaryId(entry.id);
-    setDiaryDraft({
-      description: entry.description,
-      date: entry.date,
-      linkedEntities: entry.linkedEntities ?? [],
-      isImportant: Boolean(entry.isImportant),
-    });
-    setShowDiaryForm(true);
-  };
-
+  // Diary functions
   const resetDiaryForm = () => {
     setEditingDiaryId(null);
     setDiaryDraft(createDiaryDraft());
     setShowDiaryForm(false);
-  };
-
-  const saveDiaryEntry = async () => {
-    if (!character?.id) {
-      toast.error("Save the character before adding diary entries.");
-      return;
-    }
-
-    if (!diaryDraft.description.trim()) {
-      toast.error("Diary description is required");
-      return;
-    }
-
-    const payload = {
-      ...diaryDraft,
-      linkedEntities: diaryDraft.linkedEntities,
-    };
-
-    const endpoint = editingDiaryId
-      ? `/api/characters/${character.id}/diary/${editingDiaryId}`
-      : `/api/characters/${character.id}/diary`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: editingDiaryId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save diary entry");
-      }
-
-      const savedEntry = (await response.json()) as DiaryEntry;
-      setDiaryEntries((prev) => {
-        if (editingDiaryId) {
-          return prev.map((entry) => (entry.id === editingDiaryId ? savedEntry : entry));
-        }
-        return [savedEntry, ...prev];
-      });
-
-      toast.success(editingDiaryId ? "Diary entry updated" : "Diary entry added");
-      resetDiaryForm();
-    } catch (error) {
-      console.error("Error saving diary entry:", error);
-      toast.error("Failed to save diary entry");
-    }
   };
 
   const addLinkedEntity = (entity: { id: string; type: string; name: string }) => {
@@ -553,786 +239,418 @@ export default function CharacterForm({
     }));
   };
 
-  const handleManualMagicItemRemoval = async (magicItemId: number) => {
-    if (!character?.id) {
-      return;
-    }
+  // Form tabs configuration
+  const formTabs = [
+    {
+      id: "basic",
+      label: "Basic Info",
+      content: (
+        <div className="space-y-6">
+          {/* First Row: Name and Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Name" required>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={(e) => updateFormData("name", e.target.value)}
+                className="input input-bordered w-full"
+                required
+                placeholder="Enter character name"
+              />
+            </FormField>
 
-    const guardKey = `manual-${magicItemId}`;
-    if (removingItems.has(guardKey)) {
-      return;
-    }
+            <FormField label="Type">
+              <Select
+                value={formData.characterType}
+                onValueChange={(value) => updateFormData("characterType", value as "pc" | "npc" | "monster")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select character type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {characterTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          </div>
 
-    setRemovingItems((prev) => new Set(prev).add(guardKey));
+          {/* Second Row: Race and Alignment */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Race">
+              <input
+                type="text"
+                name="race"
+                value={formData.race}
+                onChange={(e) => updateFormData("race", e.target.value)}
+                className="input input-bordered w-full"
+                placeholder="e.g. Human, Elf, Dwarf"
+              />
+            </FormField>
 
-    try {
-      const response = await fetch(
-        `/api/magic-items/${magicItemId}/assign/${character.id}`,
-        {
-          method: "DELETE",
-        },
-      );
-      if (!response.ok) {
-        throw new Error("Failed to unassign magic item");
-      }
-      setManualMagicItems((prev) => prev.filter((item) => item.id !== magicItemId));
-      toast.success("Magic item unassigned");
-    } catch (error) {
-      console.error("Error unassigning magic item:", error);
-      toast.error("Failed to unassign magic item");
-    } finally {
-      setRemovingItems((prev) => {
-        const updated = new Set(prev);
-        updated.delete(guardKey);
-        return updated;
-      });
-    }
-  };
+            <FormField label="Alignment">
+              <Select
+                value={formData.alignment}
+                onValueChange={(value) => updateFormData("alignment", value as "Lawful Good" | "Neutral Good" | "Chaotic Good" | "Lawful Neutral" | "True Neutral" | "Chaotic Neutral" | "Lawful Evil" | "Neutral Evil" | "Chaotic Evil")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select alignment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {alignmentOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          </div>
 
-  const handleWikiEntityRemoval = async (entityId: number, contentType: string) => {
-    if (!character?.id) {
-      return;
-    }
+          <FormField label="Background">
+            <textarea
+              name="background"
+              value={formData.background}
+              onChange={(e) => updateFormData("background", e.target.value)}
+              rows={3}
+              className="textarea textarea-bordered w-full"
+              placeholder="Character's background story..."
+            />
+          </FormField>
 
-    const guardKey = `${contentType}-${entityId}`;
-    if (removingItems.has(guardKey)) {
-      return;
-    }
+          <FormField label="Description">
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={(e) => updateFormData("description", e.target.value)}
+              rows={4}
+              className="textarea textarea-bordered w-full"
+              placeholder="Physical description, personality, etc."
+            />
+          </FormField>
+        </div>
+      ),
+    },
+    {
+      id: "abilities",
+      label: "Abilities",
+      content: (
+        <div className="space-y-6">
+          <FormGrid columns={3}>
+            {abilityFields.map(({ key, label }) => (
+              <FormField key={key} label={label}>
+                <input
+                  type="number"
+                  name={key}
+                  min={1}
+                  max={30}
+                  value={formData[key]}
+                  onChange={(e) => updateFormData(key, parseInt(e.target.value) || 10)}
+                  className="input input-bordered w-full"
+                />
+              </FormField>
+            ))}
+          </FormGrid>
 
-    setRemovingItems((prev) => new Set(prev).add(guardKey));
+          <FormGrid columns={3}>
+            <FormField label="Current Hit Points">
+              <input
+                type="number"
+                name="hitPoints"
+                min={0}
+                value={formData.hitPoints}
+                onChange={(e) => updateFormData("hitPoints", parseInt(e.target.value) || 0)}
+                className="input input-bordered w-full"
+              />
+            </FormField>
 
-    try {
-      const response = await fetch(`/api/wiki-articles/${entityId}/entities`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entityType: "character", entityId: character.id }),
-      });
+            <FormField label="Max Hit Points">
+              <input
+                type="number"
+                name="maxHitPoints"
+                min={0}
+                value={formData.maxHitPoints}
+                onChange={(e) => updateFormData("maxHitPoints", parseInt(e.target.value) || 0)}
+                className="input input-bordered w-full"
+              />
+            </FormField>
 
-      if (!response.ok && response.status !== 404) {
-        throw new Error("Failed to remove wiki entity");
-      }
+            <FormField label="Armor Class">
+              <input
+                type="number"
+                name="armorClass"
+                min={0}
+                value={formData.armorClass}
+                onChange={(e) => updateFormData("armorClass", parseInt(e.target.value) || 10)}
+                className="input input-bordered w-full"
+              />
+            </FormField>
+          </FormGrid>
 
-      setWikiEntities((prev) => prev.filter((entity) => entity.id !== entityId));
-      toast.success("Wiki entity removed");
-    } catch (error) {
-      console.error("Error removing wiki entity:", error);
-      toast.error("Failed to remove wiki entity");
-    } finally {
-      setRemovingItems((prev) => {
-        const updated = new Set(prev);
-        updated.delete(guardKey);
-        return updated;
-      });
-    }
-  };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      const payload = new FormData();
-      const typeOption = characterTypeOptions.find(
-        (option) => option.value === formState.characterType,
-      );
-      const serverType = typeOption?.serverValue ?? "pc";
-
-      payload.append("campaignId", String(formState.campaignId));
-      if (formState.adventureId) {
-        payload.append("adventureId", String(formState.adventureId));
-      }
-      payload.append("characterType", serverType);
-      payload.append("name", formState.name.trim());
-      payload.append("race", formState.race.trim());
-      payload.append("background", formState.background.trim());
-      payload.append("alignment", formState.alignment.trim());
-      payload.append("description", formState.description.trim());
-      payload.append("strength", String(formState.strength));
-      payload.append("dexterity", String(formState.dexterity));
-      payload.append("constitution", String(formState.constitution));
-      payload.append("intelligence", String(formState.intelligence));
-      payload.append("wisdom", String(formState.wisdom));
-      payload.append("charisma", String(formState.charisma));
-      payload.append("hitPoints", String(formState.hitPoints));
-      payload.append("maxHitPoints", String(formState.maxHitPoints));
-      payload.append("armorClass", String(formState.armorClass));
-      payload.append("classes", JSON.stringify(formState.classes));
-      payload.append("images", JSON.stringify(formState.images));
-
-      const result: ActionResult =
-        mode === "create"
-          ? await createCharacter(payload)
-          : character
-            ? await updateCharacter(character.id, payload)
-            : { success: false, message: "Character not found" };
-
-      if (!result?.success) {
-        if (result?.errors) {
-          const fieldErrors: Record<string, string> = {};
-          Object.entries(result.errors).forEach(([fieldName, messages]) => {
-            if (Array.isArray(messages) && messages.length > 0) {
-              fieldErrors[fieldName] = messages[0];
-            }
-          });
-          setErrors(fieldErrors);
-        }
-        toast.error(result?.message ?? "Failed to save character");
-        return;
-      }
-
-      toast.success(
-        mode === "create"
-          ? "Character created successfully"
-          : "Character updated successfully",
-      );
-      router.push(`/campaigns/${campaignId}/characters`);
-    } catch (error) {
-      console.error("Error saving character:", error);
-      toast.error("Failed to save character");
-      setErrors({ submit: "Failed to save character. Please try again." });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="abilities">Abilities</TabsTrigger>
-          <TabsTrigger value="diary">Diary</TabsTrigger>
-          <TabsTrigger value="attachments">Attachments</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="basic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formState.name}
-                    onChange={(event) => updateFormState("name", event.target.value)}
-                    required
-                  />
-                  {renderFieldError("name")}
-                </div>
-                <div>
-                  <Label htmlFor="characterType">Type</Label>
-                  <Select
-                    value={formState.characterType}
-                    onValueChange={(value) =>
-                      updateFormState("characterType", value as CharacterFormState["characterType"])
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select character type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {characterTypeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="race">Race</Label>
-                  <Input
-                    id="race"
-                    value={formState.race}
-                    onChange={(event) => updateFormState("race", event.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="alignment">Alignment</Label>
-                  <Select
-                    value={formState.alignment}
-                    onValueChange={(value) => updateFormState("alignment", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select alignment" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {alignmentOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Classes Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">Classes & Levels</Label>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={addClassEntry}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Class
-                  </Button>
-                </div>
-
-                {formState.classes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No classes added yet. Add a class to define the character's progression.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {formState.classes.map((classEntry, index) => (
-                      <div key={index} className="flex items-end gap-3">
-                        <div className="flex-1">
-                          <Label htmlFor={`class-${index}`} className="text-sm font-medium">
-                            Class
-                          </Label>
-                          <Input
-                            id={`class-${index}`}
-                            value={classEntry.name}
-                            onChange={(event) => {
-                              updateClassEntry(index, { ...classEntry, name: event.target.value });
-                            }}
-                            placeholder="Enter class name"
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div className="w-20">
-                          <Label htmlFor={`level-${index}`} className="text-sm font-medium">
-                            Level
-                          </Label>
-                          <Input
-                            id={`level-${index}`}
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={classEntry.level}
-                            onChange={(event) => {
-                              const level = Math.max(1, Math.min(20, Number(event.target.value) || 1));
-                              updateClassEntry(index, { ...classEntry, level });
-                            }}
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeClassEntry(index)}
-                          className="text-gray-400 hover:text-gray-600 p-1 h-8 w-8 mb-1"
-                          aria-label="Remove class"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="background">Background</Label>
-                  <Textarea
-                    id="background"
-                    value={formState.background}
-                    onChange={(event) => updateFormState("background", event.target.value)}
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formState.description}
-                    onChange={(event) => updateFormState("description", event.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="abilities">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ability Scores &amp; Combat</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                {abilityFields.map(({ key, label }) => (
-                  <div key={key}>
-                    <Label htmlFor={key}>{label}</Label>
-                    <Input
-                      id={key}
+          <FormSection title="Classes & Levels">
+            <DynamicArrayField
+              items={formData.classes}
+              onAdd={addClassEntry}
+              onRemove={removeClassEntry}
+              addLabel="Add Class"
+              emptyMessage="No classes added yet. Add a class to define the character's progression."
+              renderItem={(classEntry: ClassEntry, index: number) => (
+                <FormGrid columns={2}>
+                  <FormField label="Class">
+                    <input
+                      type="text"
+                      value={classEntry.name}
+                      onChange={(e) => updateClassEntry(index, { ...classEntry, name: e.target.value })}
+                      placeholder="Enter class name"
+                      className="input input-bordered w-full"
+                    />
+                  </FormField>
+                  <FormField label="Level">
+                    <input
                       type="number"
                       min={1}
-                      max={30}
-                      value={formState[key]}
-                      onChange={(event) =>
-                        handleAbilityChange(key, Number(event.target.value) || 10)
-                      }
+                      max={20}
+                      value={classEntry.level}
+                      onChange={(e) => updateClassEntry(index, { ...classEntry, level: parseInt(e.target.value) || 1 })}
+                      className="input input-bordered w-full"
                     />
-                  </div>
+                  </FormField>
+                </FormGrid>
+              )}
+            />
+          </FormSection>
+        </div>
+      ),
+    },
+    {
+      id: "diary",
+      label: "Diary",
+      content: (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Add New Entry Button */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Character Diary</h3>
+              <Button
+                type="button"
+                onClick={() => setShowDiaryForm(true)}
+                className="btn btn-primary btn-sm"
+              >
+                Add Entry
+              </Button>
+            </div>
+
+            {/* Diary Entries List */}
+            {diaryEntries.length > 0 ? (
+              <div className="space-y-3">
+                {diaryEntries
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .map((entry) => (
+                  <DiaryEntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onEdit={() => {
+                      setEditingDiaryId(entry.id);
+                      const entryToEdit = diaryEntries.find(e => e.id === entry.id);
+                      if (entryToEdit) {
+                        setDiaryDraft({
+                          description: entryToEdit.description,
+                          date: entryToEdit.date,
+                          linkedEntities: entryToEdit.linkedEntities,
+                          isImportant: entryToEdit.isImportant || false,
+                        });
+                        setShowDiaryForm(true);
+                      }
+                    }}
+                    onDelete={() => {
+                      setDiaryEntries(prev => prev.filter(e => e.id !== entry.id));
+                    }}
+                    onEntityClick={(entity) => {
+                      // Handle entity click - could navigate to entity page
+                      console.log('Entity clicked:', entity);
+                    }}
+                  />
                 ))}
               </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label htmlFor="hitPoints">Current Hit Points</Label>
-                  <Input
-                    id="hitPoints"
-                    type="number"
-                    min={0}
-                    value={formState.hitPoints}
-                    onChange={(event) =>
-                      updateFormState("hitPoints", Number(event.target.value) || 0)
-                    }
-                  />
-                  {renderFieldError("hitPoints")}
-                </div>
-                <div>
-                  <Label htmlFor="maxHitPoints">Max Hit Points</Label>
-                  <Input
-                    id="maxHitPoints"
-                    type="number"
-                    min={0}
-                    value={formState.maxHitPoints}
-                    onChange={(event) =>
-                      updateFormState("maxHitPoints", Number(event.target.value) || 0)
-                    }
-                  />
-                  {renderFieldError("maxHitPoints")}
-                </div>
-                <div>
-                  <Label htmlFor="armorClass">Armor Class</Label>
-                  <Input
-                    id="armorClass"
-                    type="number"
-                    min={0}
-                    value={formState.armorClass}
-                    onChange={(event) =>
-                      updateFormState("armorClass", Number(event.target.value) || 10)
-                    }
-                  />
-                  {renderFieldError("armorClass")}
-                </div>
+            ) : (
+              <div className="text-center py-8 text-base-content/60">
+                <p>No diary entries yet.</p>
+                <p className="text-sm mt-1">Add your first entry to start tracking this character&apos;s story.</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
+          </div>
 
-        <TabsContent value="diary" className="space-y-4">
-          {mode === "create" && !character?.id ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Save the character before adding diary entries.
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <div className="flex justify-end">
-                {!showDiaryForm && (
-                  <Button type="button" size="sm" onClick={() => setShowDiaryForm(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add diary entry
-                  </Button>
-                )}
-              </div>
+          {/* Diary Entry Form Modal */}
+          {showDiaryForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-xl font-bold mb-4">
+                  {editingDiaryId ? 'Edit Diary Entry' : 'Add Diary Entry'}
+                </h3>
 
-              {showDiaryForm && (
-                <Card className="border-primary/40">
-                  <CardHeader>
-                    <CardTitle>{editingDiaryId ? "Edit Diary Entry" : "New Diary Entry"}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor="diary-date">Date</Label>
-                        <Input
-                          id="diary-date"
-                          type="date"
-                          value={diaryDraft.date}
-                          onChange={(event) =>
-                            setDiaryDraft((prev) => ({ ...prev, date: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 pt-6">
-                        <input
-                          id="diary-important"
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={diaryDraft.isImportant}
-                          onChange={(event) =>
-                            setDiaryDraft((prev) => ({
-                              ...prev,
-                              isImportant: event.target.checked,
-                            }))
-                          }
-                        />
-                        <Label htmlFor="diary-important" className="text-sm">
-                          Mark as important
-                        </Label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="diary-description">Notes *</Label>
-                      <Textarea
-                        id="diary-description"
-                        rows={4}
-                        value={diaryDraft.description}
-                        onChange={(event) =>
-                          setDiaryDraft((prev) => ({
-                            ...prev,
-                            description: event.target.value,
-                          }))
-                        }
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  // Handle form submission
+                  if (editingDiaryId) {
+                    setDiaryEntries(prev => prev.map(entry =>
+                      entry.id === editingDiaryId
+                        ? { ...entry, ...diaryDraft }
+                        : entry
+                    ));
+                  } else {
+                    const newEntry: DiaryEntry = {
+                      id: Date.now(), // Simple ID generation
+                      ...diaryDraft,
+                    };
+                    setDiaryEntries(prev => [...prev, newEntry]);
+                  }
+                  resetDiaryForm();
+                }}>
+                  <div className="space-y-4">
+                    <FormField label="Date">
+                      <input
+                        type="date"
+                        value={diaryDraft.date}
+                        onChange={(e) => setDiaryDraft(prev => ({ ...prev, date: e.target.value }))}
+                        className="input input-bordered w-full"
+                        required
                       />
-                    </div>
+                    </FormField>
 
-                    <div className="space-y-2">
-                      <Label>Linked entities</Label>
-                      {diaryDraft.linkedEntities.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {diaryDraft.linkedEntities.map((entity) => (
-                            <Badge
-                              key={`${entity.type}-${entity.id}`}
-                              variant="outline"
-                              className="gap-2"
-                            >
-                              <span className="text-xs uppercase text-muted-foreground">
-                                {entity.type.replace("-", " ")}
-                              </span>
-                              {entity.name}
-                              <button
-                                type="button"
-                                onClick={() => removeLinkedEntity(entity.id)}
-                                aria-label="Remove linked entity"
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No linked entities yet. Connect entries to characters, quests, or locations for quick reference.
-                        </p>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEntitySelectorOpen(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add linked entity
-                      </Button>
-                    </div>
+                    <FormField label="Description">
+                      <textarea
+                        value={diaryDraft.description}
+                        onChange={(e) => setDiaryDraft(prev => ({ ...prev, description: e.target.value }))}
+                        rows={6}
+                        className="textarea textarea-bordered w-full"
+                        placeholder="Describe what happened..."
+                        required
+                      />
+                    </FormField>
 
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={resetDiaryForm}>
-                        <EyeOff className="mr-2 h-4 w-4" />
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={saveDiaryEntry}
-                        disabled={!diaryDraft.description.trim()}
-                      >
-                        <Save className="mr-2 h-4 w-4" />
-                        {editingDiaryId ? "Update" : "Save"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    <FormField label="Important">
+                      <input
+                        type="checkbox"
+                        checked={diaryDraft.isImportant}
+                        onChange={(e) => setDiaryDraft(prev => ({ ...prev, isImportant: e.target.checked }))}
+                        className="checkbox"
+                      />
+                      <span className="ml-2 text-sm">Mark as important</span>
+                    </FormField>
 
-              <EntitySelectorModal
-                campaignId={campaignId}
-                isOpen={isEntitySelectorOpen}
-                onClose={() => setIsEntitySelectorOpen(false)}
-                onSelect={addLinkedEntity}
-                title="Link Entity"
-                selectLabel="Entity"
-                excludedEntities={diaryDraft.linkedEntities}
-                sourceEntity={
-                  character
-                    ? { id: character.id.toString(), type: "character", name: character.name }
-                    : undefined
-                }
-              />
-
-              {diaryLoading ? (
-                <Card>
-                  <CardContent className="space-y-3 py-6">
-                    {[1, 2, 3].map((skeleton) => (
-                      <div key={skeleton} className="h-20 animate-pulse rounded-md bg-muted" />
-                    ))}
-                  </CardContent>
-                </Card>
-              ) : filteredDiaryEntries.length === 0 ? (
-                <Card>
-                  <CardContent className="py-10 text-center text-muted-foreground">
-                    {diaryEntries.length === 0
-                      ? "No diary entries yet. Add one to start chronicling their journey."
-                      : "No entries match your filters."}
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  <Card>
-                    <CardContent className="space-y-3">
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          value={diarySearchQuery}
-                          onChange={(event) => setDiarySearchQuery(event.target.value)}
-                          placeholder="Search diary entries..."
-                          className="pl-9"
-                        />
-                        {diarySearchQuery && (
-                          <button
-                            type="button"
-                            aria-label="Clear search"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            onClick={() => setDiarySearchQuery("")}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {(() => {
-                          const entityTypes = new Set<string>();
-                          diaryEntries.forEach((entry) => {
-                            entry.linkedEntities?.forEach((entity) => entityTypes.add(entity.type));
-                          });
-                          return Array.from(entityTypes)
-                            .sort()
-                            .map((entityType) => {
-                              const selected = diaryEntityFilter.includes(entityType);
-                              return (
-                                <button
-                                  key={entityType}
-                                  type="button"
-                                  className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors ${
-                                    selected
-                                      ? "border-primary bg-primary/10 text-primary"
-                                      : "border-border text-muted-foreground hover:bg-muted"
-                                  }`}
-                                  onClick={() =>
-                                    setDiaryEntityFilter((prev) =>
-                                      selected
-                                        ? prev.filter((type) => type !== entityType)
-                                        : [...prev, entityType],
-                                    )
-                                  }
-                                >
-                                  <Filter className="h-3 w-3" />
-                                  {entityType.replace("-", " ")}
-                                </button>
-                              );
-                            });
-                        })()}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="space-y-2">
-                    {filteredDiaryEntries
-                      .slice()
-                      .sort((a, b) =>
-                        new Date(b.date).getTime() - new Date(a.date).getTime(),
-                      )
-                      .map((entry, index) => (
-                        <Card key={entry.id}>
-                          <CardContent className="py-2">
-                            <DiaryEntryCard
-                              entry={entry}
-                              isFirst={index === 0}
-                              onEdit={() => startDiaryEdit(entry)}
-                              onDelete={() => handleDiaryDelete(entry.id)}
-                              isTextExpanded={expandedDiaryEntries.has(entry.id)}
-                              onToggleTextExpanded={toggleDiaryExpand}
-                              onEntityClick={(entity) => {
-                                const routes: Record<string, string> = {
-                                  character: `/campaigns/${campaignId}/characters/${entity.id}`,
-                                  location: `/campaigns/${campaignId}/locations/${entity.id}`,
-                                  session: `/campaigns/${campaignId}/sessions/${entity.id}`,
-                                  quest: `/campaigns/${campaignId}/quests/${entity.id}`,
-                                  "magic-item": `/campaigns/${campaignId}/magic-items/${entity.id}`,
-                                  adventure: `/campaigns/${campaignId}/adventures/${entity.id}`,
-                                };
-                                const route = routes[entity.type];
-                                if (route) {
-                                  router.push(route);
-                                }
-                              }}
-                              highlightSearchTerms={highlightSearchTerms}
-                              searchQuery={diarySearchQuery}
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </TabsContent>
-
-        <TabsContent value="attachments" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Assigned Magic Items</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {manualMagicItems.length === 0 ? (
-                <div className="py-10 text-center text-muted-foreground">
-                  <Sparkles className="mx-auto mb-3 h-10 w-10" />
-                  No magic items assigned to this character yet.
-                </div>
-              ) : (
-                manualMagicItems.map((item) => {
-                  const guardKey = `manual-${item.id}`;
-                  const isRemoving = removingItems.has(guardKey);
-                  return (
-                    <Card key={item.id} className="border border-emerald-200">
-                      <CardContent className="relative py-4">
-                        <div className="pr-8">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className="text-lg font-semibold text-foreground">
-                              {item.name}
-                            </span>
-                            {item.rarity && (
-                              <Badge variant="outline" className="text-xs">
-                                {item.rarity}
-                              </Badge>
-                            )}
-                            {item.type && (
-                              <Badge variant="secondary" className="text-xs">
-                                {item.type}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground space-y-1">
-                            {item.source && <p>Source: {item.source}</p>}
-                            {item.assignedAt && (
-                              <p>Assigned: {formatUIDate(item.assignedAt)}</p>
-                            )}
-                          </div>
-                          {item.description && (
-                            <div className="mt-2">
-                              <MarkdownRenderer content={item.description} className="prose-sm" />
-                            </div>
-                          )}
-                        </div>
+                    <FormField label="Linked Entities">
+                      <div className="space-y-2">
                         <Button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={isRemoving}
-                          onClick={() => handleManualMagicItemRemoval(item.id)}
-                          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
-                          aria-label="Unassign magic item"
+                          onClick={() => setIsEntitySelectorOpen(true)}
+                          className="btn btn-outline btn-sm"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          Add Linked Entity
                         </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
+                        {diaryDraft.linkedEntities.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {diaryDraft.linkedEntities.map((entity, index) => (
+                              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                                <span className="capitalize">{entity.type}</span>: {entity.name}
+                                <button
+                                  type="button"
+                                  onClick={() => removeLinkedEntity(entity.id)}
+                                  className="ml-1 text-xs hover:text-red-600"
+                                >
+                                  ×
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </FormField>
+                  </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Wiki Entities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {wikiEntities.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No wiki entities linked to this character.
-                </p>
-              ) : (
-                <WikiEntitiesDisplay
-                  wikiEntities={wikiEntities}
-                  entityType="character"
-                  entityId={character?.id ?? 0}
-                  showImportMessage
-                  onRemoveEntity={handleWikiEntityRemoval}
-                  isEditable
-                  removingItems={removingItems}
-                />
-              )}
-            </CardContent>
-          </Card>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button
+                      type="button"
+                      onClick={resetDiaryForm}
+                      className="btn btn-ghost"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="btn btn-primary"
+                    >
+                      {editingDiaryId ? 'Update Entry' : 'Add Entry'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Images</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ImageManager
-                entityType="characters"
-                entityId={character?.id ?? 0}
-                currentImages={formState.images}
-                onImagesChange={handleImagesChange}
-              />
-              {mode === "create" && !character?.id && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Save the character to start uploading images.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          {/* Entity Selector Modal */}
+          {isEntitySelectorOpen && (
+            <EntitySelectorModal
+              isOpen={isEntitySelectorOpen}
+              onClose={() => setIsEntitySelectorOpen(false)}
+              onSelect={addLinkedEntity}
+              campaignId={campaignId}
+              sourceEntity={character ? { id: character.id.toString(), type: "character", name: character.name } : undefined}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "attachments",
+      label: "Attachments",
+      content: (
+        <div className="space-y-6">
+          <FormSection title="Images">
+            <ImageManager
+              entityType="characters"
+              entityId={character?.id ?? 0}
+              currentImages={imageManagement.images}
+              onImagesChange={imageManagement.setImages}
+            />
+            {mode === "create" && !character?.id && (
+              <p className="mt-2 text-sm text-base-content/70">
+                Save the character to start uploading images.
+              </p>
+            )}
+          </FormSection>
 
-      {errors.submit && (
-        <p className="text-center text-sm text-destructive">{errors.submit}</p>
-      )}
+          <FormSection title="Wiki Entities">
+            <WikiEntitiesDisplay
+              wikiEntities={wikiManagement.wikiEntities}
+              entityType="character"
+              entityId={character?.id ?? 0}
+              showImportMessage
+              onRemoveEntity={(wikiArticleId, contentType) =>
+                wikiManagement.removeWikiItem(wikiArticleId, contentType, "character", character?.id)
+              }
+              isEditable
+              removingItems={wikiManagement.removingItems}
+            />
+          </FormSection>
+        </div>
+      ),
+    },
+  ];
 
-      <div className="flex justify-end gap-3">
-        <Button type="submit" disabled={isSubmitting} size="sm" variant="secondary">
-          <Save className="mr-2 h-4 w-4" />
-          {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Update"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isSubmitting}
-          onClick={() => router.back()}
-          size="sm"
-        >
-          <EyeOff className="mr-2 h-4 w-4" />
-          Cancel
-        </Button>
-      </div>
-    </form>
+  return (
+    <TabbedEntityForm
+      mode={mode}
+      entity={character}
+      action={createOrUpdateCharacter}
+      tabs={formTabs}
+      title="Character"
+      redirectPath={`/campaigns/${campaignId}/characters`}
+      campaignId={campaignId}
+      defaultTab="basic"
+    />
   );
 }

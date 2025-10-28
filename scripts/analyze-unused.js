@@ -67,6 +67,16 @@ const NEXTJS_FRAMEWORK_PATTERNS = [
   /^export\s+(async\s+)?function\s+generate(StaticParams|Metadata)/
 ];
 
+// App router files that should be considered entry points
+const APP_ROUTER_ENTRY_FILES = [
+  'page.tsx', 'page.ts', 'page.jsx', 'page.js',
+  'layout.tsx', 'layout.ts', 'layout.jsx', 'layout.js',
+  'loading.tsx', 'loading.ts', 'loading.jsx', 'loading.js',
+  'error.tsx', 'error.ts', 'error.jsx', 'error.js',
+  'not-found.tsx', 'not-found.ts', 'not-found.jsx', 'not-found.js',
+  'route.ts', 'route.js'
+];
+
 // Function to get all Next.js entry points
 function getNextJsEntryPoints() {
   const entryPoints = [...ENTRY_POINTS];
@@ -82,9 +92,7 @@ function getNextJsEntryPoints() {
 
         if (stat.isDirectory() && !item.startsWith('.') && item !== 'node_modules') {
           // Check for page.tsx, layout.tsx, and other Next.js files in this directory
-          const nextJsFiles = ['page.tsx', 'page.ts', 'page.jsx', 'page.js', 'layout.tsx', 'layout.ts', 'layout.jsx', 'layout.js', 'loading.tsx', 'loading.ts', 'error.tsx', 'error.ts', 'not-found.tsx', 'not-found.ts'];
-
-          nextJsFiles.forEach(file => {
+          APP_ROUTER_ENTRY_FILES.forEach(file => {
             const filePath = path.join(fullPath, file);
             if (fs.existsSync(filePath)) {
               entryPoints.push(path.relative(PROJECT_ROOT, filePath));
@@ -285,6 +293,49 @@ function extractExports(content, filePath) {
   return exports;
 }
 
+function parseImportStatement(importStatement) {
+  const result = {
+    importedNames: [],
+    hasDefaultImport: false,
+    hasNamespaceImport: false
+  };
+
+  // Remove the 'import' keyword and 'from' part
+  const importPart = importStatement.replace(/^import\s+/, '').replace(/\s+from\s+['"][^'"]+['"]\s*;?\s*$/, '');
+
+  // Check for default import: import DefaultExport
+  if (!importPart.includes('{') && !importPart.includes('*')) {
+    result.hasDefaultImport = true;
+    return result;
+  }
+
+  // Check for namespace import: import * as Name
+  if (importPart.includes('* as')) {
+    result.hasNamespaceImport = true;
+    return result;
+  }
+
+  // Parse named imports: import { name1, name2 as alias }
+  const namedImportMatch = importPart.match(/\{([^}]+)\}/);
+  if (namedImportMatch) {
+    const namedImports = namedImportMatch[1].split(',').map(name => name.trim());
+    namedImports.forEach(namedImport => {
+      // Handle 'name as alias' syntax
+      const name = namedImport.split(' as ')[0].trim();
+      if (name && name !== 'default') {
+        result.importedNames.push(name);
+      }
+    });
+  }
+
+  // Check for default + named imports: import Default, { named }
+  if (importPart.includes(',') && importPart.includes('{')) {
+    result.hasDefaultImport = true;
+  }
+
+  return result;
+}
+
 function extractImports(content, filePath) {
   const imports = [];
   const dynamicImports = [];
@@ -294,13 +345,21 @@ function extractImports(content, filePath) {
   let match;
   while ((match = staticImportRegex.exec(content)) !== null) {
     const importPath = match[1];
+    const importStatement = match[0];
     const resolvedPaths = resolveImportPath(importPath, filePath);
+
+    // Parse the import statement to extract specific imports
+    const importDetails = parseImportStatement(importStatement);
+
     resolvedPaths.forEach(resolvedPath => {
       if (resolvedPath) {
         imports.push({
           path: resolvedPath,
           type: 'static',
-          line: content.substring(0, match.index).split('\n').length
+          line: content.substring(0, match.index).split('\n').length,
+          importedNames: importDetails.importedNames,
+          hasDefaultImport: importDetails.hasDefaultImport,
+          hasNamespaceImport: importDetails.hasNamespaceImport
         });
       }
     });
@@ -316,7 +375,10 @@ function extractImports(content, filePath) {
         dynamicImports.push({
           path: resolvedPath,
           type: 'dynamic',
-          line: content.substring(0, match.index).split('\n').length
+          line: content.substring(0, match.index).split('\n').length,
+          importedNames: [], // Dynamic imports don't specify named imports
+          hasDefaultImport: false,
+          hasNamespaceImport: false
         });
       }
     });
@@ -328,55 +390,62 @@ function extractImports(content, filePath) {
 function resolveImportPath(importPath, fromFile) {
   const resolvedPaths = [];
 
-  // Handle relative imports
-  if (importPath.startsWith('.')) {
-    const fromDir = path.dirname(fromFile);
-    let resolvedPath = path.resolve(fromDir, importPath);
+  // Handle TypeScript path mappings first
+  let resolvedImportPath = importPath;
 
-    // Try different extensions
-    for (const ext of EXTENSIONS) {
-      if (fs.existsSync(resolvedPath + ext)) {
-        resolvedPaths.push(path.relative(PROJECT_ROOT, resolvedPath + ext));
-      }
-      // Check for index files in directories
-      if (fs.existsSync(path.join(resolvedPath, 'index' + ext))) {
-        resolvedPaths.push(path.relative(PROJECT_ROOT, path.join(resolvedPath, 'index' + ext)));
-      }
-    }
-
-    // Check if it's a directory with index file
-    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
-      for (const ext of EXTENSIONS) {
-        const indexPath = path.join(resolvedPath, 'index' + ext);
-        if (fs.existsSync(indexPath)) {
-          resolvedPaths.push(path.relative(PROJECT_ROOT, indexPath));
-        }
-      }
-    }
+  // Handle @/ path mapping
+  if (importPath.startsWith('@/')) {
+    resolvedImportPath = importPath.replace(/^@\//, 'src/');
   }
 
-  // Handle absolute imports from src
-  if (importPath.startsWith('@/') || importPath.startsWith('src/')) {
-    const relativePath = importPath.replace(/^@\/?/, '').replace(/^src\/?/, '');
-    let resolvedPath = path.resolve(SRC_DIR, relativePath);
+  // Handle relative imports
+  if (resolvedImportPath.startsWith('.')) {
+    const fromDir = path.dirname(fromFile);
+    let fullPath = path.resolve(fromDir, resolvedImportPath);
 
+    // Try different extensions and index files
     for (const ext of EXTENSIONS) {
-      if (fs.existsSync(resolvedPath + ext)) {
-        resolvedPaths.push(path.relative(PROJECT_ROOT, resolvedPath + ext));
+      // Direct file match
+      if (fs.existsSync(fullPath + ext)) {
+        resolvedPaths.push(path.relative(PROJECT_ROOT, fullPath + ext));
       }
-      if (fs.existsSync(path.join(resolvedPath, 'index' + ext))) {
-        resolvedPaths.push(path.relative(PROJECT_ROOT, path.join(resolvedPath, 'index' + ext)));
-      }
-    }
 
-    // Check if it's a directory with index file
-    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
-      for (const ext of EXTENSIONS) {
-        const indexPath = path.join(resolvedPath, 'index' + ext);
+      // Directory with index file
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+        const indexPath = path.join(fullPath, 'index' + ext);
         if (fs.existsSync(indexPath)) {
           resolvedPaths.push(path.relative(PROJECT_ROOT, indexPath));
         }
       }
+    }
+
+    // Also check for TypeScript declaration files
+    if (fs.existsSync(fullPath + '.d.ts')) {
+      resolvedPaths.push(path.relative(PROJECT_ROOT, fullPath + '.d.ts'));
+    }
+  } else {
+    // Handle absolute imports from project root
+    let fullPath = path.resolve(PROJECT_ROOT, resolvedImportPath);
+
+    // Try different extensions and index files
+    for (const ext of EXTENSIONS) {
+      // Direct file match
+      if (fs.existsSync(fullPath + ext)) {
+        resolvedPaths.push(path.relative(PROJECT_ROOT, fullPath + ext));
+      }
+
+      // Directory with index file
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+        const indexPath = path.join(fullPath, 'index' + ext);
+        if (fs.existsSync(indexPath)) {
+          resolvedPaths.push(path.relative(PROJECT_ROOT, indexPath));
+        }
+      }
+    }
+
+    // Also check for TypeScript declaration files
+    if (fs.existsSync(fullPath + '.d.ts')) {
+      resolvedPaths.push(path.relative(PROJECT_ROOT, fullPath + '.d.ts'));
     }
   }
 
@@ -444,14 +513,101 @@ function analyzeCodebase() {
   Object.keys(fileData).forEach(filePath => {
     const data = fileData[filePath];
 
+    // First, check for internal usage within the same file
+    data.exports.forEach(exp => {
+      const exportKey = `${filePath}:${exp.name}`;
+
+      // Check if the export is used within the same file
+      const isUsedInternally = (() => {
+        if (exp.name === 'default') {
+          // For default exports, check if they're referenced in the same file
+          // This is complex, so we'll be conservative and assume they're used if they're default exports
+          return true;
+        }
+
+        if (exp.name === '*') {
+          // Wildcard exports are handled differently
+          return false;
+        }
+
+        // For named exports, check if the name appears in the file content (but not in export statements)
+        // Escape special regex characters
+        const escapedName = exp.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const exportRegex = new RegExp(`\\b${escapedName}\\b`, 'g');
+        const matches = data.content.match(exportRegex) || [];
+
+        // Count occurrences that appear after the export declaration
+        let usageCount = 0;
+        let exportDeclarationFound = false;
+
+        // Split content into lines to find where the export is declared
+        const lines = data.content.split('\n');
+        const exportLineContent = lines[exp.line - 1] || '';
+
+        // Check if this line contains the export declaration
+        if (exportLineContent.includes(`export`) && exportLineContent.includes(exp.name)) {
+          exportDeclarationFound = true;
+        }
+
+        if (exportDeclarationFound) {
+          // Look for usage after the export line
+          for (let i = exp.line; i < lines.length; i++) {
+            if (lines[i].match(exportRegex)) {
+              usageCount++;
+              break; // Found at least one usage, that's enough
+            }
+          }
+        }
+
+        return usageCount > 0;
+      })();
+
+      if (isUsedInternally) {
+        if (exportUsage.has(exportKey)) {
+          exportUsage.get(exportKey).add(filePath); // Mark as used by itself
+        }
+      }
+    });
+
     // Track static imports
     data.imports.forEach(imp => {
       if (fileUsage.has(imp.path)) {
         fileUsage.get(imp.path).add(filePath);
+
+        // Track specific export usage
+        if (fileData[imp.path]) {
+          const importedFileData = fileData[imp.path];
+
+          // If namespace import (import * as X), mark all exports as used
+          if (imp.hasNamespaceImport) {
+            importedFileData.exports.forEach(exp => {
+              const exportKey = `${imp.path}:${exp.name}`;
+              if (exportUsage.has(exportKey)) {
+                exportUsage.get(exportKey).add(filePath);
+              }
+            });
+          }
+
+          // If default import, mark default export as used
+          if (imp.hasDefaultImport) {
+            const defaultExportKey = `${imp.path}:default`;
+            if (exportUsage.has(defaultExportKey)) {
+              exportUsage.get(defaultExportKey).add(filePath);
+            }
+          }
+
+          // Mark specific named imports as used
+          imp.importedNames.forEach(importedName => {
+            const exportKey = `${imp.path}:${importedName}`;
+            if (exportUsage.has(exportKey)) {
+              exportUsage.get(exportKey).add(filePath);
+            }
+          });
+        }
       }
     });
 
-    // Track dynamic imports
+    // Track dynamic imports (mark files as used, but not specific exports since they're dynamic)
     data.dynamicImports.forEach(imp => {
       if (fileUsage.has(imp.path)) {
         fileUsage.get(imp.path).add(filePath);
@@ -461,11 +617,37 @@ function analyzeCodebase() {
 
   // Propagate usage through re-exports
   Object.keys(reExports).forEach(sourceFile => {
-    if (fileUsage.has(sourceFile) && fileUsage.get(sourceFile).size > 0) {
+    if (fileData[sourceFile]) {
+      const sourceExports = fileData[sourceFile].exports;
+
       reExports[sourceFile].forEach(reExport => {
-        if (fileUsage.has(reExport.file)) {
-          // Add all users of the source file to the re-export file
-          fileUsage.get(reExport.file).add(...fileUsage.get(sourceFile));
+        if (fileData[reExport.file]) {
+          const reExportData = fileData[reExport.file];
+
+          // For each re-exported item, check if it's used and propagate to source
+          reExportData.exports.forEach(reExp => {
+            if (reExp.type === 're-export' && reExp.from === sourceFile) {
+              const reExportKey = `${reExport.file}:${reExp.name}`;
+              const sourceExportKey = `${sourceFile}:${reExp.name}`;
+
+              // If the re-export is used, mark the source export as used
+              if (exportUsage.has(reExportKey) && exportUsage.get(reExportKey).size > 0) {
+                if (exportUsage.has(sourceExportKey)) {
+                  // Add all users of the re-export to the source export
+                  exportUsage.get(sourceExportKey).add(...exportUsage.get(reExportKey));
+                }
+              }
+
+              // If the re-export file is used, also mark source exports as used
+              if (fileUsage.has(reExport.file) && fileUsage.get(reExport.file).size > 0) {
+                if (exportUsage.has(sourceExportKey)) {
+                  fileUsage.get(reExport.file).forEach(user => {
+                    exportUsage.get(sourceExportKey).add(user);
+                  });
+                }
+              }
+            }
+          });
         }
       });
     }
@@ -514,20 +696,28 @@ function analyzeCodebase() {
   // Find unused exports
   Object.keys(fileData).forEach(filePath => {
     const data = fileData[filePath];
-    data.exports.forEach(exp => {
-      const exportKey = `${filePath}:${exp.name}`;
-      const isUsed = exportUsage.has(exportKey) && exportUsage.get(exportKey).size > 0;
 
-      if (!isUsed && exp.type !== 're-export') {
-        report.unusedExports.push({
-          filePath,
-          exportName: exp.name,
-          exportType: exp.type,
-          line: exp.line,
-          reason: `${exp.type} export '${exp.name}' is not imported anywhere`
-        });
-      }
-    });
+    // Skip app router entry files - their exports might be used implicitly by Next.js routing
+    const isAppRouterEntry = APP_ROUTER_ENTRY_FILES.some(entryFile =>
+      filePath.endsWith('/' + entryFile) || filePath.includes('/app/') && APP_ROUTER_ENTRY_FILES.some(f => filePath.endsWith('/' + f))
+    );
+
+    if (!isAppRouterEntry) {
+      data.exports.forEach(exp => {
+        const exportKey = `${filePath}:${exp.name}`;
+        const isUsed = exportUsage.has(exportKey) && exportUsage.get(exportKey).size > 0;
+
+        if (!isUsed && exp.type !== 're-export') {
+          report.unusedExports.push({
+            filePath,
+            exportName: exp.name,
+            exportType: exp.type,
+            line: exp.line,
+            reason: `${exp.type} export '${exp.name}' is not imported anywhere`
+          });
+        }
+      });
+    }
   });
 
   report.summary.unusedFiles = report.unusedFiles.length;

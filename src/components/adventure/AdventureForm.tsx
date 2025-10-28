@@ -1,13 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useActionState } from "react";
+import { createAdventure, updateAdventure } from "@/lib/actions/adventures";
+import { FormSection, FormGrid, FormActions } from "@/lib/forms";
+import { FormField } from "@/components/ui/form-components";
+import { AdventureFormSchema, type AdventureFormData } from "@/lib/forms";
+import { validateFormData } from "@/lib/forms/validation";
+import { useImageManagement } from "@/lib/utils/imageFormUtils";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { ImageManager } from "@/components/ui/image-manager";
+import { ErrorHandler } from "@/lib/error-handler";
 import {
   Select,
   SelectContent,
@@ -15,11 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Save, EyeOff } from "lucide-react";
-import { createAdventure, updateAdventure } from "@/lib/actions/adventures";
-import { ImageManager } from "@/components/ui/image-manager";
-import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
-import { toast } from "sonner";
+
+const statusOptions = [
+  { value: "planned", label: "Planned" },
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
+  { value: "paused", label: "Paused" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 interface AdventureFormProps {
   adventure?: {
@@ -36,230 +43,172 @@ interface AdventureFormProps {
   mode: "create" | "edit";
 }
 
-interface FormState {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  slug: string;
-  images: ImageInfo[];
-}
-
-const statusOptions = [
-  { value: "planned", label: "Planned" },
-  { value: "active", label: "Active" },
-  { value: "completed", label: "Completed" },
-  { value: "paused", label: "Paused" },
-  { value: "cancelled", label: "Cancelled" },
-];
-
 export default function AdventureForm({
   adventure,
   campaignId,
   mode,
 }: AdventureFormProps) {
   const router = useRouter();
+  
+  // Form state
+  const [formData, setFormData] = useState<AdventureFormData>(() => ({
+    name: adventure?.title || "",
+    description: adventure?.description || "",
+    startDate: adventure?.startDate || "",
+    endDate: adventure?.endDate || "",
+    status: (adventure?.status as "active" | "completed" | "paused" | "cancelled" | undefined) || "planned",
+    campaignId,
+    images: parseImagesJson(adventure?.images),
+  }));
 
-  const createOrUpdateAdventure = async (
-    prevState: { success: boolean; error?: string } | undefined,
-    formData: FormData,
-  ) => {
+  // Use shared hooks for state management
+  const imageManagement = useImageManagement(parseImagesJson(adventure?.images));
+
+  // Server action setup
+  const createOrUpdateAdventure = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
     try {
-      if (mode === "edit" && adventure) {
-        await updateAdventure(formData);
-      } else {
-        await createAdventure(formData);
+      // Validate form data
+      const rawData = Object.fromEntries(formData.entries());
+      const validation = validateFormData(AdventureFormSchema, {
+        ...rawData,
+        campaignId: parseInt(rawData.campaignId as string),
+        status: rawData.status as "planned" | "active" | "completed" | "paused" | "cancelled",
+        images: rawData.images ? JSON.parse(rawData.images as string) : [],
+      });
+
+      if (!validation.success) {
+        return { success: false, error: Object.values(validation.errors)[0] };
       }
 
-      toast.success(
-        `Adventure ${mode === "edit" ? "updated" : "created"} successfully!`,
-      );
-      router.push(`/campaigns/${campaignId}/adventures`);
-      return { success: true };
+      if (mode === "edit" && adventure) {
+        return await updateAdventure(formData);
+      } else {
+        return await createAdventure(formData);
+      }
     } catch (error) {
-      console.error("Error saving adventure:", error);
-      toast.error("Failed to save adventure. Please try again.");
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+      console.error("Form submission error:", error);
+      return { success: false, error: "An unexpected error occurred" };
     }
   };
 
-  const [state, formAction, isPending] = useActionState(
-    createOrUpdateAdventure,
-    { success: false },
-  );
+  const [state, formAction, isPending] = useActionState(createOrUpdateAdventure, { success: false });
 
-  // Initialize form data
-  const [formData, setFormData] = useState<FormState>(() => {
-    if (mode === "edit" && adventure) {
-      return {
-        title: adventure.title,
-        description: adventure.description || "",
-        startDate: adventure.startDate || "",
-        endDate: adventure.endDate || "",
-        status: adventure.status || "planned",
-        slug: adventure.slug || "",
-        images: parseImagesJson(adventure.images),
-      };
-    }
-    return {
-      title: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      status: "planned",
-      slug: "",
-      images: [],
-    };
-  });
+  // Handle form submission results
+  const redirectPath = `/campaigns/${campaignId}/adventures`;
+  
+  if (state?.success) {
+    ErrorHandler.showSuccess(`Adventure ${mode === "create" ? "created" : "updated"} successfully!`);
+    router.push(redirectPath);
+  } else if (state?.error) {
+    ErrorHandler.handleSubmissionError(state.error, `${mode} adventure`);
+  }
 
-  const handleInputChange = (
-    field: keyof FormState,
-    value: string | ImageInfo[],
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Auto-generate slug from title
-    if (field === "title" && typeof value === "string") {
-      const slug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .trim();
-      setFormData((prev) => ({
-        ...prev,
-        slug: slug,
-      }));
-    }
-  };
-
-  const handleImagesChange = (images: ImageInfo[]) => {
-    handleInputChange("images", images);
+  // Helper functions
+  const updateFormData = <K extends keyof AdventureFormData>(key: K, value: AdventureFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   return (
     <form action={formAction} className="space-y-6">
-      {/* Hidden inputs for form data */}
-      <input type="hidden" name="title" value={formData.title} />
-      <input type="hidden" name="description" value={formData.description} />
-      <input type="hidden" name="startDate" value={formData.startDate} />
-      <input type="hidden" name="endDate" value={formData.endDate} />
-      <input type="hidden" name="status" value={formData.status} />
-      <input type="hidden" name="slug" value={formData.slug} />
-      <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
-      {mode === "edit" && adventure && (
-        <input type="hidden" name="id" value={adventure.id.toString()} />
-      )}
       <input type="hidden" name="campaignId" value={campaignId.toString()} />
+      {mode === "edit" && adventure?.id && <input type="hidden" name="id" value={adventure.id.toString()} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="Enter adventure title"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={formData.slug}
-                onChange={(e) => handleInputChange("slug", e.target.value)}
-                placeholder="adventure-slug"
-              />
-              <p className="text-sm text-base-content/70">
-                URL-friendly identifier (auto-generated from title)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                name="status"
-                value={formData.status}
-                onValueChange={(value) => handleInputChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                handleInputChange("description", e.target.value)
-              }
-              placeholder="Describe the adventure, its goals, themes, and key elements..."
-              rows={6}
+      <div className="space-y-6">
+        <FormGrid columns={2}>
+          <FormField label="Title" required>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={(e) => updateFormData("name", e.target.value)}
+              className="input input-bordered w-full"
+              placeholder="Enter adventure title"
+              required
             />
-          </div>
-        </CardContent>
-      </Card>
+          </FormField>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Images</CardTitle>
-        </CardHeader>
-        <CardContent>
+          <FormField label="Slug" help="URL-friendly identifier (auto-generated from title)">
+            <input
+              type="text"
+              name="slug"
+              value={adventure?.slug || ""}
+              className="input input-bordered w-full"
+              placeholder="adventure-slug"
+              readOnly
+            />
+          </FormField>
+
+          <FormField label="Status" required>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => updateFormData("status", value as "planned" | "active" | "completed" | "paused" | "cancelled")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+
+          <FormField label="Start Date">
+            <input
+              type="date"
+              name="startDate"
+              value={formData.startDate}
+              onChange={(e) => updateFormData("startDate", e.target.value)}
+              className="input input-bordered w-full"
+            />
+          </FormField>
+
+          <FormField label="End Date">
+            <input
+              type="date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={(e) => updateFormData("endDate", e.target.value)}
+              className="input input-bordered w-full"
+            />
+          </FormField>
+
+          <div className="col-span-2">
+            <FormField label="Description">
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={(e) => updateFormData("description", e.target.value)}
+                rows={6}
+                className="textarea textarea-bordered w-full"
+                placeholder="Describe the adventure, its goals, themes, and key elements..."
+              />
+            </FormField>
+          </div>
+        </FormGrid>
+
+        <FormSection title="Images">
           <ImageManager
             entityType="adventures"
-            entityId={adventure?.id || 0}
-            currentImages={formData.images}
-            onImagesChange={handleImagesChange}
+            entityId={adventure?.id ?? 0}
+            currentImages={imageManagement.images}
+            onImagesChange={imageManagement.setImages}
           />
-        </CardContent>
-      </Card>
+          {mode === "create" && !adventure?.id && (
+            <p className="mt-2 text-sm text-base-content/70">
+              Save the adventure to start uploading images.
+            </p>
+          )}
+        </FormSection>
 
-      <div className="flex gap-4 pt-4 justify-end">
-        <Button type="submit" size="sm" disabled={isPending} variant="primary">
-          <Save className="w-4 h-4 mr-2" />
-          {isPending
-            ? mode === "edit"
-              ? "Updating..."
-              : "Creating..."
-            : mode === "edit"
-              ? "Update"
-              : "Create"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="gap-2"
-          size="sm"
-          onClick={() => router.push(`/campaigns/${campaignId}/adventures`)}
-        >
-          <EyeOff className="w-4 h-4" />
-          Cancel
-        </Button>
+        <FormActions
+          isPending={isPending}
+          mode={mode}
+          onCancel={() => router.back()}
+        />
       </div>
     </form>
   );

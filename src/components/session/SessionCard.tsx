@@ -52,10 +52,6 @@ export function SessionCard({ session }: SessionCardProps) {
           </p>
         )}
 
-        <div className="flex justify-between items-center text-xs text-base-content/70 mb-4">
-          {session.adventureId && <span>Adventure #{session.adventureId}</span>}
-        </div>
-
         <div className="flex gap-2 mt-4">
           <Link href={`/sessions/${session.id}`} className="flex-1">
             <Button variant="warning" className="gap-2 w-full" size="sm">

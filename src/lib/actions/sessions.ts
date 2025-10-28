@@ -18,6 +18,7 @@ export async function getSessions() {
       date: sessions.date,
       text: sessions.text,
       images: sessions.images,
+      promotedTo: sessions.promotedTo,
       createdAt: sessions.createdAt,
       updatedAt: sessions.updatedAt,
       campaignTitle: campaigns.title,
@@ -53,7 +54,7 @@ export async function getSession(id: number) {
 
 export async function createSession(
   formData: FormData,
-): Promise<ActionResult<Session>> {
+): Promise<{ success: boolean; error?: string }> {
   const title = formData.get("title") as string;
   const date = formData.get("date") as string;
   const adventureIdValue = formData.get("adventureId") as string;
@@ -67,7 +68,7 @@ export async function createSession(
   if (!title || !date) {
     return {
       success: false,
-      message: "Title and date are required",
+      error: "Title and date are required",
     };
   }
 
@@ -91,19 +92,19 @@ export async function createSession(
       revalidatePath("/sessions");
     }
 
-    return { success: true, data: session };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Failed to create session",
+      error: "Failed to create session",
     };
   }
 }
 
 export async function updateSession(
   formData: FormData,
-): Promise<ActionResult<Session>> {
+): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
   const title = formData.get("title") as string;
   const date = formData.get("date") as string;
@@ -118,7 +119,7 @@ export async function updateSession(
   if (!title || !date) {
     return {
       success: false,
-      message: "Title and date are required",
+      error: "Title and date are required",
     };
   }
 
@@ -144,12 +145,12 @@ export async function updateSession(
       revalidatePath("/sessions");
     }
 
-    return { success: true, data: session };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Failed to update session",
+      error: "Failed to update session",
     };
   }
 }

@@ -28,7 +28,7 @@ export async function getAdventure(id: number) {
 
 export async function createAdventure(
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<{ success: boolean; error?: string }> {
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const campaignId = formData.get("campaignId")
@@ -53,19 +53,19 @@ export async function createAdventure(
     });
 
     revalidatePath(`/campaigns/${campaignId}/adventures`);
-    redirect(`/campaigns/${campaignId}/adventures`);
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to create adventure.",
+      error: "Database Error: Failed to create adventure.",
     };
   }
 }
 
 export async function updateAdventure(
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -95,12 +95,12 @@ export async function updateAdventure(
       .where(eq(adventures.id, id));
 
     revalidatePath(`/campaigns/${campaignId}/adventures`);
-    redirect(`/campaigns/${campaignId}/adventures`);
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to update adventure.",
+      error: "Database Error: Failed to update adventure.",
     };
   }
 }

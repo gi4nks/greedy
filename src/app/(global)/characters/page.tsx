@@ -9,6 +9,8 @@ import Link from "next/link";
 import { Users, BookOpen, Edit, Trash2, View } from "lucide-react";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
 import { CardSkeleton } from "../../../components/ui/skeleton";
+import { PageContainer } from "../../../components/layout/PageContainer";
+import { PageHeader } from "../../../components/ui/page-header";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -161,22 +163,18 @@ function CharactersSkeleton() {
 
 export default async function CharactersPage() {
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Characters" }]} />
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Characters</h1>
-          <p className="text-base-content/70 mt-2">
-            No characters found. Create some characters to see them listed here.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Characters"
+        subtitle="Manage all characters across your campaigns"
+      />
 
       <Suspense fallback={<CharactersSkeleton />}>
         <CharactersContent />
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }

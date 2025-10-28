@@ -5,7 +5,7 @@ import { Character, Adventure, Campaign } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Heart, Shield, Sword, Zap, Eye, Brain, Users } from "lucide-react";
+import { Heart, Shield, Sword, Eye, Brain, Users } from "lucide-react";
 
 interface CharacterStatsProps {
   character: Character & {
@@ -15,17 +15,6 @@ interface CharacterStatsProps {
 }
 
 export default function CharacterStats({ character }: CharacterStatsProps) {
-  const parseJsonArray = (json: unknown): string[] => {
-    if (typeof json === "string") {
-      try {
-        return JSON.parse(json);
-      } catch {
-        return [];
-      }
-    }
-    return Array.isArray(json) ? json : [];
-  };
-
   const calculateModifier = (score: number | null): number => {
     if (!score) return 0;
     return Math.floor((score - 10) / 2);

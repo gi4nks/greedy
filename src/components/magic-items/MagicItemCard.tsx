@@ -35,8 +35,8 @@ export function MagicItemCard({ item }: MagicItemCardProps) {
 
       const result = await deleteMagicItemAction(undefined, formData);
 
-      if (!result.success && result.message) {
-        alert(result.message);
+      if (!result.success && result.error) {
+        alert(result.error);
       } else {
         router.push("/magic-items");
       }

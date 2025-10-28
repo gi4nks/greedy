@@ -100,12 +100,19 @@ export default async function EditSessionPage({
           </div>
         </div>
 
-        <SessionForm
-          session={session}
-          campaignId={campaignId}
-          adventures={campaignAdventures}
-          mode="edit"
-        />
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <SessionForm
+              session={session}
+              campaignId={campaignId}
+              adventures={campaignAdventures}
+              mode="edit"
+            />
+          </CardContent>
+        </Card>
       </div>
     </Suspense>
   );
@@ -123,15 +130,19 @@ function EditSessionSkeleton() {
         <div className="skeleton h-4 w-96"></div>
       </div>
 
-      <Card className="w-full">
+      <Card>
+        <CardHeader>
+          <div className="skeleton h-6 w-32"></div>
+        </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-6">
-            <div className="skeleton h-6 w-32 mb-4"></div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="skeleton h-10 w-full"></div>
               <div className="skeleton h-10 w-full"></div>
             </div>
             <div className="skeleton h-10 w-full mb-4"></div>
+            <div className="skeleton h-6 w-32 mb-4"></div>
+            <div className="skeleton h-32 w-full mb-4"></div>
             <div className="skeleton h-6 w-32 mb-4"></div>
             <div className="skeleton h-32 w-full mb-4"></div>
             <div className="flex gap-4 justify-end">

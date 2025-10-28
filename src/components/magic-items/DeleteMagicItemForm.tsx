@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { InlineError } from "@/components/ui/error-message";
 import { Trash2 } from "lucide-react";
+import { deleteMagicItemAction } from "@/lib/actions/magicItems";
 
 interface DeleteMagicItemFormProps {
   itemId: number;
@@ -30,18 +32,16 @@ export function DeleteMagicItemForm({
     startTransition(async () => {
       try {
         setError(null);
-        const response = await fetch(`/api/magic-items/${itemId}`, {
-          method: "DELETE",
-        });
+        const formData = new FormData();
+        formData.append("id", itemId.toString());
 
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as {
-            error?: string;
-          } | null;
-          throw new Error(payload?.error ?? "Failed to delete magic item.");
+        const result = await deleteMagicItemAction(undefined, formData);
+
+        if (!result.success && result.error) {
+          setError(result.error);
+        } else {
+          router.push("/magic-items");
         }
-
-        router.push("/magic-items");
       } catch (caught) {
         console.error("Failed to delete magic item", caught);
         setError((caught as Error).message || "Failed to delete magic item.");
@@ -62,7 +62,7 @@ export function DeleteMagicItemForm({
         <Trash2 className="w-4 h-4" />
         {isPending ? "Deleting…" : "Delete"}
       </Button>
-      {error && <span className="text-xs text-error">{error}</span>}
+      <InlineError message={error} />
     </div>
   );
 }

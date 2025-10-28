@@ -8,6 +8,8 @@ import Link from "next/link";
 import { Calendar, MapPin, BookOpen, View } from "lucide-react";
 import { formatUIDate } from "../../../lib/utils/date";
 import DynamicBreadcrumb from "../../../components/ui/dynamic-breadcrumb";
+import { PageContainer } from "../../../components/layout/PageContainer";
+import { PageHeader } from "../../../components/layout/PageHeader";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -39,18 +41,14 @@ export default async function AdventuresPage() {
   const adventuresList = await getAdventures();
 
   return (
-    <div className="container mx-auto p-6">
+    <PageContainer>
       {/* Breadcrumb */}
       <DynamicBreadcrumb items={[{ label: "Adventures" }]} />
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Adventures</h1>
-          <p className="text-base-content/70 mt-2">
-            Explore all adventures across your campaigns
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Adventures"
+        description="Explore all adventures across your campaigns"
+      />
 
       {adventuresList.length === 0 ? (
         <Card className="text-center py-12">
@@ -129,6 +127,6 @@ export default async function AdventuresPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

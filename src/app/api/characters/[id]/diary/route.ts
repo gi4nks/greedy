@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { characters, characterDiaryEntries } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { DiaryEntrySchema, validateRequestBody } from "@/lib/validation/schemas";
 
 // GET /api/characters/[id]/diary - Get all diary entries for a character
 export async function GET(
@@ -14,7 +15,7 @@ export async function GET(
 
     if (isNaN(characterId)) {
       return NextResponse.json(
-        { error: "Invalid character ID" },
+        { success: false, error: "Invalid character ID" },
         { status: 400 },
       );
     }
@@ -27,7 +28,7 @@ export async function GET(
 
     if (!character) {
       return NextResponse.json(
-        { error: "Character not found" },
+        { success: false, error: "Character not found" },
         { status: 404 },
       );
     }
@@ -45,11 +46,11 @@ export async function GET(
       linkedEntities: entry.linkedEntities ? JSON.parse(entry.linkedEntities as string) : [],
     }));
 
-    return NextResponse.json(parsedEntries);
+    return NextResponse.json({ success: true, data: parsedEntries });
   } catch (error) {
     console.error("Error fetching diary entries:", error);
     return NextResponse.json(
-      { error: "Failed to fetch diary entries" },
+      { success: false, error: "Failed to fetch diary entries" },
       { status: 500 },
     );
   }
@@ -66,7 +67,7 @@ export async function POST(
 
     if (isNaN(characterId)) {
       return NextResponse.json(
-        { error: "Invalid character ID" },
+        { success: false, error: "Invalid character ID" },
         { status: 400 },
       );
     }
@@ -79,31 +80,29 @@ export async function POST(
 
     if (!character) {
       return NextResponse.json(
-        { error: "Character not found" },
+        { success: false, error: "Character not found" },
         { status: 404 },
       );
     }
 
-    // Parse request body
     const body = await request.json();
-    const { description, date, linkedEntities, isImportant } = body;
+    const validation = validateRequestBody(DiaryEntrySchema, body);
 
-    if (!description || !date) {
-      return NextResponse.json(
-        { error: "Description and date are required" },
-        { status: 400 },
-      );
+    if (!validation.success) {
+      return NextResponse.json(validation, { status: 400 });
     }
+
+    const validatedData = validation.data;
 
     // Insert new diary entry
     const [newEntry] = await db
       .insert(characterDiaryEntries)
       .values({
         characterId,
-        description,
-        date,
-        linkedEntities: linkedEntities ? JSON.stringify(linkedEntities) : null,
-        isImportant: isImportant || false,
+        description: validatedData.description,
+        date: validatedData.date,
+        linkedEntities: validatedData.linkedEntities ? JSON.stringify(validatedData.linkedEntities) : null,
+        isImportant: validatedData.isImportant,
       })
       .returning();
 
@@ -113,11 +112,11 @@ export async function POST(
       linkedEntities: newEntry.linkedEntities ? JSON.parse(newEntry.linkedEntities as string) : [],
     };
 
-    return NextResponse.json(parsedEntry, { status: 201 });
+    return NextResponse.json({ success: true, data: parsedEntry }, { status: 201 });
   } catch (error) {
     console.error("Error creating diary entry:", error);
     return NextResponse.json(
-      { error: "Failed to create diary entry" },
+      { success: false, error: "Failed to create diary entry" },
       { status: 500 },
     );
   }

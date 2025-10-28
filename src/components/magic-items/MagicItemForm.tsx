@@ -1,24 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   createMagicItemAction,
   updateMagicItemAction,
-  type MagicItemFormState,
 } from "@/lib/actions/magicItems";
-import { type MagicItem } from "@/lib/db/schema";
 import { ImageManager } from "@/components/ui/image-manager";
-import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
-import { ActionResult } from "@/lib/types/api";
-import { Save, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { FormSection, FormGrid, FormActions } from "@/lib/forms";
+import { FormField } from "@/components/ui/form-components";
+import { MagicItemFormSchema, type MagicItemFormData } from "@/lib/forms";
+import { validateFormData } from "@/lib/forms/validation";
+import { useImageManagement } from "@/lib/utils/imageFormUtils";
 
 const RARITY_OPTIONS = [
   "Common",
@@ -39,203 +35,196 @@ interface MagicItemFormProps {
     description: string | null;
     properties: string;
     attunementRequired: boolean | null;
+    tags: unknown;
     images: unknown;
   };
 }
 
 export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [images, setImages] = useState<ImageInfo[]>(() => {
-    if (mode === "edit" && magicItem?.images) {
-      return parseImagesJson(magicItem.images);
-    }
-    return [];
-  });
 
-  const handleImagesChange = (newImages: ImageInfo[]) => {
-    setImages(newImages);
-  };
+  // Form state
+  const [formData, setFormData] = useState<MagicItemFormData>(() => ({
+    name: magicItem?.name || "",
+    type: magicItem?.type || "",
+    rarity: magicItem?.rarity || "",
+    description: magicItem?.description || "",
+    properties: magicItem?.properties ? JSON.parse(magicItem.properties) : null,
+    attunementRequired: magicItem?.attunementRequired || false,
+    tags: Array.isArray(magicItem?.tags) ? magicItem.tags : [],
+    images: parseImagesJson(magicItem?.images),
+  }));
 
-  const handleSubmit = async (formData: FormData) => {
-    setIsSubmitting(true);
-    setErrors({});
+  // Use shared hooks for state management
+  const imageManagement = useImageManagement(parseImagesJson(magicItem?.images));
 
+  // Server action setup
+  const createOrUpdateMagicItem = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
     try {
-      const action =
-        mode === "create" ? createMagicItemAction : updateMagicItemAction;
-      const result: ActionResult<MagicItem | undefined> = await action(
-        {} as MagicItemFormState,
-        formData,
-      );
+      // Validate form data
+      const rawData = Object.fromEntries(formData.entries());
+      const validation = validateFormData(MagicItemFormSchema, {
+        ...rawData,
+        attunementRequired: rawData.attunementRequired === "on",
+        tags: rawData.tags ? JSON.parse(rawData.tags as string) : [],
+        images: rawData.images ? JSON.parse(rawData.images as string) : [],
+        properties: rawData.properties ? JSON.parse(rawData.properties as string) : null,
+      });
 
-      if (result?.success === false) {
-        if (result.errors) {
-          setErrors(result.errors);
-          toast.error(
-            "Failed to save magic item. Please check the form for errors.",
-          );
-        } else {
-          toast.error(result.message || "Failed to save magic item.");
-        }
+      if (!validation.success) {
+        return { success: false, error: Object.values(validation.errors)[0] };
+      }
+
+      if (mode === "edit" && magicItem?.id) {
+        return await updateMagicItemAction(formData);
       } else {
-        toast.success(
-          `Magic item ${mode === "create" ? "created" : "updated"} successfully!`,
-        );
-        if (result.data?.id) {
-          router.push(`/magic-items/${result.data.id}`);
-        } else {
-          router.push("/magic-items");
-        }
+        return await createMagicItemAction(formData);
       }
     } catch (error) {
-      console.error("Error saving magic item:", error);
-      toast.error("Failed to save magic item. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      console.error("Form submission error:", error);
+      return { success: false, error: "An unexpected error occurred" };
     }
   };
 
-  const formAction = async (formData: FormData) => {
-    await handleSubmit(formData);
+  const [state, formAction, isPending] = useActionState(createOrUpdateMagicItem, {
+    success: false,
+  });
+
+  // Handle redirect on success
+  useEffect(() => {
+    if (state.success) {
+      const redirectPath = mode === "edit" && magicItem?.id 
+        ? `/magic-items/${magicItem.id}`
+        : "/magic-items";
+      router.push(redirectPath);
+    }
+  }, [state.success, mode, magicItem?.id, router]);
+
+  // Helper functions
+  const updateFormData = <K extends keyof MagicItemFormData>(key: K, value: MagicItemFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Magic Item Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="images" value={JSON.stringify(images)} />
-          {mode === "edit" && magicItem && (
-            <input type="hidden" name="id" value={magicItem.id} />
-          )}
+    <form action={formAction} className="space-y-6">
+      <FormGrid columns={2}>
+        <FormField label="Name" required>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={(e) => updateFormData("name", e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="e.g. Sunsword"
+            required
+          />
+        </FormField>
 
-          <div className="space-y-2">
-            <Label htmlFor="magic-item-name">Name *</Label>
-            <Input
-              id="magic-item-name"
-              name="name"
-              defaultValue={magicItem?.name ?? ""}
-              placeholder="e.g. Sunsword"
-              required
-            />
-            {errors?.name && (
-              <span className="text-sm text-error">{errors.name[0]}</span>
-            )}
-          </div>
+        <FormField label="Type">
+          <input
+            type="text"
+            name="type"
+            value={formData.type}
+            onChange={(e) => updateFormData("type", e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="e.g. Weapon"
+          />
+        </FormField>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="magic-item-type">Type</Label>
-              <Input
-                id="magic-item-type"
-                name="type"
-                defaultValue={magicItem?.type ?? ""}
-                placeholder="e.g. Weapon"
-              />
-              {errors?.type && (
-                <span className="text-sm text-error">{errors.type[0]}</span>
-              )}
-            </div>
+        <FormField label="Rarity">
+          <input
+            type="text"
+            name="rarity"
+            value={formData.rarity}
+            onChange={(e) => updateFormData("rarity", e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="Select rarity"
+            list="magic-item-rarity-options"
+          />
+          <datalist id="magic-item-rarity-options">
+            {RARITY_OPTIONS.map((rarity) => (
+              <option key={rarity} value={rarity} />
+            ))}
+          </datalist>
+        </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="magic-item-rarity">Rarity</Label>
-              <Input
-                id="magic-item-rarity"
-                name="rarity"
-                list="magic-item-rarity-options"
-                defaultValue={magicItem?.rarity ?? ""}
-                placeholder="Select rarity"
-              />
-              <datalist id="magic-item-rarity-options">
-                {RARITY_OPTIONS.map((rarity) => (
-                  <option key={rarity} value={rarity} />
-                ))}
-              </datalist>
-              {errors?.rarity && (
-                <span className="text-sm text-error">{errors.rarity[0]}</span>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="magic-item-attunement"
+            name="attunementRequired"
+            checked={formData.attunementRequired}
+            onChange={(e) => updateFormData("attunementRequired", e.target.checked)}
+            className="checkbox"
+          />
+          <Label htmlFor="magic-item-attunement" className="text-sm">
+            Requires attunement
+          </Label>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="magic-item-description">Description</Label>
-            <Textarea
-              id="magic-item-description"
+        <div className="col-span-2">
+          <FormField label="Description">
+            <textarea
               name="description"
-              defaultValue={magicItem?.description ?? ""}
+              value={formData.description}
+              onChange={(e) => updateFormData("description", e.target.value)}
+              rows={6}
+              className="textarea textarea-bordered w-full"
               placeholder="Describe the item..."
-              rows={6}
             />
-            {errors?.description && (
-              <span className="text-sm text-error">
-                {errors.description[0]}
-              </span>
-            )}
-          </div>
+          </FormField>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="magic-item-properties">Properties (JSON)</Label>
-            <Textarea
-              id="magic-item-properties"
+        <div className="col-span-2">
+          <FormField label="Properties (JSON)">
+            <textarea
               name="properties"
-              defaultValue={magicItem?.properties ?? ""}
-              placeholder='{"charges": 3}'
+              value={formData.properties ? JSON.stringify(formData.properties, null, 2) : ""}
+              onChange={(e) => {
+                try {
+                  const parsed = e.target.value ? JSON.parse(e.target.value) : null;
+                  updateFormData("properties", parsed);
+                } catch {
+                  // Invalid JSON, keep as string for now
+                  updateFormData("properties", null);
+                }
+              }}
               rows={6}
+              className="textarea textarea-bordered w-full font-mono text-sm"
+              placeholder='{"charges": 3, "damage": "2d6"}'
             />
             <p className="text-xs text-base-content/60">
               Structured data for automations (optional)
             </p>
-            {errors?.properties && (
-              <span className="text-sm text-error">{errors.properties[0]}</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="magic-item-attunement"
-              name="attunementRequired"
-              defaultChecked={magicItem?.attunementRequired ?? false}
-            />
-            <Label htmlFor="magic-item-attunement" className="text-sm">
-              Requires attunement
-            </Label>
-          </div>
-
-          <ImageManager
-            entityType="magic-items"
-            entityId={magicItem?.id || 0}
-            currentImages={images}
-            onImagesChange={handleImagesChange}
-          />
-        </form>
-      </CardContent>
-      <CardFooter className="pt-3">
-        <div className="flex justify-end gap-2 w-full">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              const form = document.querySelector('form[action]') as HTMLFormElement;
-              if (form) form.requestSubmit();
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
+          </FormField>
         </div>
-      </CardFooter>
-    </Card>
+      </FormGrid>
+
+      <FormSection title="Images">
+        <ImageManager
+          entityType="magic-items"
+          entityId={magicItem?.id ?? 0}
+          currentImages={imageManagement.images}
+          onImagesChange={imageManagement.setImages}
+        />
+        {mode === "create" && !magicItem?.id && (
+          <p className="mt-2 text-sm text-base-content/70">
+            Save the magic item to start uploading images.
+          </p>
+        )}
+      </FormSection>
+
+      <FormActions 
+        mode={mode}
+        onCancel={() => {
+          const redirectPath = mode === "edit" && magicItem?.id 
+            ? `/magic-items/${magicItem.id}`
+            : "/magic-items";
+          router.push(redirectPath);
+        }}
+        isPending={isPending}
+        submitLabel={mode === "create" ? "Create Magic Item" : "Update Magic Item"}
+      />
+    </form>
   );
 }

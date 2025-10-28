@@ -56,6 +56,7 @@ export const sessions = sqliteTable("sessions", {
   date: text("date").notNull(),
   text: text("text"),
   images: text("images", { mode: "json" }),
+  promotedTo: text("promoted_to", { mode: "json" }), // Array of {type, id, text, createdAt}
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
   updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
@@ -81,6 +82,7 @@ export const characters = sqliteTable("characters", {
   classes: text("classes", { mode: "json" }),
   description: text("description"),
   images: text("images", { mode: "json" }),
+  tags: text("tags", { mode: "json" }),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
   updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
@@ -119,6 +121,7 @@ export const magicItems = sqliteTable("magic_items", {
   attunementRequired: integer("attunement_required", {
     mode: "boolean",
   }).default(false),
+  tags: text("tags", { mode: "json" }),
   images: text("images", { mode: "json" }),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
   updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
@@ -275,7 +278,47 @@ export const characterDiaryEntries = sqliteTable(
   }),
 );
 
-// Additional tables will be added as needed
+// Location diary entries - for tracking location history and events
+export const locationDiaryEntries = sqliteTable(
+  "location_diary_entries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    locationId: integer("location_id")
+      .references(() => locations.id, { onDelete: "cascade" })
+      .notNull(),
+    description: text("description").notNull(),
+    date: text("date").notNull(),
+    linkedEntities: text("linked_entities", { mode: "json" }), // Array of {id, type, name}
+    isImportant: integer("is_important", { mode: "boolean" }).default(false),
+    createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+    updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
+  },
+  (table) => ({
+    locationIndex: index("idx_location_diary_location").on(table.locationId),
+    dateIndex: index("idx_location_diary_date").on(table.date),
+  }),
+);
+
+// Quest diary entries - for tracking quest progress and events
+export const questDiaryEntries = sqliteTable(
+  "quest_diary_entries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    questId: integer("quest_id")
+      .references(() => quests.id, { onDelete: "cascade" })
+      .notNull(),
+    description: text("description").notNull(),
+    date: text("date").notNull(),
+    linkedEntities: text("linked_entities", { mode: "json" }), // Array of {id, type, name}
+    isImportant: integer("is_important", { mode: "boolean" }).default(false),
+    createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+    updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
+  },
+  (table) => ({
+    questIndex: index("idx_quest_diary_quest").on(table.questId),
+    dateIndex: index("idx_quest_diary_date").on(table.date),
+  }),
+);
 
 // Type exports for components
 export type Campaign = {
@@ -315,6 +358,7 @@ export type Session = {
   date: string;
   text: string | null;
   images: unknown;
+  promotedTo: unknown; // Array of {type, id, text, createdAt}
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -368,6 +412,7 @@ export type Character = {
   classes: unknown;
   description: string | null;
   images: unknown;
+  tags: unknown;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -380,6 +425,7 @@ export type MagicItem = {
   description: string | null;
   properties: unknown;
   attunementRequired: boolean | null;
+  tags: unknown;
   images: unknown;
   createdAt: string | null;
   updatedAt: string | null;
@@ -415,6 +461,28 @@ export type Relation = {
 export type CharacterDiaryEntry = {
   id: number;
   characterId: number;
+  description: string;
+  date: string;
+  linkedEntities: unknown; // JSON array of {id, type, name}
+  isImportant: boolean | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type LocationDiaryEntry = {
+  id: number;
+  locationId: number;
+  description: string;
+  date: string;
+  linkedEntities: unknown; // JSON array of {id, type, name}
+  isImportant: boolean | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type QuestDiaryEntry = {
+  id: number;
+  questId: number;
   description: string;
   date: string;
   linkedEntities: unknown; // JSON array of {id, type, name}

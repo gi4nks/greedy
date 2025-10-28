@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AlertError } from "@/components/ui/error-message";
 import {
   Select,
   SelectContent,
@@ -17,6 +18,7 @@ import {
   type AssignableEntityOption,
   type MagicItemAssignableEntity,
 } from "@/lib/magicItems/shared";
+import { assignMagicItemToEntities } from "@/lib/actions/magicItems";
 import { cn } from "@/lib/utils";
 import { EyeOff, Plus, Save } from "lucide-react";
 
@@ -227,23 +229,10 @@ export function MagicItemAssignmentComposer({
 
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/magic-items/${itemId}/assign`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            entityType,
-            entityIds: selected.map((item) => item.id),
-          }),
+        await assignMagicItemToEntities(itemId, {
+          entityType,
+          entityIds: selected.map((item) => item.id),
         });
-
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as {
-            error?: string;
-          } | null;
-          throw new Error(payload?.error ?? "Failed to assign magic item.");
-        }
 
         handleClose();
         router.refresh();
@@ -299,14 +288,14 @@ export function MagicItemAssignmentComposer({
     <>
       <Button
         type="button"
-        variant="secondary"
+        variant="primary"
         className="gap-2"
         onClick={handleOpen}
         size="sm"
       >
         <Plus className="w-4 h-4" />
         Assign
-      </Button>
+      </Button>npm 
 
       {isOpen && (
         <div className="modal modal-open">
@@ -398,9 +387,7 @@ export function MagicItemAssignmentComposer({
               </div>
 
               {fetchState.error && (
-                <div className="rounded-md border border-error/40 bg-error/10 p-3 text-sm text-error">
-                  {fetchState.error}
-                </div>
+                <AlertError message={fetchState.error} />
               )}
 
               {!fetchState.isLoading &&
@@ -458,15 +445,13 @@ export function MagicItemAssignmentComposer({
             </div>
 
             {assignError && (
-              <div className="rounded-md border border-error/40 bg-error/10 p-3 text-sm text-error">
-                {assignError}
-              </div>
+              <AlertError message={assignError} />
             )}
 
             <div className="modal-action flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 type="button"
-                variant="secondary"
+                variant="primary"
                 className="gap-2"
                 onClick={handleAssign}
                 disabled={isSubmitting || selected.length === 0}

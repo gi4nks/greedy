@@ -132,28 +132,104 @@ export const CreateQuestSchema = z.object({
 
 export const UpdateQuestSchema = CreateQuestSchema.partial();
 
-// Helper function to create APIError response
-export function createAPIError(
-  code: string,
-  message: string,
-  details?: unknown,
-) {
+// Diary schemas
+export const DiaryEntrySchema = z.object({
+  description: z.string().min(1, "Description is required"),
+  date: z.string().min(1, "Date is required"),
+  linkedEntities: z.array(z.object({
+    id: z.string(),
+    type: z.string(),
+    name: z.string(),
+  })).optional().default([]),
+  isImportant: z.boolean().optional().default(false),
+});
+
+// Relationship schemas (for NPC-Character relationships)
+export const RelationshipFormSchema = z.object({
+  npcId: z.string().min(1, "NPC is required"),
+  characterId: z.string().min(1, "Character is required"),
+  relationshipType: z.enum(["ally", "enemy", "neutral", "romantic", "family", "friend", "rival"]),
+  strength: z.number().int().min(-100).max(100),
+  trust: z.number().int().min(0).max(100),
+  fear: z.number().int().min(0).max(100),
+  respect: z.number().int().min(0).max(100),
+  description: z.string().optional(),
+  isMutual: z.boolean().optional().default(true),
+  discoveredByPlayers: z.boolean().optional().default(false),
+});
+
+// Relation schemas
+export const RelationSchema = z.object({
+  campaignId: z.number().int().positive("Campaign ID must be a positive integer"),
+  sourceEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
+  sourceEntityId: z.number().int().positive("Source entity ID must be a positive integer"),
+  targetEntityType: z.enum(["character", "npc", "location", "quest", "adventure", "session"]),
+  targetEntityId: z.number().int().positive("Target entity ID must be a positive integer"),
+  relationType: z.string().min(1, "Relation type is required"),
+  description: z.string().optional(),
+  bidirectional: z.boolean().optional().default(false),
+  metadata: z.any().optional(),
+});
+
+// Wiki schemas
+export const WikiMonsterSchema = z.object({
+  title: z.string().min(1, "Title is required").max(500, "Title must be less than 500 characters"),
+  contentType: z.literal("monster"),
+  wikiUrl: z.string().url("Wiki URL must be a valid URL").optional(),
+  rawContent: z.string().optional(),
+  parsedData: z.unknown().optional(),
+  importedFrom: z.string().optional().default("wiki"),
+});
+
+export const WikiSpellSchema = z.object({
+  title: z.string().min(1, "Title is required").max(500, "Title must be less than 500 characters"),
+  contentType: z.literal("spell"),
+  wikiUrl: z.string().url("Wiki URL must be a valid URL").optional(),
+  rawContent: z.string().optional(),
+  parsedData: z.unknown().optional(),
+  importedFrom: z.string().optional().default("wiki"),
+});
+
+// Image upload schemas
+export const ImageUploadSchema = z.object({
+  entityType: z.enum(["character", "location", "quest", "adventure", "session", "campaign"]),
+  entityId: z.number().int().positive("Entity ID must be a positive integer"),
+  // File validation will be handled separately in the upload function
+});
+
+// Export schemas
+export const ExportOptionsSchema = z.object({
+  campaignId: z.number().int().positive("Campaign ID must be a positive integer"),
+  format: z.enum(["markdown", "pdf", "html", "json"]),
+  sections: z.object({
+    sessions: z.boolean().optional(),
+    characters: z.boolean().optional(),
+    locations: z.boolean().optional(),
+    quests: z.boolean().optional(),
+    magicItems: z.boolean().optional(),
+  }),
+  dateRange: z.object({
+    start: z.string(),
+    end: z.string(),
+  }).optional(),
+});
+
+// Helper function to create unified error response
+export function createValidationError(message: string, details?: unknown) {
   return {
-    error: {
-      code,
-      message,
-      details,
-    },
+    success: false,
+    error: message,
+    data: details,
   };
 }
 
-// Helper function to validate request body and return appropriate response
+// Helper function to validate request body and return unified response
 export function validateRequestBody<T>(
   schema: z.ZodSchema<T>,
   body: unknown,
 ):
   | { success: true; data: T }
-  | { success: false; error: ReturnType<typeof createAPIError> } {
+  | { success: false; error: string; data?: unknown } {
   const result = schema.safeParse(body);
 
   if (!result.success) {
@@ -162,11 +238,8 @@ export function validateRequestBody<T>(
     );
     return {
       success: false,
-      error: createAPIError(
-        "VALIDATION_ERROR",
-        "Invalid request data",
-        errorMessages,
-      ),
+      error: "Invalid request data",
+      data: errorMessages,
     };
   }
 

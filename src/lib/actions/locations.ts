@@ -28,7 +28,7 @@ export async function getLocation(id: number) {
 
 export async function createLocation(
   formData: FormData,
-): Promise<ActionResult<Location>> {
+): Promise<{ success: boolean; error?: string }> {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const adventureId = formData.get("adventureId")
@@ -62,19 +62,19 @@ export async function createLocation(
       .returning();
 
     revalidatePath(`/campaigns/${campaignId}/locations`);
-    return { success: true, data: newLocation };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: `Database Error: Failed to create location. ${error instanceof Error ? error.message : String(error)}`,
+      error: `Database Error: Failed to create location. ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
 
 export async function updateLocation(
   formData: FormData,
-): Promise<ActionResult<Location>> {
+): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -109,12 +109,12 @@ export async function updateLocation(
       .returning();
 
     revalidatePath(`/campaigns/${campaignId}/locations`);
-    return { success: true, data: updatedLocation };
+    return { success: true };
   } catch (error) {
     console.error("Database error:", error);
     return {
       success: false,
-      message: "Database Error: Failed to update location.",
+      error: "Database Error: Failed to update location.",
     };
   }
 }

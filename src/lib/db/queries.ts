@@ -46,6 +46,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
       classes: characters.classes,
       description: characters.description,
       images: characters.images,
+      tags: characters.tags,
       createdAt: characters.createdAt,
       updatedAt: characters.updatedAt,
       // Adventure fields
@@ -170,6 +171,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
     classes: characterData.classes,
     description: characterData.description,
     images: characterData.images,
+    tags: characterData.tags,
     createdAt: characterData.createdAt,
     updatedAt: characterData.updatedAt,
     // Related entities
@@ -221,11 +223,13 @@ export async function getSessionWithWikiEntities(sessionId: number) {
     .select({
       // Session fields
       id: sessions.id,
+      campaignId: sessions.campaignId,
       adventureId: sessions.adventureId,
       title: sessions.title,
       date: sessions.date,
       text: sessions.text,
       images: sessions.images,
+      promotedTo: sessions.promotedTo,
       createdAt: sessions.createdAt,
       updatedAt: sessions.updatedAt,
       // Wiki entity fields (nullable)
@@ -275,11 +279,13 @@ export async function getSessionWithWikiEntities(sessionId: number) {
   // Transform into expected structure
   const session = {
     id: sessionData.id,
+    campaignId: sessionData.campaignId,
     adventureId: sessionData.adventureId,
     title: sessionData.title,
     date: sessionData.date,
     text: sessionData.text,
     images: sessionData.images,
+    promotedTo: sessionData.promotedTo,
     createdAt: sessionData.createdAt,
     updatedAt: sessionData.updatedAt,
     wikiEntities: wikiEntities,

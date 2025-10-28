@@ -1,6 +1,6 @@
 import { MagicItemForm } from "@/components/magic-items/MagicItemForm";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 
 export default function NewMagicItemPage() {

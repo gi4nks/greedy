@@ -32,9 +32,9 @@ const UpdateCampaignSchema = z.object({
 });
 
 export async function createCampaign(
-  state: ActionResult<{ id: number }> | undefined,
+  state: { success: boolean; error?: string } | undefined,
   formData: FormData,
-): Promise<ActionResult<{ id: number }>> {
+): Promise<{ success: boolean; error?: string }> {
   console.log("🔥 createCampaign called");
   console.log("📝 Form data:", {
     title: formData.get("title"),
@@ -66,7 +66,7 @@ export async function createCampaign(
     console.error("❌ Validation failed:", validatedFields.error.flatten().fieldErrors);
     return {
       success: false,
-      errors: validatedFields.error.flatten().fieldErrors,
+      error: "Validation failed",
     };
   }
 
@@ -102,14 +102,13 @@ export async function createCampaign(
     console.log("🔄 Path revalidated, returning success");
     return {
       success: true,
-      data: { id: campaign.id },
     };
   } catch (error) {
     console.error("💥 Database error creating campaign:", error);
     logger.error("Database error creating campaign", error);
     return {
       success: false,
-      message: "Database Error: Failed to create campaign.",
+      error: "Failed to create campaign",
     };
   }
 }
@@ -117,7 +116,7 @@ export async function createCampaign(
 export async function updateCampaign(
   id: number,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<{ success: boolean; error?: string }> {
   const validatedFields = UpdateCampaignSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
@@ -136,7 +135,7 @@ export async function updateCampaign(
   if (!validatedFields.success) {
     return {
       success: false,
-      errors: validatedFields.error.flatten().fieldErrors,
+      error: "Validation failed",
     };
   }
 
@@ -156,7 +155,7 @@ export async function updateCampaign(
     logger.error("Database error updating campaign", error);
     return {
       success: false,
-      message: "Database Error: Failed to update campaign.",
+      error: "Failed to update campaign",
     };
   }
 }

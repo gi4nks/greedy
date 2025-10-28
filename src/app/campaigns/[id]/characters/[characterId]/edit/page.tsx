@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import {
@@ -17,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { WikiDataService } from "@/lib/services/wiki-data";
+import { WikiEntity } from "@/lib/types/wiki";
 
 interface EditCharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -46,6 +46,7 @@ async function getCharacter(characterId: number) {
       classes: characters.classes,
       description: characters.description,
       images: characters.images,
+      tags: characters.tags,
       createdAt: characters.createdAt,
       updatedAt: characters.updatedAt,
       wikiEntities: sql<string>`json_group_array(
@@ -115,7 +116,7 @@ async function getCharacter(characterId: number) {
     : [];
 
   // Apply content conversion for AD&D 2e wiki articles
-  const processedWikiEntities = parsedWikiEntities.map((entity: any) => ({
+  const processedWikiEntities = parsedWikiEntities.map((entity: WikiEntity) => ({
     ...entity,
     description: entity.importedFrom === "adnd2e-wiki"
       ? WikiDataService.wikitextToHtml(entity.description || "")
@@ -127,6 +128,16 @@ async function getCharacter(characterId: number) {
     magicItems: magicItemAssignmentsForCharacter,
     wikiEntities: processedWikiEntities,
   };
+
+  // Fetch diary entries
+  const diaryResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/characters/${characterId}/diary`);
+  let diaryEntries: any[] = [];
+  if (diaryResponse.ok) {
+    const diaryResult = await diaryResponse.json();
+    if (diaryResult.success && diaryResult.data) {
+      diaryEntries = diaryResult.data;
+    }
+  }
 
   // Get related data
   const [adventure] = characterWithParsedEntities.adventureId
@@ -161,6 +172,7 @@ async function getCharacter(characterId: number) {
 
   return {
     ...characterWithParsedEntities,
+    diaryEntries,
     adventure,
     campaign,
   };

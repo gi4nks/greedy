@@ -1,20 +1,48 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MagicItemAssignmentComposer } from "@/components/magic-items/MagicItemAssignmentComposer";
-import { UnassignMagicItemButton } from "@/components/magic-items/UnassignMagicItemButton";
-import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { EntityImageCarousel } from "@/components/ui/image-carousel";
-import { getMagicItemById, deleteMagicItem } from "@/lib/actions/magicItems";
+import { getMagicItemById } from "@/lib/actions/magicItems";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
 import { parseImagesJson, type ImageInfo } from "@/lib/utils/imageUtils.client";
 import type { MagicItemAssignableEntity } from "@/lib/magicItems/shared";
-import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { DeleteMagicItemForm } from "@/components/magic-items/DeleteMagicItemForm";
+import type { MagicItemWithAssignments } from "@/lib/actions/magicItems";
+import MarkdownRenderer from "@/components/ui/markdown-renderer";
+import CollapsibleSection from "@/components/ui/collapsible-section";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/ui/page-header";
+import { MagicItemSidebar } from "@/components/magic-items/MagicItemSidebar";
+import { MagicItemDiary } from "@/components/magic-items/MagicItemDiary";
+import { MagicItemWikiLinks } from "@/components/magic-items/MagicItemWikiLinks";
+import { UnassignMagicItemButton } from "@/components/magic-items/UnassignMagicItemButton";
+
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
+import { Edit, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+function parseTags(tags: unknown): string[] {
+  if (!tags) return [];
+  
+  if (Array.isArray(tags)) {
+    return tags.filter(tag => typeof tag === 'string');
+  }
+  
+  if (typeof tags === 'string') {
+    try {
+      const parsed = JSON.parse(tags);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(tag => typeof tag === 'string');
+      }
+    } catch (error) {
+      console.warn("Failed to parse tags JSON", error);
+    }
+  }
+  
+  return [];
+}
 
 function parseProperties(value: unknown): Record<string, unknown> | null {
   if (!value) {
@@ -117,13 +145,6 @@ function groupAssignmentsByType(assignments: ParsedAssignment[]) {
   );
 }
 
-function buildExistingAssignments(assignments: ParsedAssignment[]) {
-  return assignments.map((assignment) => ({
-    entityType: assignment.entityType,
-    entityId: assignment.entityId,
-  }));
-}
-
 function parseImages(images: unknown): ImageInfo[] {
   try {
     return parseImagesJson(images);
@@ -133,173 +154,63 @@ function parseImages(images: unknown): ImageInfo[] {
   }
 }
 
-function metadataBadges(item: {
-  rarity: string | null;
-  type: string | null;
-  attunementRequired: boolean | null;
-  source: "manual" | "wiki";
+function MagicItemDetail({
+  item,
+  properties,
+  assignmentsByType,
+  parsedAssignments,
+  images
+}: {
+  item: MagicItemWithAssignments;
+  properties: Record<string, unknown> | null;
+  assignmentsByType: Record<string, ParsedAssignment[]>;
+  parsedAssignments: ParsedAssignment[];
+  images: ImageInfo[];
 }) {
-  const badges: {
-    id: string;
-    content: string;
-    variant: "default" | "secondary" | "outline";
-    className?: string;
-  }[] = [];
-
-  if (item.rarity) {
-    badges.push({ id: "rarity", content: item.rarity, variant: "outline" });
-  }
-
-  if (item.type) {
-    badges.push({ id: "type", content: item.type, variant: "secondary" });
-  }
-
-  badges.push({
-    id: "source",
-    content: item.source,
-    variant: item.source === "wiki" ? "default" : "outline",
-    className: item.source === "wiki" ? "bg-blue-500 text-white" : "",
-  });
-
-  if (item.attunementRequired) {
-    badges.push({
-      id: "attunement",
-      content: "Attunement required",
-      variant: "secondary",
-      className: "bg-emerald-500 text-white",
-    });
-  }
-
-  return badges;
-}
-
-export default async function MagicItemDetailPage({
-  params,
-}: MagicItemDetailPageProps) {
-  const resolvedParams = await params;
-  const itemId = Number.parseInt(resolvedParams.id, 10);
-
-  if (!Number.isFinite(itemId)) {
-    notFound();
-  }
-
-  const [item, campaignOptions] = await Promise.all([
-    getMagicItemById(itemId),
-    getCampaignOptions(),
-  ]);
-
-  if (!item) {
-    notFound();
-  }
-
-  const parsedAssignments = parseAssignments(item.assignments);
-  const assignmentsByType = groupAssignmentsByType(parsedAssignments);
-  const existingAssignments = buildExistingAssignments(parsedAssignments);
-  const properties = parseProperties(item.properties);
-  const images = parseImages(item.images);
-
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      <DynamicBreadcrumb
-        items={[
-          { label: "Magic Items", href: "/magic-items" },
-          { label: item.name },
-        ]}
-      />
+    <div className="space-y-6">
+      {/* Description */}
+      <CollapsibleSection title="Description" defaultExpanded={true}>
+        <div className="space-y-4 text-base-content/70">
+          {item.description ? (
+            <MarkdownRenderer
+              content={item.description}
+              className="prose-base"
+            />
+          ) : (
+            <p className="italic text-base-content/60">
+              No description available for this magic item.
+            </p>
+          )}
 
-      {/* Magic Item Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold">{item.name}</h1>
-            <div className="flex items-center gap-4 mt-2">
-              <div className="flex flex-wrap gap-2 text-sm text-base-content/70">
-                {metadataBadges(item).map((badge) => (
-                  <Badge
-                    key={badge.id}
-                    variant={badge.variant}
-                    className={`capitalize ${badge.className ?? ""}`}
+          {properties && Object.keys(properties).length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                Properties
+              </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                {Object.entries(properties).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="rounded-md border border-base-200 bg-base-100 p-4"
                   >
-                    {badge.content}
-                  </Badge>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                      {key}
+                    </p>
+                    <pre className="mt-2 whitespace-pre-wrap text-sm text-base-content">
+                      {formatPropertyValue(value)}
+                    </pre>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <MagicItemAssignmentComposer
-              itemId={item.id}
-              existingAssignments={existingAssignments}
-              campaignOptions={campaignOptions}
-            />
-            {item.source === "manual" && (
-              <>
-                <Link href={`/magic-items/${item.id}/edit`}>
-                  <Button
-                    variant="secondary"
-                    className="w-full gap-2 sm:w-auto"
-                    size="sm"
-                  >
-                    Edit
-                  </Button>
-                </Link>
-                <DeleteMagicItemForm itemId={item.id} itemName={item.name} />
-              </>
-            )}
-          </div>
+          )}
         </div>
-      </div>
-
-      {/* Description */}
-      <div className="mb-6">
-        <Card className="border-base-200">
-          <CardHeader>
-            <CardTitle>Description</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-base-content/70">
-            {item.description ? (
-              <MarkdownRenderer
-                content={item.description}
-                className="prose-base"
-              />
-            ) : (
-              <p className="italic text-base-content/60">
-                No description available for this magic item.
-              </p>
-            )}
-
-            {properties && Object.keys(properties).length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-                  Properties
-                </p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {Object.entries(properties).map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="rounded-md border border-base-200 bg-base-100 p-4"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-                        {key}
-                      </p>
-                      <pre className="mt-2 whitespace-pre-wrap text-sm text-base-content">
-                        {formatPropertyValue(value)}
-                      </pre>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      </CollapsibleSection>
 
       {/* Assignments */}
-      <Card className="border-base-200">
-        <CardHeader>
-          <CardTitle>Assignments</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <CollapsibleSection title="Assignments" defaultExpanded={false}>
+        <div className="space-y-6">
           {parsedAssignments.length === 0 ? (
             <div className="rounded-md border border-dashed border-base-300 p-6 text-center text-sm text-base-content/60">
               This magic item has not been assigned to any entities yet.
@@ -354,17 +265,102 @@ export default async function MagicItemDetailPage({
               ),
             )
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleSection>
 
       {/* Images */}
-      <div className="mt-8">
+      <CollapsibleSection title="Images" defaultExpanded={false}>
         <EntityImageCarousel
-          images={parseImagesJson(images)}
+          images={images}
           entityType="magic-item"
           className="max-w-2xl mx-auto"
         />
+      </CollapsibleSection>
+    </div>
+  );
+}
+
+function MagicItemDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="animate-pulse">
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-24 bg-base-300 rounded-lg"></div>
+          ))}
+        </div>
       </div>
     </div>
+  );
+}
+
+export default async function MagicItemPage({ params }: MagicItemDetailPageProps) {
+  const { id } = await params;
+  const itemId = parseInt(id);
+
+  const item = await getMagicItemById(itemId);
+
+  if (!item) {
+    notFound();
+  }
+
+  const properties = parseProperties(item.properties);
+  const assignments = parseAssignments(item.assignments || []);
+  const assignmentsByType = groupAssignmentsByType(assignments);
+  const images = parseImages(item.images);
+  const campaignOptions = await getCampaignOptions();
+
+  return (
+    <EntityErrorBoundary entityType="magic-item">
+      <PageContainer>
+        <PageHeader
+          breadcrumb={{
+            items: [
+              { label: "Magic Items", href: "/magic-items" },
+              { label: item.name },
+            ],
+          }}
+          title={item.name}
+          actions={
+            <Link href={`/magic-items/${itemId}/edit`}>
+              <Button variant="secondary" className="gap-2" size="sm">
+                <Edit className="w-4 h-4" />
+                Edit
+              </Button>
+            </Link>
+          }
+          className="mb-8"
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            <Suspense fallback={<EntityDetailSkeleton />}>
+              <MagicItemDetail
+                item={item}
+                properties={properties}
+                assignmentsByType={assignmentsByType}
+                parsedAssignments={assignments}
+                images={images}
+              />
+            </Suspense>
+
+            {/* Diary */}
+            <MagicItemDiary itemId={item.id} campaignId={undefined} />
+
+            {/* Wiki Links */}
+            <MagicItemWikiLinks item={item} />
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <MagicItemSidebar
+              item={item}
+              campaignOptions={campaignOptions}
+            />
+          </div>
+        </div>
+      </PageContainer>
+    </EntityErrorBoundary>
   );
 }

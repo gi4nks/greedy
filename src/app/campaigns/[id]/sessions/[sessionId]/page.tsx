@@ -11,6 +11,9 @@ import { db } from "@/lib/db";
 import { adventures, sessions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+import { EntityErrorBoundary } from "@/components/ui/error-boundary";
+import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
+
 interface SessionPageProps {
   params: Promise<{ id: string; sessionId: string }>;
 }
@@ -68,7 +71,7 @@ async function SessionContent({ sessionId, campaignId }: { sessionId: number; ca
         ]}
       />
 
-      <SessionHeader session={session} />
+      <SessionHeader session={session} campaignId={campaignId} />
 
       {/* Image Carousel */}
       <div className="mb-8">
@@ -91,22 +94,12 @@ export default async function SessionPage({ params }: SessionPageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      <Suspense
-        fallback={
-          <div className="space-y-6">
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <Skeleton className="h-8 w-1/3 mb-2" />
-                <Skeleton className="h-4 w-1/4 mb-4" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            </div>
-          </div>
-        }
-      >
-        <SessionContent sessionId={sessionId} campaignId={campaignId} />
-      </Suspense>
-    </div>
+    <EntityErrorBoundary entityType="session">
+      <div className="container mx-auto px-4 py-6 md:p-6">
+        <Suspense fallback={<EntityDetailSkeleton />}>
+          <SessionContent sessionId={sessionId} campaignId={campaignId} />
+        </Suspense>
+      </div>
+    </EntityErrorBoundary>
   );
 }

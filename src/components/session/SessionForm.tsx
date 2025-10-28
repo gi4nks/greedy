@@ -1,13 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useActionState } from "react";
+import { createSession, updateSession } from "@/lib/actions/sessions";
+import { SessionFormSchema, type SessionFormData } from "@/lib/forms";
+import { validateFormData } from "@/lib/forms/validation";
+import { ImageManager } from "@/components/ui/image-manager";
+import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
+import { WikiEntity } from "@/lib/types/wiki";
+import { useImageManagement } from "@/lib/utils/imageFormUtils";
+import { useWikiItemManagement } from "@/lib/utils/wikiUtils";
+import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { FormSection, FormGrid, FormActions } from "@/lib/forms";
+import { FormField } from "@/components/ui/form-components";
+import { ErrorHandler } from "@/lib/error-handler";
 import {
   Select,
   SelectContent,
@@ -15,13 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Save, EyeOff } from "lucide-react";
-import { createSession, updateSession } from "@/lib/actions/sessions";
-import { ImageManager } from "@/components/ui/image-manager";
-import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
-import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
-import { WikiEntity } from "@/lib/types/wiki";
-import { toast } from "sonner";
 
 interface SessionFormProps {
   session?: {
@@ -41,16 +41,6 @@ interface SessionFormProps {
   }>;
   mode: "create" | "edit";
   defaultAdventureId?: number;
-  showButtons?: boolean;
-  id?: string;
-}
-
-interface FormState {
-  title: string;
-  date: string;
-  text: string;
-  adventureId: string;
-  images: ImageInfo[];
 }
 
 export default function SessionForm({
@@ -59,203 +49,110 @@ export default function SessionForm({
   adventures,
   mode,
   defaultAdventureId,
-  showButtons = true,
-  id,
 }: SessionFormProps) {
   const router = useRouter();
+  
+  // Form state
+  const [formData, setFormData] = useState<SessionFormData>(() => ({
+    title: session?.title || "",
+    date: session?.date || new Date().toISOString().split("T")[0],
+    adventureId: session?.adventureId || defaultAdventureId,
+    text: session?.text || "",
+    campaignId,
+    images: parseImagesJson(session?.images),
+  }));
 
-  const createOrUpdateSession = async (
-    prevState: { success: boolean; error?: string } | undefined,
-    formData: FormData,
-  ) => {
+  // Use shared hooks for state management
+  const imageManagement = useImageManagement(parseImagesJson(session?.images));
+  const wikiManagement = useWikiItemManagement(session?.wikiEntities || []);
+
+  // Server action setup
+  const createOrUpdateSession = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
     try {
-      let result;
-      if (mode === "edit" && session) {
-        result = await updateSession(formData);
-      } else {
-        result = await createSession(formData);
-      }
-
-      if (result?.success) {
-        toast.success(
-          `Session ${mode === "edit" ? "updated" : "created"} successfully!`,
-        );
-        router.push(
-          campaignId ? `/campaigns/${campaignId}/sessions` : "/sessions",
-        );
-        return { success: true };
-      } else {
-        toast.error("Failed to save session. Please try again.");
-        return { success: false, error: "Unknown error" };
-      }
-    } catch (error) {
-      console.error("Error saving session:", error);
-      toast.error("Failed to save session. Please try again.");
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  };
-
-  const [, formAction, isPending] = useActionState(createOrUpdateSession, {
-    success: false,
-  });
-
-  // Wiki entities state
-  const [wikiEntities, setWikiEntities] = useState<WikiEntity[]>(
-    session?.wikiEntities || [],
-  );
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
-
-  // Initialize form data
-  const [formData, setFormData] = useState<FormState>(() => {
-    if (mode === "edit" && session) {
-      return {
-        title: session.title,
-        date: session.date,
-        text: session.text || "",
-        adventureId: session.adventureId?.toString() || "",
-        images: parseImagesJson(session.images),
-      };
-    }
-    return {
-      title: "",
-      date: new Date().toISOString().split("T")[0], // Today's date
-      text: "",
-      adventureId: defaultAdventureId?.toString() || "",
-      images: [],
-    };
-  });
-
-  const handleInputChange = (
-    field: keyof FormState,
-    value: string | ImageInfo[],
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleImagesChange = (images: ImageInfo[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      images,
-    }));
-  };
-
-  const removeWikiItem = async (wikiArticleId: number, contentType: string) => {
-    const itemKey = `${contentType}-${wikiArticleId}`;
-
-    // Prevent multiple simultaneous removals of the same item
-    if (removingItems.has(itemKey)) {
-      return;
-    }
-
-    setRemovingItems((prev) => new Set(prev).add(itemKey));
-
-    try {
-      const response = await fetch(
-        `/api/wiki-articles/${wikiArticleId}/entities`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            entityType: "session",
-            entityId: session?.id,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error response:", errorText);
-
-        // Treat 404 as success (item already removed)
-        if (response.status === 404) {
-          console.log("Item already removed (404), treating as success");
-        } else {
-          throw new Error(`Failed to remove wiki item: ${errorText}`);
-        }
-      }
-
-      const result = response.ok ? await response.json() : null;
-      if (result) {
-        console.log("API success result:", result);
-      }
-
-      // Update local state - remove the entity from wikiEntities
-      setWikiEntities((prev) =>
-        prev.filter((entity) => entity.id !== wikiArticleId),
-      );
-      console.log("Wiki item removed successfully");
-    } catch (error) {
-      console.error("Error removing wiki item:", error);
-      toast.error("Failed to remove wiki item. Please try again.");
-    } finally {
-      setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
+      // Validate form data
+      const rawData = Object.fromEntries(formData.entries());
+      const validation = validateFormData(SessionFormSchema, {
+        ...rawData,
+        campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : undefined,
+        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
+        images: rawData.images ? JSON.parse(rawData.images as string) : [],
       });
+
+      if (!validation.success) {
+        return { success: false, error: Object.values(validation.errors)[0] };
+      }
+
+      if (mode === "edit" && session) {
+        return await updateSession(formData);
+      } else {
+        return await createSession(formData);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      return { success: false, error: "An unexpected error occurred" };
     }
+  };
+
+  const [state, formAction, isPending] = useActionState(createOrUpdateSession, { success: false });
+
+  // Handle form submission results in useEffect
+  const redirectPath = campaignId ? `/campaigns/${campaignId}/sessions` : "/sessions";
+  
+  useEffect(() => {
+    if (state?.success) {
+      ErrorHandler.showSuccess(`Session ${mode === "create" ? "created" : "updated"} successfully!`);
+      router.push(redirectPath);
+    } else if (state?.error) {
+      ErrorHandler.handleSubmissionError(state.error, `${mode} session`);
+    }
+  }, [state, mode, redirectPath, router]);
+
+  // Helper functions
+  const updateFormData = <K extends keyof SessionFormData>(key: K, value: SessionFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <form id={id} action={formAction} className="space-y-6">
-      {/* Hidden inputs for server action */}
-      <input type="hidden" name="campaignId" value={campaignId || ""} />
-      <input type="hidden" name="images" value={JSON.stringify(formData.images)} />
-      {mode === "edit" && session && (
-        <input type="hidden" name="id" value={session.id} />
-      )}
-      <Card>
-        <CardHeader>
-          <CardTitle>Session Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Session Title *</Label>
-              <Input
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="Enter session title"
-                required
-              />
-            </div>
+    <form action={formAction} className="space-y-6">
+      <input type="hidden" name="campaignId" value={campaignId?.toString() || ""} />
+      {mode === "edit" && session?.id && <input type="hidden" name="id" value={session.id.toString()} />}
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Date *</Label>
-              <Input
-                id="date"
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange("date", e.target.value)}
-                required
-              />
-            </div>
+      <div className="space-y-6">
+        <FormGrid columns={2}>
+          <FormField label="Session Title" required>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={(e) => updateFormData("title", e.target.value)}
+              className="input input-bordered w-full"
+              placeholder="Enter session title"
+              required
+            />
+          </FormField>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="adventureId">Adventure</Label>
+          <FormField label="Date" required>
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={(e) => updateFormData("date", e.target.value)}
+              className="input input-bordered w-full"
+              required
+            />
+          </FormField>
+
+          <div className="col-span-2">
+            <FormField label="Adventure">
               <Select
-                name="adventureId"
-                value={formData.adventureId}
-                onValueChange={(value) =>
-                  handleInputChange("adventureId", value)
-                }
+                value={formData.adventureId?.toString() || ""}
+                onValueChange={(value) => updateFormData("adventureId", value ? parseInt(value) : undefined)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an adventure (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No specific adventure</SelectItem>
+                  <SelectItem value="">No specific adventure</SelectItem>
                   {adventures.map((adventure) => (
                     <SelectItem
                       key={adventure.id}
@@ -271,105 +168,63 @@ export default function SessionForm({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm text-base-content/70">
+              <p className="text-sm text-base-content/70 mt-1">
                 Link this session to a specific adventure
               </p>
-            </div>
+            </FormField>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Session Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="text">Session Summary</Label>
-            <Textarea
-              id="text"
-              name="text"
-              value={formData.text}
-              onChange={(e) => handleInputChange("text", e.target.value)}
-              placeholder="What happened in this session? Record key events, character interactions, plot developments, combat encounters, and any memorable moments..."
-              rows={12}
-            />
-            <p className="text-sm text-base-content/70">
-              Describe what happened during this session. This will help you
-              track campaign progress and recall important details.
-            </p>
+          <div className="col-span-2">
+            <FormField label="Session Summary">
+              <textarea
+                name="text"
+                value={formData.text}
+                onChange={(e) => updateFormData("text", e.target.value)}
+                rows={12}
+                className="textarea textarea-bordered w-full"
+                placeholder="What happened in this session? Record key events, character interactions, plot developments, combat encounters, and any memorable moments..."
+              />
+            </FormField>
           </div>
-        </CardContent>
-      </Card>
+        </FormGrid>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Images</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <FormSection title="Images">
           <ImageManager
             entityType="sessions"
-            entityId={session?.id || 0}
-            currentImages={formData.images}
-            onImagesChange={handleImagesChange}
+            entityId={session?.id ?? 0}
+            currentImages={imageManagement.images}
+            onImagesChange={imageManagement.setImages}
           />
-        </CardContent>
-      </Card>
+          {mode === "create" && !session?.id && (
+            <p className="mt-2 text-sm text-base-content/70">
+              Save the session to start uploading images.
+            </p>
+          )}
+        </FormSection>
 
-      {/* Wiki Items */}
-      {mode === "edit" && wikiEntities.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Wiki Items</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Wiki Items */}
+        {mode === "edit" && wikiManagement.wikiEntities.length > 0 && (
+          <FormSection title="Wiki Entities">
             <WikiEntitiesDisplay
-              wikiEntities={wikiEntities}
+              wikiEntities={wikiManagement.wikiEntities}
               entityType="session"
-              entityId={session?.id || 0}
-              showImportMessage={true}
-              isEditable={true}
-              onRemoveEntity={removeWikiItem}
-              removingItems={removingItems}
+              entityId={session?.id ?? 0}
+              showImportMessage
+              isEditable
+              onRemoveEntity={(wikiArticleId, contentType) =>
+                wikiManagement.removeWikiItem(wikiArticleId, contentType, "session", session?.id)
+              }
+              removingItems={wikiManagement.removingItems}
             />
-          </CardContent>
-        </Card>
-      )}
+          </FormSection>
+        )}
 
-      {/* Actions */}
-      {showButtons && (
-        <div className="flex gap-4 justify-end">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isPending}
-            variant="primary"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isPending
-              ? mode === "edit"
-                ? "Updating..."
-                : "Creating..."
-              : mode === "edit"
-                ? "Update"
-              : "Create"}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="gap-2"
-            onClick={() =>
-              router.push(
-                campaignId ? `/campaigns/${campaignId}/sessions` : "/sessions",
-              )
-            }
-          >
-            <EyeOff className="w-4 h-4" />
-            Cancel
-          </Button>
-        </div>
-      )}
+        <FormActions
+          isPending={isPending}
+          mode={mode}
+          onCancel={() => router.back()}
+        />
+      </div>
     </form>
   );
 }

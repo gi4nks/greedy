@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import type { Relation } from "@/lib/db/schema";
+import type { Relation, Session } from "@/lib/db/schema";
 
 interface CampaignData {
   id: number;
@@ -59,19 +59,14 @@ interface Location {
   name: string;
 }
 
-interface Quest {
-  id: number;
-  title: string;
-}
-
 interface Adventure {
   id: number;
   title: string;
 }
 
-interface Session {
+interface NPC {
   id: number;
-  title: string;
+  name: string;
 }
 
 const ENTITY_TYPES = [
@@ -146,7 +141,7 @@ export default function RelationsPageClient({ campaign, campaignId }: RelationsP
       }
 
       if (npcsRes.ok) {
-        const npcs: any[] = await npcsRes.json();
+        const npcs: NPC[] = await npcsRes.json();
         // Add NPCs from the separate NPCs table
         entities.push(...npcs.map((npc) => ({ id: npc.id, name: npc.name, type: "npc" })));
       }
