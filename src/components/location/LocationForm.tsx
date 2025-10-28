@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createLocation, updateLocation } from "@/lib/actions/locations";
 import { LocationFormSchema, type LocationFormData } from "@/lib/forms";
@@ -8,12 +10,13 @@ import { validateFormData } from "@/lib/forms/validation";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
 import { ImageManager } from "@/components/ui/image-manager";
-import DiaryWrapper from "@/components/ui/diary-wrapper";
 import { useWikiItemManagement } from "@/lib/utils/wikiUtils";
 import { useImageManagement } from "@/lib/utils/imageFormUtils";
-import { StandardEntityForm, FormSection, FormGrid } from "@/lib/forms";
+import { FormSection, FormGrid, FormActions } from "@/lib/forms";
 import { FormField } from "@/components/ui/form-components";
-import TagManager from "@/components/ui/tag-manager";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ErrorHandler } from "@/lib/error-handler";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 
 interface LocationFormProps {
@@ -36,6 +39,8 @@ export default function LocationForm({
   mode,
   location,
 }: LocationFormProps) {
+  const router = useRouter();
+
   // Form state
   const [formData, setFormData] = useState<LocationFormData>(() => ({
     name: location?.name || "",
@@ -43,7 +48,7 @@ export default function LocationForm({
     campaignId,
     adventureId,
     images: parseImagesJson(location?.images),
-    tags: location?.tags ? JSON.parse(location.tags as string) : [],
+    tags: [],
   }));
 
   // Use shared hooks for state management
@@ -60,7 +65,7 @@ export default function LocationForm({
         campaignId: parseInt(rawData.campaignId as string),
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
         images: rawData.images ? JSON.parse(rawData.images as string) : [],
-        tags: rawData.tags ? JSON.parse(rawData.tags as string) : [],
+        tags: [],
       });
 
       if (!validation.success) {
@@ -78,92 +83,89 @@ export default function LocationForm({
     }
   };
 
+  const [state, formAction, isPending] = useActionState(createOrUpdateLocation, { success: false });
+
+  // Handle form submission results in useEffect
+  const redirectPath = `/campaigns/${campaignId}/locations`;
+  
+  useEffect(() => {
+    if (state?.success) {
+      ErrorHandler.showSuccess(`Location ${mode === "create" ? "created" : "updated"} successfully!`);
+      router.push(redirectPath);
+    } else if (state?.error) {
+      ErrorHandler.handleSubmissionError(state.error, `${mode} location`);
+    }
+  }, [state, mode, redirectPath, router]);
+
   // Helper functions
   const updateFormData = <K extends keyof LocationFormData>(key: K, value: LocationFormData[K]) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <StandardEntityForm
-      mode={mode}
-      entity={location}
-      action={createOrUpdateLocation}
-      title="Location"
-      redirectPath={`/campaigns/${campaignId}/locations`}
-      campaignId={campaignId}
-    >
-      <FormGrid columns={1}>
-        <FormField label="Name" required>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={(e) => updateFormData("name", e.target.value)}
-            className="input input-bordered w-full"
-            placeholder="e.g., Moonhaven, The Whispering Woods, Dragonspire Castle"
-            required
+    <form action={formAction} className="space-y-6">
+      <input type="hidden" name="campaignId" value={campaignId.toString()} />
+      {adventureId && <input type="hidden" name="adventureId" value={adventureId.toString()} />}
+      {mode === "edit" && location?.id && <input type="hidden" name="id" value={location.id.toString()} />}
+
+      <div className="space-y-6">
+        <FormGrid columns={1}>
+          <FormField label="Name" required>
+            <Input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={(e) => updateFormData("name", e.target.value)}
+              placeholder="e.g., Moonhaven, The Whispering Woods, Dragonspire Castle"
+              required
+            />
+          </FormField>
+
+          <FormField label="Description">
+            <Textarea
+              name="description"
+              value={formData.description}
+              onChange={(e) => updateFormData("description", e.target.value)}
+              rows={4}
+              placeholder="Describe this location's appearance, atmosphere, and notable features..."
+            />
+          </FormField>
+        </FormGrid>
+
+        <FormSection title="Images">
+          <ImageManager
+            entityType="locations"
+            entityId={location?.id ?? 0}
+            currentImages={imageManagement.images}
+            onImagesChange={imageManagement.setImages}
           />
-        </FormField>
+          {mode === "create" && !location?.id && (
+            <p className="mt-2 text-sm text-base-content/70">
+              Save the location to start uploading images.
+            </p>
+          )}
+        </FormSection>
 
-        <FormField label="Description">
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={(e) => updateFormData("description", e.target.value)}
-            rows={4}
-            className="textarea textarea-bordered w-full"
-            placeholder="Describe this location's appearance, atmosphere, and notable features..."
-          />
-        </FormField>
-      </FormGrid>
-
-      <FormSection title="Tags">
-        <TagManager
-          initialTags={formData.tags}
-          readonly={false}
-          onTagsChange={(tags: string[]) => updateFormData("tags", tags)}
-        />
-      </FormSection>
-
-      <FormSection title="Images">
-        <ImageManager
-          entityType="locations"
-          entityId={location?.id ?? 0}
-          currentImages={imageManagement.images}
-          onImagesChange={imageManagement.setImages}
-        />
-        {mode === "create" && !location?.id && (
-          <p className="mt-2 text-sm text-base-content/70">
-            Save the location to start uploading images.
-          </p>
-        )}
-      </FormSection>
-
-      <FormSection title="Wiki Entities">
-        <WikiEntitiesDisplay
-          wikiEntities={wikiManagement.wikiEntities}
-          entityType="location"
-          entityId={location?.id ?? 0}
-          showImportMessage
-          onRemoveEntity={(wikiArticleId, contentType) =>
-            wikiManagement.removeWikiItem(wikiArticleId, contentType, "location", location?.id)
-          }
-          isEditable
-          removingItems={wikiManagement.removingItems}
-        />
-      </FormSection>
-
-      {/* Diary */}
-      {mode === "edit" && location?.id && (
-        <FormSection title="Diary">
-          <DiaryWrapper
+        <FormSection title="Wiki Entities">
+          <WikiEntitiesDisplay
+            wikiEntities={wikiManagement.wikiEntities}
             entityType="location"
-            entityId={location.id}
-            campaignId={campaignId}
-            title="Location Diary"
+            entityId={location?.id ?? 0}
+            showImportMessage
+            onRemoveEntity={(wikiArticleId, contentType) =>
+              wikiManagement.removeWikiItem(wikiArticleId, contentType, "location", location?.id)
+            }
+            isEditable
+            removingItems={wikiManagement.removingItems}
           />
         </FormSection>
-      )}
-    </StandardEntityForm>
+
+        <FormActions
+          isPending={isPending}
+          mode={mode}
+          onCancel={() => router.back()}
+        />
+      </div>
+    </form>
   );
 }
