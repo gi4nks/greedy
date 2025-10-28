@@ -14,6 +14,8 @@ import { useWikiItemManagement } from "@/lib/utils/wikiUtils";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import { FormSection, FormGrid, FormActions } from "@/lib/forms";
 import { FormField } from "@/components/ui/form-components";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ErrorHandler } from "@/lib/error-handler";
 import {
   Select,
@@ -120,24 +122,22 @@ export default function SessionForm({
       <div className="space-y-6">
         <FormGrid columns={2}>
           <FormField label="Session Title" required>
-            <input
+            <Input
               type="text"
               name="title"
               value={formData.title}
               onChange={(e) => updateFormData("title", e.target.value)}
-              className="input input-bordered w-full"
               placeholder="Enter session title"
               required
             />
           </FormField>
 
           <FormField label="Date" required>
-            <input
+            <Input
               type="date"
               name="date"
               value={formData.date}
               onChange={(e) => updateFormData("date", e.target.value)}
-              className="input input-bordered w-full"
               required
             />
           </FormField>
@@ -176,12 +176,11 @@ export default function SessionForm({
 
           <div className="col-span-2">
             <FormField label="Session Summary">
-              <textarea
+              <Textarea
                 name="text"
                 value={formData.text}
                 onChange={(e) => updateFormData("text", e.target.value)}
                 rows={12}
-                className="textarea textarea-bordered w-full"
                 placeholder="What happened in this session? Record key events, character interactions, plot developments, combat encounters, and any memorable moments..."
               />
             </FormField>

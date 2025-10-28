@@ -6,6 +6,8 @@ import { createQuest } from "@/lib/actions/quests";
 import { createLocation } from "@/lib/actions/locations";
 import { createMagicItemAction } from "@/lib/actions/magicItems";
 import { showToast } from "@/lib/toast";
+import { Button } from "@/components/ui/button";
+import { Edit, EyeOff } from "lucide-react";
 
 export type PromotionType = "character" | "quest" | "location" | "magic-item" | "diary-note";
 
@@ -225,7 +227,7 @@ export default function PromoteToModal({
           Promote Text to {entityTypeLabels[selectedType]}
         </h3>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4">
           {/* Character Selection for Diary Note */}
           {selectedType === "diary-note" && (
             <div className="form-control">
@@ -288,23 +290,26 @@ export default function PromoteToModal({
 
           {/* Action Buttons */}
           <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
+            <Button
+              variant="ghost"
               onClick={onClose}
               disabled={isSubmitting}
+              size="sm"
             >
+              <EyeOff className="w-4 h-4" />
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               disabled={
                 isSubmitting || 
                 !formData.description.trim() || 
                 (selectedType === "diary-note" && !formData.characterId)
               }
+              onClick={handleSubmit}
             >
+              <Edit className="w-4 h-4" />
               {isSubmitting ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
@@ -313,7 +318,7 @@ export default function PromoteToModal({
               ) : (
                 "Confirm Promotion"
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

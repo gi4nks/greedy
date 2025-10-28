@@ -263,7 +263,7 @@ export function SessionHeader({ session, campaignId }: SessionHeaderProps) {
                               role="menuitem"
                               aria-label="Promote to character"
                             >
-                              � Promote to Character
+                              👤 Promote to Character
                             </button>
                             <button
                               onClick={(e) => {
