@@ -10,7 +10,6 @@ import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { formatDate } from "@/lib/utils/date";
-import DiaryWrapper from "@/components/ui/diary-wrapper";
 import CollapsibleSection from "@/components/ui/collapsible-section";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/ui/page-header";
@@ -310,14 +309,6 @@ function LocationDetail({ location }: { location: LocationData }) {
           />
         </CollapsibleSection>
       )}
-
-      {/* Location Diary */}
-      <DiaryWrapper
-        entityType="location"
-        entityId={location.id}
-        campaignId={location.campaignId!}
-        title="Location Diary"
-      />
 
       {!location.description &&
         (!location.wikiEntities || location.wikiEntities.length === 0) && (
