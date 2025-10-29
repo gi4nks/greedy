@@ -103,8 +103,10 @@ export default function DiaryWrapper({
     });
   }, [diaryEntries, searchQuery, entityFilter]);
 
-  // Don't render anything if there are no diary entries
-  if (!loading && diaryEntries.length === 0) {
+  // Don't render anything if there are no diary entries and not loading
+  // Actually, we should always show the section so users can add entries
+  // Only hide if we're still loading
+  if (loading) {
     return null;
   }
 
