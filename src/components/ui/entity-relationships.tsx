@@ -82,18 +82,34 @@ export default function EntityRelationships({
   };
 
   const getEntityLink = (relationship: Relationship) => {
-    // Determine which entity is not the current one
-    const isNpcCurrent = relationship.npcId.toString() === entityId;
-    const targetId = isNpcCurrent ? relationship.characterId : relationship.npcId;
-    const targetType = isNpcCurrent ? "character" : "character"; // Assuming characters for now
-
-    return `/${targetType}s/${targetId}${campaignId ? `?campaignId=${campaignId}` : ""}`;
+    // For non-character entities, use the npc_type and determine the ID from the data
+    if (entityType === "character" || entityType === "magic-item") {
+      const isNpcCurrent = relationship.npcId.toString() === entityId;
+      const targetId = isNpcCurrent ? relationship.characterId : relationship.npcId;
+      const targetType = isNpcCurrent ? relationship.target_type : relationship.npc_type;
+      return `/campaigns/${campaignId}/${targetType}s/${targetId}`;
+    } else {
+      // For location/quest views, the related entity is in npc_type/npcId
+      // but we need to handle the case where it might actually be a different type
+      const targetType = relationship.npc_type || "character";
+      const targetId = relationship.npcId;
+      return `/campaigns/${campaignId}/${targetType}s/${targetId}`;
+    }
   };
 
   const getEntityName = (relationship: Relationship) => {
-    // Determine which entity is not the current one
-    const isNpcCurrent = relationship.npcId.toString() === entityId;
-    return isNpcCurrent ? relationship.target_name : relationship.npc_name;
+    // For non-character entities (location, quest, etc), we need to check
+    // which side of the relationship we're looking at
+    // npc_name is always the "other" entity, target_name is the current entity
+    if (entityType === "character" || entityType === "magic-item") {
+      // For character view, determine which entity is not the current one
+      const isNpcCurrent = relationship.npcId.toString() === entityId;
+      return isNpcCurrent ? relationship.target_name : relationship.npc_name;
+    } else {
+      // For location, quest, etc views, npc_name is the related entity
+      // (even though it might be a location or quest, not just an npc)
+      return relationship.npc_name;
+    }
   };
 
   if (relationships.length === 0) {

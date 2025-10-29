@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { relations, characters, npcs } from "@/lib/db/schema";
+import { relations, characters, npcs, locations, quests } from "@/lib/db/schema";
 import { eq, or, and } from "drizzle-orm";
 import { relationshipSchema, type RelationshipFormData } from "@/lib/validation";
 import { validateFormData } from "@/lib/validation";
@@ -72,8 +72,56 @@ export async function getEntityRelationships(entityId: string, entityType: strin
             .where(eq(npcs.id, otherEntityId))
             .limit(1);
           otherEntityName = npc[0]?.name || `NPC ${otherEntityId}`;
+        } else if (otherEntityType === "location") {
+          const location = await db
+            .select({ name: locations.name })
+            .from(locations)
+            .where(eq(locations.id, otherEntityId))
+            .limit(1);
+          otherEntityName = location[0]?.name || `Location ${otherEntityId}`;
+        } else if (otherEntityType === "quest") {
+          const quest = await db
+            .select({ title: quests.title })
+            .from(quests)
+            .where(eq(quests.id, otherEntityId))
+            .limit(1);
+          otherEntityName = quest[0]?.title || `Quest ${otherEntityId}`;
         } else {
           otherEntityName = `${otherEntityType} ${otherEntityId}`;
+        }
+
+        // Get the current entity name
+        let currentEntityName = "";
+        if (entityType === "character") {
+          const character = await db
+            .select({ name: characters.name })
+            .from(characters)
+            .where(eq(characters.id, parseInt(entityId)))
+            .limit(1);
+          currentEntityName = character[0]?.name || `Character ${entityId}`;
+        } else if (entityType === "npc") {
+          const npc = await db
+            .select({ name: npcs.name })
+            .from(npcs)
+            .where(eq(npcs.id, parseInt(entityId)))
+            .limit(1);
+          currentEntityName = npc[0]?.name || `NPC ${entityId}`;
+        } else if (entityType === "location") {
+          const location = await db
+            .select({ name: locations.name })
+            .from(locations)
+            .where(eq(locations.id, parseInt(entityId)))
+            .limit(1);
+          currentEntityName = location[0]?.name || `Location ${entityId}`;
+        } else if (entityType === "quest") {
+          const quest = await db
+            .select({ title: quests.title })
+            .from(quests)
+            .where(eq(quests.id, parseInt(entityId)))
+            .limit(1);
+          currentEntityName = quest[0]?.title || `Quest ${entityId}`;
+        } else {
+          currentEntityName = `${entityType} ${entityId}`;
         }
 
         // Parse metadata
@@ -101,7 +149,7 @@ export async function getEntityRelationships(entityId: string, entityType: strin
           notes: relation.description || "",
           npc_name: otherEntityName,
           npc_type: otherEntityType,
-          target_name: entityType === "character" ? `Character ${entityId}` : `${entityType} ${entityId}`,
+          target_name: currentEntityName,
           target_type: entityType,
           createdAt: relation.createdAt || "",
           updatedAt: relation.updatedAt || "",

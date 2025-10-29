@@ -10,7 +10,7 @@ import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { ImageInfo, parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { formatUIDate } from "@/lib/utils/date";
-import DiaryWrapper from "@/components/ui/diary-wrapper";
+import QuestDiaryWrapper from "@/components/quest/QuestDiaryWrapper";
 import CollapsibleSection from "@/components/ui/collapsible-section";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/ui/page-header";
@@ -269,11 +269,9 @@ function QuestDetail({ questData, images }: { questData: QuestData; images: Imag
       )}
 
       {/* Diary */}
-      <DiaryWrapper
-        entityType="quest"
-        entityId={questData.id}
+      <QuestDiaryWrapper
+        questId={questData.id}
         campaignId={parseInt(questData.campaign.id?.toString() || "0")}
-        title="Quest Diary"
       />
     </div>
   );
