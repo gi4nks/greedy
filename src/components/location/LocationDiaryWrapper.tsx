@@ -1,3 +1,5 @@
+"use client";
+
 import DiaryWrapper from "@/components/ui/diary-wrapper";
 
 interface LocationDiaryWrapperProps {
