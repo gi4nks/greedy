@@ -14,7 +14,6 @@ import CollapsibleSection from "@/components/ui/collapsible-section";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/ui/page-header";
 import { MagicItemSidebar } from "@/components/magic-items/MagicItemSidebar";
-import { MagicItemDiary } from "@/components/magic-items/MagicItemDiary";
 import { MagicItemWikiLinks } from "@/components/magic-items/MagicItemWikiLinks";
 import { UnassignMagicItemButton } from "@/components/magic-items/UnassignMagicItemButton";
 
@@ -345,8 +344,6 @@ export default async function MagicItemPage({ params }: MagicItemDetailPageProps
               />
             </Suspense>
 
-            {/* Diary */}
-            <MagicItemDiary itemId={item.id} campaignId={undefined} />
 
             {/* Wiki Links */}
             <MagicItemWikiLinks item={item} />
