@@ -142,7 +142,7 @@ export default function QuestForm({
         <FormField label="Title" required>
           <input
             type="text"
-            name="name"
+            name="title"
             value={formData.name}
             onChange={(e) => updateFormData("name", e.target.value)}
             className="input input-bordered w-full"
