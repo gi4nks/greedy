@@ -97,11 +97,14 @@ export default function QuestForm({
       // Validate form data
       const rawData = Object.fromEntries(formData.entries());
       const validation = validateFormData(QuestFormSchema, {
+        name: rawData.title, // Map title to name for schema validation
         ...rawData,
-        campaignId: parseInt(rawData.campaignId as string),
+        campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : undefined,
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
         images: rawData.images ? JSON.parse(rawData.images as string) : [],
         tags: rawData.tags ? JSON.parse(rawData.tags as string) : [],
+        status: rawData.status || "active",
+        priority: rawData.priority || "medium",
       });
 
       if (!validation.success) {
