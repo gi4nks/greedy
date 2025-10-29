@@ -210,7 +210,7 @@ export default function DiaryComponent({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Add Button */}
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold text-gray-900">Diary Entries</h3>
@@ -232,7 +232,7 @@ export default function DiaryComponent({
 
       {/* Compact Search and Filter Bar */}
       {Array.isArray(diaryEntries) && diaryEntries.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Search Bar and Filter Toggle in one row */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -389,7 +389,7 @@ export default function DiaryComponent({
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {sortedEntries.map((entry, index) => (
             <DiaryEntryCard
               key={entry.id}

@@ -42,6 +42,11 @@ interface QuestFormProps {
     title: string;
     status?: string | null;
   }>;
+  characters?: Array<{
+    id: number;
+    name: string;
+    characterType?: string | null;
+  }>;
   adventureId?: number; // For adventure-scoped creation
   mode: "create" | "edit";
 }
@@ -69,6 +74,7 @@ export default function QuestForm({
   quest,
   campaignId,
   adventures,
+  characters,
   adventureId: fixedAdventureId,
   mode,
 }: QuestFormProps) {
@@ -76,7 +82,7 @@ export default function QuestForm({
   const [formData, setFormData] = useState<QuestFormData>(() => ({
     name: quest?.title || "",
     description: quest?.description || "",
-    adventureId: quest?.adventureId || fixedAdventureId,
+    adventureId: quest?.adventureId || fixedAdventureId || 0,
     status: (quest?.status as "active" | "completed" | "paused" | "cancelled") || "active",
     priority: (quest?.priority as "high" | "medium" | "low") || "medium",
     type: quest?.type || "main",
@@ -127,9 +133,9 @@ export default function QuestForm({
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const redirectPath = fixedAdventureId
-    ? `/campaigns/${campaignId}/adventures/${fixedAdventureId}/quests`
-    : `/campaigns/${campaignId}/adventures`;
+  // All quests now must have an adventure ID
+  const adventureIdForRedirect = formData.adventureId || fixedAdventureId;
+  const redirectPath = `/campaigns/${campaignId}/adventures/${adventureIdForRedirect}/quests`;
 
   return (
     <StandardEntityForm
@@ -169,13 +175,31 @@ export default function QuestForm({
         {/* Two Column Grid */}
         <FormGrid columns={2}>
           <FormField label="Assigned To">
+            <Select
+              value={formData.assignedTo}
+              onValueChange={(value) => updateFormData("assignedTo", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select character or NPC" />
+              </SelectTrigger>
+              <SelectContent>
+                {characters && characters.length > 0 ? (
+                  characters.map((character) => (
+                    <SelectItem key={character.id} value={character.name}>
+                      {character.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-gray-500">
+                    No characters available
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
             <input
-              type="text"
+              type="hidden"
               name="assignedTo"
               value={formData.assignedTo}
-              onChange={(e) => updateFormData("assignedTo", e.target.value)}
-              className="input input-bordered w-full"
-              placeholder="Character or player name"
             />
           </FormField>
 
@@ -247,18 +271,17 @@ export default function QuestForm({
           </FormField>
         </FormGrid>
 
-        {/* Adventure Selector - Full Width if shown */}
+        {/* Adventure Selector - Full Width if not fixed */}
         {!fixedAdventureId && (
-          <FormField label="Adventure">
+          <FormField label="Adventure" required>
             <Select
               value={formData.adventureId?.toString() || ""}
-              onValueChange={(value) => updateFormData("adventureId", value ? parseInt(value) : undefined)}
+              onValueChange={(value) => updateFormData("adventureId", parseInt(value) || 0)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select an adventure (optional)" />
+                <SelectValue placeholder="Select an adventure" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific adventure</SelectItem>
                 {adventures?.map((adventure) => (
                   <SelectItem
                     key={adventure.id}

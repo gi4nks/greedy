@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
 import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
@@ -16,7 +17,8 @@ interface CampaignQuestsPageProps {
 }
 
 async function getQuestsForCampaign(campaignId: number) {
-  const questsList = await db
+  // Get all adventure-scoped quests only (adventureId is NOT NULL)
+  return await db
     .select({
       id: quests.id,
       adventureId: quests.adventureId,
@@ -34,8 +36,6 @@ async function getQuestsForCampaign(campaignId: number) {
     .innerJoin(adventures, eq(quests.adventureId, adventures.id))
     .where(eq(adventures.campaignId, campaignId))
     .orderBy(quests.createdAt);
-
-  return questsList;
 }
 
 export default async function CampaignQuestsPage({
@@ -59,11 +59,22 @@ export default async function CampaignQuestsPage({
       description="Manage campaign quests and story objectives"
       sectionItems={[{ label: "Quests" }]}
       createButton={{
-        href: `/campaigns/${campaignId}/quests/new`,
+        href: `/campaigns/${campaignId}/adventures`,
         label: "Create Quest",
         icon: <Plus className="w-4 h-4" />,
       }}
     >
+      <Card className="bg-blue-50 border-blue-200 mb-6">
+        <CardContent className="pt-6 flex gap-3">
+          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-blue-900">
+              Quests are managed within adventures. Click "Create Quest" to get started.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Suspense fallback={<QuestsListSkeleton />}>
         <QuestsList quests={questsList} campaignId={campaignId} />
       </Suspense>

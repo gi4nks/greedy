@@ -112,7 +112,7 @@ export const LocationFormSchema = BaseEntitySchema.extend({
 
 // Quest Schema
 export const QuestFormSchema = BaseEntitySchema.extend({
-  adventureId: z.number().int().positive().optional(),
+  adventureId: z.number().int().positive("Adventure is required"),
   status: StatusSchema,
   priority: PrioritySchema,
   type: z.string().optional(),

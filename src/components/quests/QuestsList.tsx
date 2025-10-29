@@ -21,7 +21,7 @@ import { formatUIDate } from "@/lib/utils/date";
 
 type Quest = {
   id: number;
-  adventureId: number | null;
+  adventureId: number;
   title: string;
   description: string | null;
   status: string | null;
@@ -103,7 +103,7 @@ export function QuestsList({ quests, campaignId }: QuestsListProps) {
           </div>
           <h3 className="text-lg font-semibold mb-2">No Quests Yet</h3>
           <p className="text-base-content/70 mb-4">
-            Start creating quests by adding them to your adventures.
+            Create quests by visiting your adventures. Each adventure can have its own quests.
           </p>
           <Link href={`/campaigns/${campaignId}/adventures`}>
             <Button variant="primary" size="sm">

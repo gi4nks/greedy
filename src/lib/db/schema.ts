@@ -203,7 +203,7 @@ export const wikiArticleEntities = sqliteTable("wiki_article_entities", {
 
 export const quests = sqliteTable("quests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  adventureId: integer("adventure_id").references(() => adventures.id),
+  adventureId: integer("adventure_id").references(() => adventures.id).notNull(),
   title: text("title").notNull(),
   description: text("description"),
   status: text("status").default("active"),
