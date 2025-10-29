@@ -81,7 +81,7 @@ export function EntitySidebar({
                   Created
                 </div>
                 <div className="text-sm text-base-content">
-                  {formatUIDate(metadata.createdAt)}
+                  {formatUIDate(metadata.createdAt) || "—"}
                 </div>
               </div>
             )}

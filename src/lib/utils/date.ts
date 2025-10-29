@@ -77,7 +77,7 @@ export function formatMonthYear(
 export function formatDisplayDate(
   dateString: string | Date | null | undefined,
 ): string {
-  if (!dateString) return "—";
+  if (!dateString || dateString === "") return "—";
 
   try {
     let date: Date;
@@ -85,19 +85,23 @@ export function formatDisplayDate(
     if (dateString instanceof Date) {
       date = dateString;
     } else if (typeof dateString === 'string') {
+      // Trim whitespace
+      const trimmed = dateString.trim();
+      if (!trimmed || trimmed === "" || trimmed === "—") return "—";
+      
       // Handle various timestamp formats
-      let isoString = dateString;
+      let isoString = trimmed;
       
       // Handle SQLite timestamp format with space (e.g., "2025-10-14 12:34:56")
-      if (dateString.includes(' ') && dateString.includes('-')) {
-        isoString = dateString.replace(' ', 'T');
+      if (trimmed.includes(' ') && trimmed.includes('-')) {
+        isoString = trimmed.replace(' ', 'T');
       }
       
       date = new Date(isoString);
 
       // If that doesn't work, try the original string
       if (isNaN(date.getTime())) {
-        date = new Date(dateString);
+        date = new Date(trimmed);
       }
     } else {
       return "—";
