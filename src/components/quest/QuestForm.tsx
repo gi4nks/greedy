@@ -309,6 +309,14 @@ export default function QuestForm({
           />
         </FormSection>
       )}
+
+      {/* Hidden fields for Select values */}
+      <input type="hidden" name="status" value={formData.status || "active"} />
+      <input type="hidden" name="priority" value={formData.priority || "medium"} />
+      <input type="hidden" name="type" value={formData.type || "main"} />
+      <input type="hidden" name="adventureId" value={formData.adventureId?.toString() || ""} />
+      <input type="hidden" name="tags" value={JSON.stringify(formData.tags || [])} />
+      <input type="hidden" name="images" value={JSON.stringify(imageManagement.images || [])} />
     </StandardEntityForm>
   );
 }
