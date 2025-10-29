@@ -102,17 +102,31 @@ export default function DiaryEntryCard({
               {/* Linked Entities - Compact */}
               {entry.linkedEntities && entry.linkedEntities.length > 0 && (
                 <div className="flex flex-wrap gap-0.5 mt-1">
-                  {entry.linkedEntities.map((entity) => (
-                    <Badge
-                      key={`${entity.type}-${entity.id}`}
-                      variant="outline"
-                      className="text-xs px-1 py-0.5 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                      onClick={() => onEntityClick?.(entity)}
-                    >
-                      <span className="capitalize text-xs">{entity.type.replace('-', ' ')}</span>
-                      {entity.name && <span className="font-medium ml-0.5">{entity.name.substring(0, 15)}{entity.name.length > 15 ? '…' : ''}</span>}
-                    </Badge>
-                  ))}
+                  {entry.linkedEntities.map((entity) => {
+                    // Color coding by entity type
+                    const typeColorMap: Record<string, { bg: string; text: string; border: string }> = {
+                      'character': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+                      'location': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+                      'quest': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+                      'adventure': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                      'session': { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200' },
+                      'npc': { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
+                      'magic-item': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+                    };
+                    const colors = typeColorMap[entity.type] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' };
+                    
+                    return (
+                      <Badge
+                        key={`${entity.type}-${entity.id}`}
+                        variant="outline"
+                        className={`text-xs px-2 py-0.5 ${colors.bg} ${colors.text} ${colors.border} hover:opacity-80 cursor-pointer transition-all`}
+                        onClick={() => onEntityClick?.(entity)}
+                        title={`${entity.type.replace('-', ' ')}: ${entity.name}`}
+                      >
+                        {entity.name && <span className="font-medium">{entity.name.substring(0, 20)}{entity.name.length > 20 ? '…' : ''}</span>}
+                      </Badge>
+                    );
+                  })}
                 </div>
               )}
 
