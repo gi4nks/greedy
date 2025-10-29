@@ -125,10 +125,19 @@ export function FormActions({
 
   return (
     <div className={`flex gap-4 pt-4 justify-end ${className}`}>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={isPending}
+        variant="primary"
+      >
+        <Save className="w-4 h-4 mr-2" />
+        {submitLabel || defaultSubmitLabel}
+      </Button>
       {showDelete && onDelete && (
         <Button
           type="button"
-          variant="destructive"
+          variant="neutral"
           size="sm"
           className="gap-2"
           onClick={onDelete}
@@ -147,15 +156,6 @@ export function FormActions({
       >
         <EyeOff className="w-4 h-4" />
         {cancelLabel}
-      </Button>
-      <Button
-        type="submit"
-        size="sm"
-        disabled={isPending}
-        variant="primary"
-      >
-        <Save className="w-4 h-4 mr-2" />
-        {submitLabel || defaultSubmitLabel}
       </Button>
     </div>
   );

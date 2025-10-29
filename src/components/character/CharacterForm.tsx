@@ -609,20 +609,6 @@ export default function CharacterForm({
       label: "Attachments",
       content: (
         <div className="space-y-6">
-          <FormSection title="Images">
-            <ImageManager
-              entityType="characters"
-              entityId={character?.id ?? 0}
-              currentImages={imageManagement.images}
-              onImagesChange={imageManagement.setImages}
-            />
-            {mode === "create" && !character?.id && (
-              <p className="mt-2 text-sm text-base-content/70">
-                Save the character to start uploading images.
-              </p>
-            )}
-          </FormSection>
-
           <FormSection title="Wiki Entities">
             <WikiEntitiesDisplay
               wikiEntities={wikiManagement.wikiEntities}
@@ -635,6 +621,20 @@ export default function CharacterForm({
               isEditable
               removingItems={wikiManagement.removingItems}
             />
+          </FormSection>
+
+          <FormSection title="Images">
+            <ImageManager
+              entityType="characters"
+              entityId={character?.id ?? 0}
+              currentImages={imageManagement.images}
+              onImagesChange={imageManagement.setImages}
+            />
+            {mode === "create" && !character?.id && (
+              <p className="mt-2 text-sm text-base-content/70">
+                Save the character to start uploading images.
+              </p>
+            )}
           </FormSection>
         </div>
       ),
