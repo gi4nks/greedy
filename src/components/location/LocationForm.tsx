@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorHandler } from "@/lib/error-handler";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import DiaryWrapper from "@/components/ui/diary-wrapper";
 
 interface LocationFormProps {
   campaignId: number;
@@ -145,6 +146,19 @@ export default function LocationForm({
             </p>
           )}
         </FormSection>
+
+        {mode === "edit" && location?.id && (
+          <div>
+            <DiaryWrapper
+              entityType="location"
+              entityId={location.id}
+              campaignId={campaignId}
+              title="Location Diary"
+              enableSearch={true}
+              enableFiltering={true}
+            />
+          </div>
+        )}
 
         <FormSection title="Wiki Entities">
           <WikiEntitiesDisplay

@@ -16,7 +16,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EntitySidebar } from "@/components/ui/entity-sidebar";
 import EntityRelationships from "@/components/ui/entity-relationships";
 import { getEntityRelationships } from "@/lib/actions/relationships";
-
+import LocationDiaryWrapper from "@/components/location/LocationDiaryWrapper";
 import { EntityErrorBoundary } from "@/components/ui/error-boundary";
 import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
 import { getLocationById } from "@/lib/actions/entities";
@@ -219,6 +219,12 @@ function LocationDetail({ location }: { location: LocationData }) {
           />
         </CollapsibleSection>
       )}
+
+      {/* Location Diary */}
+      <LocationDiaryWrapper
+        locationId={location.id}
+        campaignId={location.campaignId || 0}
+      />
 
       {/* Images */}
       <CollapsibleSection title="Images" defaultExpanded={false}>
