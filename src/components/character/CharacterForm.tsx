@@ -448,7 +448,18 @@ export default function CharacterForm({
             {diaryEntries.length > 0 ? (
               <div className="space-y-3">
                 {diaryEntries
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .sort((a, b) => {
+                    // Parse dates safely - handle YYYY-MM-DD format
+                    const parseDate = (dateString: string) => {
+                      const [year, month, day] = dateString.split('-').map(Number);
+                      return new Date(Date.UTC(year, month - 1, day)).getTime();
+                    };
+                    try {
+                      return parseDate(b.date) - parseDate(a.date);
+                    } catch {
+                      return b.date.localeCompare(a.date);
+                    }
+                  })
                   .map((entry) => (
                   <DiaryEntryCard
                     key={entry.id}

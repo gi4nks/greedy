@@ -180,7 +180,18 @@ export default function DiaryComponent({
 
   // Sort by newest first
   const sortedEntries = [...filteredDiaryEntries].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    // Parse dates safely - handle YYYY-MM-DD format
+    const parseDate = (dateString: string) => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(Date.UTC(year, month - 1, day)).getTime();
+    };
+    
+    try {
+      return parseDate(b.date) - parseDate(a.date);
+    } catch {
+      // Fallback to string comparison if parsing fails
+      return b.date.localeCompare(a.date);
+    }
   });
 
   if (loading) {
