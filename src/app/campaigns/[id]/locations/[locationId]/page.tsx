@@ -94,7 +94,6 @@ export default async function LocationPage({ params }: LocationPageProps) {
             ],
           }}
           title={location.name}
-          subtitle={location.description || undefined}
           actions={
             <Link href={`/campaigns/${campaignId}/locations/${locationId}/edit`}>
               <Button variant="secondary" size="sm" className="gap-2">
