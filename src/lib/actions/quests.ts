@@ -38,9 +38,11 @@ export async function createQuest(
 ): Promise<{ success: boolean; error?: string }> {
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
-  const adventureId = formData.get("adventureId")
-    ? Number(formData.get("adventureId"))
-    : null;
+  const adventureIdValue = formData.get("adventureId");
+  if (!adventureIdValue) {
+    return { success: false, error: "Adventure is required" };
+  }
+  const adventureId = Number(adventureIdValue);
   const status = formData.get("status") as string;
   const priority = formData.get("priority") as string;
   const type = formData.get("type") as string;
@@ -75,7 +77,7 @@ export async function createQuest(
         images: images ? JSON.parse(images) : null,
         createdAt: now,
         updatedAt: now,
-      })
+      } as any)
       .returning();
 
     // Revalidate adventure-specific path if applicable
@@ -102,9 +104,11 @@ export async function updateQuest(
   const id = Number(formData.get("id"));
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
-  const adventureId = formData.get("adventureId")
-    ? Number(formData.get("adventureId"))
-    : null;
+  const adventureIdValue = formData.get("adventureId");
+  if (!adventureIdValue) {
+    return { success: false, error: "Adventure is required" };
+  }
+  const adventureId = Number(adventureIdValue);
   const status = formData.get("status") as string;
   const priority = formData.get("priority") as string;
   const type = formData.get("type") as string;
@@ -138,7 +142,7 @@ export async function updateQuest(
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
         images: images ? JSON.parse(images) : null,
         updatedAt: now,
-      })
+      } as any)
       .where(eq(quests.id, id))
       .returning();
 
