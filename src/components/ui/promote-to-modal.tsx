@@ -40,22 +40,46 @@ export default function PromoteToModal({
     title: "",
     description: "",
     characterId: "",
+    entityType: "character" as "character" | "location" | "quest",
+    entityId: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [characters, setCharacters] = useState<Array<{id: number, name: string}>>([]);
+  const [locations, setLocations] = useState<Array<{id: number, name: string}>>([]);
+  const [quests, setQuests] = useState<Array<{id: number, title: string}>>([]);
   const hasInitializedRef = useRef(false);
 
-  // Fetch characters when diary-note is selected
+  // Fetch entities when diary-note is selected
   useEffect(() => {
     if (isOpen && selectedType === "diary-note" && campaignId) {
+      // Fetch characters
       fetch(`/api/campaigns/${campaignId}/characters`)
         .then(response => response.json())
         .then(data => {
-          // API returns array directly
           setCharacters(data || []);
         })
         .catch(error => {
           console.error("Error fetching characters:", error);
+        });
+
+      // Fetch locations
+      fetch(`/api/campaigns/${campaignId}/locations`)
+        .then(response => response.json())
+        .then(data => {
+          setLocations(data || []);
+        })
+        .catch(error => {
+          console.error("Error fetching locations:", error);
+        });
+
+      // Fetch quests
+      fetch(`/api/campaigns/${campaignId}/quests`)
+        .then(response => response.json())
+        .then(data => {
+          setQuests(data || []);
+        })
+        .catch(error => {
+          console.error("Error fetching quests:", error);
         });
     }
   }, [isOpen, selectedType, campaignId]);
@@ -67,6 +91,8 @@ export default function PromoteToModal({
         title: selectedType === "diary-note" ? "" : prefilledText,
         description: selectedType === "diary-note" ? prefilledText : "",
         characterId: "",
+        entityType: "character",
+        entityId: "",
       });
       hasInitializedRef.current = true;
     } else if (!isOpen) {
@@ -177,8 +203,8 @@ export default function PromoteToModal({
           break;
 
         case "diary-note":
-          if (!formData.characterId) {
-            showToast.error("Please select a character");
+          if (!formData.entityId) {
+            showToast.error(`Please select a ${formData.entityType}`);
             return;
           }
           
@@ -189,7 +215,25 @@ export default function PromoteToModal({
             isImportant: false,
           };
 
-          const response = await fetch(`/api/characters/${formData.characterId}/diary`, {
+          let diaryEndpoint = "";
+          let redirectPathDiary = "";
+          
+          switch (formData.entityType) {
+            case "character":
+              diaryEndpoint = `/api/characters/${formData.entityId}/diary`;
+              redirectPathDiary = `/campaigns/${campaignId}/characters/${formData.entityId}`;
+              break;
+            case "location":
+              diaryEndpoint = `/api/locations/${formData.entityId}/diary`;
+              redirectPathDiary = `/campaigns/${campaignId}/locations/${formData.entityId}`;
+              break;
+            case "quest":
+              diaryEndpoint = `/api/quests/${formData.entityId}/diary`;
+              redirectPathDiary = `/campaigns/${campaignId}/quests/${formData.entityId}`;
+              break;
+          }
+
+          const response = await fetch(diaryEndpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -199,7 +243,7 @@ export default function PromoteToModal({
 
           const diaryResult = await response.json();
           result = diaryResult;
-          redirectPath = `/campaigns/${campaignId}/characters/${formData.characterId}`;
+          redirectPath = redirectPathDiary;
           entityName = "Diary Note";
           break;
       }
@@ -228,26 +272,62 @@ export default function PromoteToModal({
         </h3>
 
         <form className="space-y-4">
-          {/* Character Selection for Diary Note */}
+          {/* Entity Type and Selection for Diary Note */}
           {selectedType === "diary-note" && (
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Character *</span>
-              </label>
-              <select
-                value={formData.characterId}
-                onChange={(e) => setFormData(prev => ({ ...prev, characterId: e.target.value }))}
-                className="select select-bordered w-full"
-                required
-              >
-                <option value="">Select a character</option>
-                {characters.map((character) => (
-                  <option key={character.id} value={character.id}>
-                    {character.name}
+            <>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Add Diary Note to *</span>
+                </label>
+                <select
+                  value={formData.entityType}
+                  onChange={(e) => setFormData(prev => ({ ...prev, entityType: e.target.value as "character" | "location" | "quest", entityId: "" }))}
+                  className="select select-bordered w-full"
+                  required
+                >
+                  <option value="character">Character</option>
+                  <option value="location">Location</option>
+                  <option value="quest">Quest</option>
+                </select>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">
+                    {formData.entityType === "character" && "Character *"}
+                    {formData.entityType === "location" && "Location *"}
+                    {formData.entityType === "quest" && "Quest *"}
+                  </span>
+                </label>
+                <select
+                  value={formData.entityId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, entityId: e.target.value }))}
+                  className="select select-bordered w-full"
+                  required
+                >
+                  <option value="">
+                    {formData.entityType === "character" && "Select a character"}
+                    {formData.entityType === "location" && "Select a location"}
+                    {formData.entityType === "quest" && "Select a quest"}
                   </option>
-                ))}
-              </select>
-            </div>
+                  {formData.entityType === "character" && characters.map((character) => (
+                    <option key={character.id} value={character.id}>
+                      {character.name}
+                    </option>
+                  ))}
+                  {formData.entityType === "location" && locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                  {formData.entityType === "quest" && quests.map((quest) => (
+                    <option key={quest.id} value={quest.id}>
+                      {quest.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
 
           {/* Title Field - only for non-diary-note */}
@@ -305,7 +385,7 @@ export default function PromoteToModal({
               disabled={
                 isSubmitting || 
                 !formData.description.trim() || 
-                (selectedType === "diary-note" && !formData.characterId)
+                (selectedType === "diary-note" && !formData.entityId)
               }
               onClick={handleSubmit}
             >
