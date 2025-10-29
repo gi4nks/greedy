@@ -9,6 +9,7 @@ import {
   magicItemAssignments,
   wikiArticles,
   wikiArticleEntities,
+  characterDiaryEntries,
 } from "@/lib/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import CharacterForm from "@/components/character/CharacterForm";
@@ -129,15 +130,24 @@ async function getCharacter(characterId: number) {
     wikiEntities: processedWikiEntities,
   };
 
-  // Fetch diary entries
-  const diaryResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/characters/${characterId}/diary`);
-  let diaryEntries: any[] = [];
-  if (diaryResponse.ok) {
-    const diaryResult = await diaryResponse.json();
-    if (diaryResult.success && diaryResult.data) {
-      diaryEntries = diaryResult.data;
-    }
-  }
+  // Fetch diary entries directly from database
+  const diaryEntriesFromDb = await db
+    .select()
+    .from(characterDiaryEntries)
+    .where(eq(characterDiaryEntries.characterId, characterId))
+    .orderBy(characterDiaryEntries.date);
+
+  // Parse JSON fields and normalize types
+  const diaryEntries = diaryEntriesFromDb.map(entry => ({
+    id: entry.id,
+    characterId: entry.characterId,
+    description: entry.description,
+    date: entry.date,
+    linkedEntities: entry.linkedEntities ? JSON.parse(entry.linkedEntities as string) : [],
+    isImportant: entry.isImportant ?? false,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+  }));
 
   // Get related data
   const [adventure] = characterWithParsedEntities.adventureId
