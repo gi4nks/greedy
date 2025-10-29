@@ -166,9 +166,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
-          <Link href={`/campaigns/${campaignId}/adventures`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/adventures`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <BookOpen className="w-8 h-8 mx-auto mb-3 text-orange-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Adventures</h3>
                 <p className="text-sm text-base-content/70">
@@ -178,9 +178,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/sessions`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/sessions`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <Play className="w-8 h-8 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Sessions</h3>
                 <p className="text-sm text-base-content/70">
@@ -190,9 +190,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/quests`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/quests`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <CheckCircle className="w-8 h-8 mx-auto mb-3 text-emerald-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Quests</h3>
                 <p className="text-sm text-base-content/70">
@@ -202,9 +202,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/characters`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/characters`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <Users className="w-8 h-8 mx-auto mb-3 text-green-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Characters</h3>
                 <p className="text-sm text-base-content/70">Players and NPCs</p>
@@ -212,9 +212,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/locations`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/locations`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <MapPin className="w-8 h-8 mx-auto mb-3 text-purple-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Locations</h3>
                 <p className="text-sm text-base-content/70">
@@ -224,9 +224,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/relations`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/relations`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <LinkIcon className="w-8 h-8 mx-auto mb-3 text-fuchsia-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Relations</h3>
                 <p className="text-sm text-base-content/70">
@@ -236,9 +236,9 @@ export default function CampaignPageClient({ campaign, campaignId }: CampaignPag
             </Card>
           </Link>
 
-          <Link href={`/campaigns/${campaignId}/network`} className="group">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
+          <Link href={`/campaigns/${campaignId}/network`} className="group h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
                 <Share2 className="w-8 h-8 mx-auto mb-3 text-indigo-500 group-hover:scale-110 transition-transform" />
                 <h3 className="font-semibold mb-1">Network</h3>
                 <p className="text-sm text-base-content/70">
