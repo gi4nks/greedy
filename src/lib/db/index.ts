@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "../../../");
 const dataDir = process.env.DATA_DIR 
   ? path.resolve(projectRoot, process.env.DATA_DIR)
-  : path.resolve(__dirname, "./database");
+  : path.resolve(projectRoot, "./database");
 const dbPath = path.join(dataDir, "campaign.db");
 
 // Ensure the database directory exists
