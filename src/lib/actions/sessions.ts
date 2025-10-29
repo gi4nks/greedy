@@ -73,6 +73,7 @@ export async function createSession(
   }
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [session] = await db
       .insert(sessions)
       .values({
@@ -82,6 +83,8 @@ export async function createSession(
         adventureId,
         text: text || null,
         images: images ? JSON.parse(images) : null,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 
@@ -124,6 +127,7 @@ export async function updateSession(
   }
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [session] = await db
       .update(sessions)
       .set({
@@ -133,7 +137,7 @@ export async function updateSession(
         adventureId,
         text: text || null,
         images: images ? JSON.parse(images) : null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(sessions.id, id))
       .returning();

@@ -751,6 +751,7 @@ export interface UpsertMagicItemInput {
 export async function createMagicItem(
   input: UpsertMagicItemInput,
 ): Promise<MagicItem> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const [created] = await db
     .insert(magicItems)
     .values({
@@ -762,6 +763,8 @@ export async function createMagicItem(
       tags: input.tags ? JSON.stringify(input.tags) : null,
       attunementRequired: input.attunementRequired ?? false,
       images: input.images ? JSON.stringify(input.images) : null,
+      createdAt: now,
+      updatedAt: now,
     })
     .returning();
 
@@ -772,6 +775,7 @@ export async function updateMagicItem(
   itemId: number,
   input: UpsertMagicItemInput,
 ): Promise<MagicItem | null> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const [updated] = await db
     .update(magicItems)
     .set({
@@ -783,7 +787,7 @@ export async function updateMagicItem(
       tags: input.tags ? JSON.stringify(input.tags) : null,
       attunementRequired: input.attunementRequired ?? false,
       images: input.images ? JSON.stringify(input.images) : null,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     })
     .where(eq(magicItems.id, itemId))
     .returning();

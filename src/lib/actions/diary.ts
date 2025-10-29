@@ -80,6 +80,8 @@ export async function createDiaryEntry(
         date: parsed.data.date,
         linkedEntities: parsed.data.linkedEntities.length > 0 ? JSON.stringify(parsed.data.linkedEntities) : null,
         isImportant: parsed.data.isImportant,
+        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       })
       .returning();
 
@@ -152,7 +154,7 @@ export async function updateDiaryEntry(
         date: parsed.data.date,
         linkedEntities: parsed.data.linkedEntities.length > 0 ? JSON.stringify(parsed.data.linkedEntities) : null,
         isImportant: parsed.data.isImportant,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       })
       .where(eq(table.id, entryId))
       .returning();

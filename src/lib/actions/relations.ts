@@ -73,6 +73,8 @@ export async function createRelationship(
         description: parsed.data.description,
         bidirectional: parsed.data.bidirectional,
         metadata: parsed.data.metadata ? JSON.stringify(parsed.data.metadata) : null,
+        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       })
       .returning();
 
@@ -135,7 +137,7 @@ export async function updateRelationship(
         description: parsed.data.description,
         bidirectional: parsed.data.bidirectional,
         metadata: parsed.data.metadata ? JSON.stringify(parsed.data.metadata) : null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       })
       .where(eq(relations.id, relationshipId))
       .returning();

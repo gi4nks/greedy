@@ -41,6 +41,7 @@ export async function createAdventure(
   const images = formData.get("images") as string;
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await db.insert(adventures).values({
       title,
       description: description || null,
@@ -50,6 +51,8 @@ export async function createAdventure(
       status: status || "planned",
       slug: slug || null,
       images: images ? JSON.parse(images) : null,
+      createdAt: now,
+      updatedAt: now,
     });
 
     revalidatePath(`/campaigns/${campaignId}/adventures`);
@@ -79,6 +82,7 @@ export async function updateAdventure(
   const images = formData.get("images") as string;
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await db
       .update(adventures)
       .set({
@@ -90,7 +94,7 @@ export async function updateAdventure(
         status: status || "planned",
         slug: slug || null,
         images: images ? JSON.parse(images) : null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(adventures.id, id));
 

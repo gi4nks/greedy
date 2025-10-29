@@ -195,6 +195,7 @@ export async function createRelationship(
     const validatedData = validationResult.data;
 
     // Create relationship in database using generic relations table
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [newRelationship] = await db
       .insert(relations)
       .values({
@@ -213,6 +214,8 @@ export async function createRelationship(
           respect: validatedData.respect,
           discoveredByPlayers: validatedData.discoveredByPlayers,
         }),
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 
@@ -259,6 +262,7 @@ export async function updateRelationship(
     const validatedData = validationResult.data;
 
     // Update relationship in database
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [updatedRelationship] = await db
       .update(relations)
       .set({
@@ -277,6 +281,7 @@ export async function updateRelationship(
           respect: validatedData.respect,
           discoveredByPlayers: validatedData.discoveredByPlayers,
         }),
+        updatedAt: now,
       })
       .where(eq(relations.id, relationshipId))
       .returning();

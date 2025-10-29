@@ -93,7 +93,7 @@ export async function createCharacter(
   const characterData = validatedFields.data;
 
   try {
-    const now = new Date().toISOString();
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await db.insert(characters).values({
       ...characterData,
       classes: JSON.stringify(characterData.classes),
@@ -170,13 +170,14 @@ export async function updateCharacter(
   const characterData = validatedFields.data;
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await db
       .update(characters)
       .set({
         ...characterData,
         classes: JSON.stringify(characterData.classes),
         images: JSON.stringify(characterData.images),
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(characters.id, id));
 

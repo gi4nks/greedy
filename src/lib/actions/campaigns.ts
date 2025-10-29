@@ -84,6 +84,7 @@ export async function createCampaign(
 
   try {
     console.log("💾 Attempting to insert campaign into database...");
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [campaign] = await db
       .insert(campaigns)
       .values({
@@ -94,6 +95,8 @@ export async function createCampaign(
         endDate: endDate || null,
         gameEditionId: gameEditionId || 1, // Default to D&D 5e
         tags: JSON.stringify(tags),
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 
@@ -140,12 +143,13 @@ export async function updateCampaign(
   }
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await db
       .update(campaigns)
       .set({
         ...validatedFields.data,
         tags: JSON.stringify(validatedFields.data.tags),
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(campaigns.id, id));
 
@@ -192,6 +196,7 @@ export async function createCampaignDirect(
   }
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [campaign] = await db
       .insert(campaigns)
       .values({
@@ -208,6 +213,8 @@ export async function createCampaignDirect(
                 .filter((t) => t),
             )
           : null,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 

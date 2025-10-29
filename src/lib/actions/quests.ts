@@ -59,6 +59,7 @@ export async function createQuest(
     : [];
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [newQuest] = await db
       .insert(quests)
       .values({
@@ -72,6 +73,8 @@ export async function createQuest(
         assignedTo: assignedTo || null,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
         images: images ? JSON.parse(images) : null,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 
@@ -120,6 +123,7 @@ export async function updateQuest(
     : [];
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [updatedQuest] = await db
       .update(quests)
       .set({
@@ -133,7 +137,7 @@ export async function updateQuest(
         assignedTo: assignedTo || null,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
         images: images ? JSON.parse(images) : null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(quests.id, id))
       .returning();

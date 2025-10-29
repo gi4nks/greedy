@@ -49,6 +49,7 @@ export async function createLocation(
     : [];
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [newLocation] = await db
       .insert(locations)
       .values({
@@ -58,6 +59,8 @@ export async function createLocation(
         adventureId,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
         images: images ? JSON.parse(images) : null,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 
@@ -94,6 +97,7 @@ export async function updateLocation(
     : [];
 
   try {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [updatedLocation] = await db
       .update(locations)
       .set({
@@ -103,7 +107,7 @@ export async function updateLocation(
         adventureId,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
         images: images ? JSON.parse(images) : null,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       })
       .where(eq(locations.id, id))
       .returning();
