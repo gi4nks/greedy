@@ -39,6 +39,7 @@ export default function DiaryComponent({
   const [expandedTexts, setExpandedTexts] = useState<Set<number>>(new Set());
   const [showEditor, setShowEditor] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | undefined>();
+  const [showFilters, setShowFilters] = useState(false);
   const router = useRouter();
 
   const fetchDiaryEntries = useCallback(async () => {
@@ -211,104 +212,107 @@ export default function DiaryComponent({
   return (
     <div className="space-y-4">
       {/* Header with Add Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold text-gray-900">Diary Entries</h3>
-        <Button
-          type="button"
-          onClick={() => {
-            setEditingEntry(undefined);
-            setShowEditor(true);
-          }}
-          className="flex items-center gap-2"
-          size="sm"
-        >
-          <Plus className="w-4 h-4" />
-          Add Entry
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setEditingEntry(undefined);
+              setShowEditor(true);
+            }}
+            className="flex items-center gap-2"
+            size="sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Entry
+          </Button>
+        </div>
       </div>
-      {/* Search and Filter Controls */}
+
+      {/* Compact Search and Filter Bar */}
       {Array.isArray(diaryEntries) && diaryEntries.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <div className="flex flex-col space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="space-y-2">
+          {/* Search Bar and Filter Toggle in one row */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 type="text"
-                placeholder="Search diary entries..."
+                placeholder="Search entries..."
                 value={diarySearchQuery}
                 onChange={(e) => setDiarySearchQuery(e.target.value)}
-                className="pl-10 pr-10 py-3 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
+                className="pl-9 pr-8 py-2 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                 aria-label="Search diary entries"
               />
               {diarySearchQuery && (
                 <button
                   onClick={() => setDiarySearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
+            
+            {/* Filter Toggle Button */}
+            <Button
+              type="button"
+              variant={showFilters ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-1 whitespace-nowrap"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filters</span>
+              {diaryEntityFilter.length > 0 && (
+                <Badge className="ml-1 bg-blue-600 text-white px-1.5 py-0 text-xs">
+                  {diaryEntityFilter.length}
+                </Badge>
+              )}
+            </Button>
+          </div>
 
-            {/* Active Filters Display */}
-            {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Active filters:</span>
-
-                {/* Search term badge */}
-                {diarySearchQuery && (
-                  <Badge variant="default" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200">
-                    <Search className="w-3 h-3" />
-                    &quot;{diarySearchQuery}&quot;
-                    <X
-                      className="w-3 h-3 cursor-pointer ml-1"
-                      onClick={() => setDiarySearchQuery("")}
-                      aria-label="Remove search filter"
-                    />
-                  </Badge>
-                )}
-
-                {/* Entity type badges */}
-                {diaryEntityFilter.map((entityType) => (
-                  <Badge
-                    key={entityType}
-                    variant="default"
-                    className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 hover:bg-green-200"
-                  >
-                    <Filter className="w-3 h-3" />
-                    {entityType.replace('-', ' ')}
-                    <X
-                      className="w-3 h-3 cursor-pointer ml-1"
-                      onClick={() => setDiaryEntityFilter(prev => prev.filter(type => type !== entityType))}
-                      aria-label={`Remove ${entityType} filter`}
-                    />
-                  </Badge>
-                ))}
-
-                {/* Clear all button */}
-                <Button
+          {/* Active Filters Badges (Compact) */}
+          {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
+            <div className="flex flex-wrap items-center gap-1">
+              {diarySearchQuery && (
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                  Search: &quot;{diarySearchQuery.substring(0, 10)}{diarySearchQuery.length > 10 ? '...' : ''}&quot;
+                </Badge>
+              )}
+              {diaryEntityFilter.map((entityType) => (
+                <Badge
+                  key={entityType}
+                  variant="secondary"
+                  className="text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-gray-300"
+                  onClick={() => setDiaryEntityFilter(prev => prev.filter(type => type !== entityType))}
+                >
+                  {entityType.replace('-', ' ')}
+                  <X className="w-3 h-3" />
+                </Badge>
+              ))}
+              {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={() => {
                     setDiarySearchQuery("");
                     setDiaryEntityFilter([]);
                   }}
-                  className="text-xs text-gray-500 hover:text-gray-700 h-6 px-2"
+                  className="text-xs text-gray-500 hover:text-gray-700 ml-1 underline"
                 >
-                  Clear all
-                </Button>
-              </div>
-            )}
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
 
-            {/* Entity Filter Section */}
-            <div className="border-t border-gray-100 pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Filter by entity type:</span>
-
-                {/* Quick filter buttons for common entity types */}
+          {/* Collapsible Filter Buttons */}
+          {showFilters && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+              <div className="text-xs font-semibold text-gray-600">Filter by entity type:</div>
+              <div className="flex flex-wrap gap-2">
                 {(() => {
                   const allEntityTypes = new Set<string>();
                   if (Array.isArray(diaryEntries)) {
@@ -320,6 +324,10 @@ export default function DiaryComponent({
                   }
 
                   const availableTypes = Array.from(allEntityTypes).sort();
+                  
+                  if (availableTypes.length === 0) {
+                    return <p className="text-xs text-gray-500">No linked entities found</p>;
+                  }
 
                   return availableTypes.map((entityType) => {
                     const isSelected = diaryEntityFilter.includes(entityType);
@@ -334,12 +342,11 @@ export default function DiaryComponent({
                             setDiaryEntityFilter(prev => [...prev, entityType]);
                           }
                         }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ${
+                        className={`px-2.5 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ${
                           isSelected
-                            ? 'bg-blue-100 text-blue-800 border border-blue-300 shadow-sm'
-                            : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                         }`}
-                        aria-label={`${isSelected ? 'Remove' : 'Add'} ${entityType} filter`}
                       >
                         {entityType.replace('-', ' ')}
                       </button>
@@ -348,7 +355,7 @@ export default function DiaryComponent({
                 })()}
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

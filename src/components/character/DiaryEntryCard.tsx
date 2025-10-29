@@ -66,11 +66,11 @@ export default function DiaryEntryCard({
     <div
       className="bg-white border border-gray-200 rounded-md p-2 shadow-sm hover:shadow-md transition-all duration-200"
     >
-      {/* Entry Row */}
-      <div className="flex items-start gap-3">
-        {/* Date Chip */}
+      {/* Entry Row - Compact Layout */}
+      <div className="flex items-start gap-2">
+        {/* Date Chip - Smaller */}
         <div className="flex-shrink-0">
-          <Badge variant="warning" className="text-xs px-2 py-1">
+          <Badge variant="warning" className="text-xs px-1.5 py-0.5 whitespace-nowrap">
             {formatDate(entry.date)}
           </Badge>
         </div>
@@ -79,38 +79,38 @@ export default function DiaryEntryCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              {/* Description with line clamping */}
+              {/* Description with compact line clamping - 2 lines max by default */}
               <div className="relative">
-                <p className={`text-sm text-gray-900 leading-relaxed ${
+                <p className={`text-sm text-gray-900 leading-snug ${
                   !isTextExpanded && needsTruncation ? 'line-clamp-2' : ''
                 }`}>
                   {highlightSearchTerms ? highlightSearchTerms(description, searchQuery) : description}
                 </p>
                 
-                {/* Show more/less toggle */}
+                {/* Show more/less toggle - inline */}
                 {needsTruncation && onToggleTextExpanded && (
                   <button
                     type="button"
                     onClick={() => onToggleTextExpanded(entry.id)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-2 transition-colors"
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium ml-1 inline transition-colors"
                   >
-                    {isTextExpanded ? 'Show less' : 'Show more'}
+                    {isTextExpanded ? 'less' : 'more'}
                   </button>
                 )}
               </div>
 
-              {/* Linked Entities */}
+              {/* Linked Entities - Compact */}
               {entry.linkedEntities && entry.linkedEntities.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-0.5 mt-1">
                   {entry.linkedEntities.map((entity) => (
                     <Badge
                       key={`${entity.type}-${entity.id}`}
                       variant="outline"
-                      className="text-xs px-1.5 py-0.5 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                      className="text-xs px-1 py-0.5 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
                       onClick={() => onEntityClick?.(entity)}
                     >
                       <span className="capitalize text-xs">{entity.type.replace('-', ' ')}</span>
-                      <span className="font-medium ml-1">{entity.name}</span>
+                      {entity.name && <span className="font-medium ml-0.5">{entity.name.substring(0, 15)}{entity.name.length > 15 ? '…' : ''}</span>}
                     </Badge>
                   ))}
                 </div>
@@ -118,22 +118,22 @@ export default function DiaryEntryCard({
 
               {/* Important Badge */}
               {entry.isImportant && (
-                <Badge variant="warning" className="text-xs mt-2">
+                <Badge variant="warning" className="text-xs mt-1">
                   ⭐ Important
                 </Badge>
               )}
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Compact */}
             {(onEdit || onDelete) && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-0.5 flex-shrink-0">
                 {onEdit && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={onEdit}
-                    className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                    className="text-gray-400 hover:text-gray-600 p-0.5 h-5 w-5"
                     aria-label="Edit diary entry"
                   >
                     <Edit className="w-3 h-3" />
@@ -145,7 +145,7 @@ export default function DiaryEntryCard({
                     variant="ghost"
                     size="sm"
                     onClick={onDelete}
-                    className="text-gray-400 hover:text-gray-600 p-1 h-6 w-6"
+                    className="text-gray-400 hover:text-gray-600 p-0.5 h-5 w-5"
                     aria-label="Delete diary entry"
                   >
                     <Trash2 className="w-3 h-3" />
