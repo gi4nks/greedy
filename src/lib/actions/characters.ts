@@ -93,10 +93,13 @@ export async function createCharacter(
   const characterData = validatedFields.data;
 
   try {
+    const now = new Date().toISOString();
     await db.insert(characters).values({
       ...characterData,
       classes: JSON.stringify(characterData.classes),
       images: JSON.stringify(characterData.images),
+      createdAt: now,
+      updatedAt: now,
     });
 
     revalidatePath(`/campaigns/${characterData.campaignId}/characters`);

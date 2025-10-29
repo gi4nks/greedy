@@ -84,23 +84,30 @@ export function formatDisplayDate(
 
     if (dateString instanceof Date) {
       date = dateString;
-    } else {
-      // Handle SQLite timestamp format (e.g., "2025-10-14 12:34:56")
-      // Replace space with 'T' to make it ISO-like format
-      const isoString = dateString.replace(' ', 'T');
+    } else if (typeof dateString === 'string') {
+      // Handle various timestamp formats
+      let isoString = dateString;
+      
+      // Handle SQLite timestamp format with space (e.g., "2025-10-14 12:34:56")
+      if (dateString.includes(' ') && dateString.includes('-')) {
+        isoString = dateString.replace(' ', 'T');
+      }
+      
       date = new Date(isoString);
 
       // If that doesn't work, try the original string
       if (isNaN(date.getTime())) {
         date = new Date(dateString);
       }
+    } else {
+      return "—";
     }
 
     if (isNaN(date.getTime())) return "—";
 
     // Use consistent format regardless of locale to prevent hydration mismatches
     const day = date.getDate().toString().padStart(2, "0");
-    const month = date.getMonth() + 1; // getMonth() returns 0-based month
+    const month = (date.getMonth() + 1).toString().padStart(2, "0"); // getMonth() returns 0-based month
     const year = date.getFullYear();
 
     return `${day}/${month}/${year}`;
