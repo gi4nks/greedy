@@ -59,7 +59,7 @@ export default async function CampaignQuestsPage({
       description="Manage campaign quests and story objectives"
       sectionItems={[{ label: "Quests" }]}
       createButton={{
-        href: `/campaigns/${campaignId}/adventures`,
+        href: `/campaigns/${campaignId}/quests/new`,
         label: "Create Quest",
         icon: <Plus className="w-4 h-4" />,
       }}
