@@ -6,7 +6,7 @@ import { quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
 import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
@@ -58,18 +58,17 @@ export default async function CampaignQuestsPage({
       title="Quests"
       description="Manage campaign quests and story objectives"
       sectionItems={[{ label: "Quests" }]}
-      createButton={{
-        href: `/campaigns/${campaignId}/adventures`,
-        label: "Create Quest",
-        icon: <Plus className="w-4 h-4" />,
-      }}
     >
-      <Card className="bg-blue-50 border-blue-200 mb-6">
+      <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6 flex gap-3">
           <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-blue-900">
-              Quests are managed within adventures. Click "Create Quest" to get started.
+              Quests are managed within adventures. Go to{" "}
+              <Link href={`/campaigns/${campaignId}/adventures`} className="underline font-semibold">
+                Adventures
+              </Link>
+              {" "}to create a new quest.
             </p>
           </div>
         </CardContent>
