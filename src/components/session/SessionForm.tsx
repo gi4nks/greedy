@@ -73,16 +73,12 @@ export default function SessionForm({
     try {
       // Validate form data
       const rawData = Object.fromEntries(formData.entries());
-      console.log("SessionForm - Raw FormData:", rawData);
-      
       const validation = validateFormData(SessionFormSchema, {
         ...rawData,
         campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : undefined,
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
         images: rawData.images ? JSON.parse(rawData.images as string) : [],
       });
-
-      console.log("SessionForm - Validation result:", validation);
 
       if (!validation.success) {
         return { success: false, error: Object.values(validation.errors)[0] };

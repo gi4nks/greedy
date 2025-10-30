@@ -119,16 +119,6 @@ export async function updateSession(
   const imagesValue = formData.get("images") as string;
   const campaignId = formData.get("campaignId") as string;
 
-  // Log incoming data for debugging
-  console.log("updateSession - FormData received:");
-  console.log("  id:", id, typeof id);
-  console.log("  title:", title);
-  console.log("  date:", date);
-  console.log("  adventureIdValue:", adventureIdValue, "=> adventureId:", adventureId);
-  console.log("  campaignId:", campaignId, typeof campaignId);
-  console.log("  imagesValue:", imagesValue ? imagesValue.substring(0, 100) + "..." : null);
-  console.log("  text:", text ? text.substring(0, 50) + "..." : null);
-
   if (!title || !date) {
     return {
       success: false,
@@ -144,22 +134,11 @@ export async function updateSession(
     if (imagesValue) {
       try {
         parsedImages = JSON.parse(imagesValue);
-        console.log("updateSession - Parsed images successfully:", Array.isArray(parsedImages) ? `array with ${parsedImages.length} items` : typeof parsedImages);
       } catch (e) {
         console.error("Error parsing images JSON:", e);
         parsedImages = null;
       }
     }
-
-    console.log("updateSession - Preparing update with:");
-    console.log("  id:", id);
-    console.log("  campaignId:", campaignId ? Number(campaignId) : null);
-    console.log("  adventureId:", adventureId);
-    console.log("  title:", title);
-    console.log("  date:", date);
-    console.log("  text:", text ? text.substring(0, 30) + "..." : null);
-    console.log("  images:", parsedImages ? "array" : null);
-    console.log("  updatedAt:", now);
 
     const [session] = await db
       .update(sessions)
@@ -175,8 +154,6 @@ export async function updateSession(
       .where(eq(sessions.id, id))
       .returning();
 
-    console.log("updateSession - Database update successful:", session?.id);
-
     // Revalidate campaign-specific sessions path
     if (campaignId) {
       revalidatePath(`/campaigns/${campaignId}/sessions`);
@@ -188,7 +165,6 @@ export async function updateSession(
   } catch (error) {
     console.error("Database error in updateSession:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error details:", errorMessage);
     return {
       success: false,
       error: `Failed to update session: ${errorMessage}`,
