@@ -116,7 +116,7 @@ export async function updateSession(
     ? Number(adventureIdValue)
     : null;
   const text = formData.get("text") as string;
-  const images = formData.get("images") as string;
+  const imagesValue = formData.get("images") as string;
   const campaignId = formData.get("campaignId") as string;
 
   if (!title || !date) {
@@ -128,6 +128,17 @@ export async function updateSession(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    
+    // Parse images if provided
+    let parsedImages: any = null;
+    if (imagesValue) {
+      try {
+        parsedImages = JSON.parse(imagesValue);
+      } catch (e) {
+        parsedImages = null;
+      }
+    }
+
     const [session] = await db
       .update(sessions)
       .set({
@@ -136,9 +147,9 @@ export async function updateSession(
         date,
         adventureId,
         text: text || null,
-        images: images ? JSON.parse(images) : null,
+        images: parsedImages,
         updatedAt: now,
-      })
+      } as any)
       .where(eq(sessions.id, id))
       .returning();
 

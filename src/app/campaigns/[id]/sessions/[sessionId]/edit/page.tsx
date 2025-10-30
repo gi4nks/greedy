@@ -119,6 +119,7 @@ export default async function EditSessionPage({
       <div className="container mx-auto px-4 py-6 md:p-6">
         <DynamicBreadcrumb
           campaignId={campaignId}
+          campaignTitle={campaign.title}
           sectionItems={sectionItems}
         />
 

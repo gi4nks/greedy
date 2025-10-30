@@ -118,6 +118,7 @@ export default function SessionForm({
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="campaignId" value={campaignId?.toString() || ""} />
       <input type="hidden" name="adventureId" value={formData.adventureId?.toString() || ""} />
+      <input type="hidden" name="images" value={JSON.stringify(imageManagement.images)} />
       {mode === "edit" && session?.id && <input type="hidden" name="id" value={session.id.toString()} />}
 
       <div className="space-y-6">

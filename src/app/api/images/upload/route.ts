@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sessions, adventures, characters, locations, quests, magicItems } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { revalidatePath } from "next/cache";
 
 // Map entity types to their database tables and fields
 const tableMap = {
@@ -51,6 +52,35 @@ async function updateEntityImages(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(table.id, entityId));
+
+    // Revalidate cache for this entity's pages
+    // We need to revalidate the entity detail page and any listing pages
+    if (entityType === "sessions") {
+      // We don't know the campaignId here, so revalidate all sessions paths
+      revalidatePath("/campaigns/[id]/sessions", "layout");
+      revalidatePath("/campaigns/[id]/sessions/[sessionId]", "layout");
+      revalidatePath("/campaigns/[id]/sessions/[sessionId]/edit", "layout");
+    } else if (entityType === "adventures") {
+      revalidatePath("/campaigns/[id]/adventures", "layout");
+      revalidatePath("/campaigns/[id]/adventures/[adventureId]", "layout");
+      revalidatePath("/campaigns/[id]/adventures/[adventureId]/edit", "layout");
+    } else if (entityType === "characters") {
+      revalidatePath("/campaigns/[id]/characters", "layout");
+      revalidatePath("/campaigns/[id]/characters/[characterId]", "layout");
+      revalidatePath("/campaigns/[id]/characters/[characterId]/edit", "layout");
+    } else if (entityType === "locations") {
+      revalidatePath("/campaigns/[id]/locations", "layout");
+      revalidatePath("/campaigns/[id]/locations/[locationId]", "layout");
+      revalidatePath("/campaigns/[id]/locations/[locationId]/edit", "layout");
+    } else if (entityType === "quests") {
+      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests", "layout");
+      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests/[questId]", "layout");
+      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests/[questId]/edit", "layout");
+    } else if (entityType === "magic-items") {
+      revalidatePath("/magic-items", "layout");
+      revalidatePath("/magic-items/[id]", "layout");
+      revalidatePath("/magic-items/[id]/edit", "layout");
+    }
   } catch (error) {
     console.error("Error updating entity images:", error);
     throw error;

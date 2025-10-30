@@ -95,6 +95,7 @@ async function SessionContent({ sessionId, campaignId }: { sessionId: number; ca
       {/* Breadcrumb */}
       <DynamicBreadcrumb
         campaignId={campaignId}
+        campaignTitle={campaign.title}
         sectionItems={sectionItems}
       />
 
@@ -104,7 +105,7 @@ async function SessionContent({ sessionId, campaignId }: { sessionId: number; ca
       <div className="mb-8">
         <ImageCarousel
           images={parseImagesJson(session.images)}
-          className="max-w-2xl mx-auto"
+          className="max-w-lg mx-auto"
         />
       </div>
     </div>
