@@ -40,15 +40,6 @@ async function checkSessionBelongsToCampaign(sessionId: number, campaignId: numb
   return adventureData?.campaignId === campaignId;
 }
 
-async function getAdventure(adventureId: number) {
-  const [adventure] = await db
-    .select()
-    .from(adventures)
-    .where(eq(adventures.id, adventureId))
-    .limit(1);
-  return adventure;
-}
-
 async function SessionContent({ sessionId, campaignId }: { sessionId: number; campaignId: number }) {
   const session = await getSession(sessionId);
   const campaign = await getCampaignWithEdition(campaignId);
@@ -65,30 +56,15 @@ async function SessionContent({ sessionId, campaignId }: { sessionId: number; ca
     notFound();
   }
 
-  // Get adventure if session is linked to one
-  const adventure = session.adventureId ? await getAdventure(session.adventureId) : null;
-
-  // Build breadcrumb items based on whether session is adventure-scoped
-  const sectionItems = adventure
-    ? [
-        {
-          label: "Adventures",
-          href: `/campaigns/${campaignId}/adventures`,
-        },
-        {
-          label: adventure.title,
-          href: `/campaigns/${campaignId}/adventures/${adventure.id}`,
-        },
-        { label: "Sessions", href: `/campaigns/${campaignId}/sessions?adventure=${adventure.id}` },
-        { label: session.title || `Session ${sessionId}` },
-      ]
-    : [
-        {
-          label: "Sessions",
-          href: `/campaigns/${campaignId}/sessions`,
-        },
-        { label: session.title || `Session ${sessionId}` },
-      ];
+  // Always use campaign-level breadcrumb, never include adventure
+  // (Sessions are accessed via /campaigns/{id}/sessions, not through adventures)
+  const sectionItems = [
+    {
+      label: "Sessions",
+      href: `/campaigns/${campaignId}/sessions`,
+    },
+    { label: session.title || `Session ${sessionId}` },
+  ];
 
   return (
     <div className="space-y-6">
