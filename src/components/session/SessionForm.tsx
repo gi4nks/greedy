@@ -71,17 +71,13 @@ export default function SessionForm({
   // Server action setup
   const createOrUpdateSession = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
     try {
-      // Validate form data
-      const rawData = Object.fromEntries(formData.entries());
-      const validation = validateFormData(SessionFormSchema, {
-        ...rawData,
-        campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : undefined,
-        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
-        images: rawData.images ? JSON.parse(rawData.images as string) : [],
-      });
+      // Don't validate on client - let server action handle validation
+      // Just ensure required fields have values
+      const title = formData.get("title") as string;
+      const date = formData.get("date") as string;
 
-      if (!validation.success) {
-        return { success: false, error: Object.values(validation.errors)[0] };
+      if (!title || !date) {
+        return { success: false, error: "Title and date are required" };
       }
 
       if (mode === "edit" && session) {
@@ -117,7 +113,7 @@ export default function SessionForm({
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="campaignId" value={campaignId?.toString() || ""} />
-      <input type="hidden" name="adventureId" value={formData.adventureId?.toString() || ""} />
+      <input type="hidden" name="adventureId" value={formData.adventureId?.toString() || "none"} />
       <input type="hidden" name="images" value={JSON.stringify(imageManagement.images)} />
       {mode === "edit" && session?.id && <input type="hidden" name="id" value={session.id.toString()} />}
 
