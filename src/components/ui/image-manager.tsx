@@ -281,6 +281,7 @@ export function ImageManager({
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="absolute bottom-1 left-1 right-1 flex justify-center">
                           <Button
+                            type="button"
                             variant="neutral"
                             size="sm"
                             onClick={() => handleRemoveImage(image)}
