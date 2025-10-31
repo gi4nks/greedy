@@ -14,8 +14,6 @@ export default function CharacterDiary({ characterId, campaignId }: CharacterDia
       entityId={characterId}
       campaignId={campaignId}
       title="Diary Entries"
-      enableSearch={true}
-      enableFiltering={true}
     />
   );
 }

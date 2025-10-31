@@ -19,8 +19,6 @@ export default function QuestDiaryWrapper({ questId, campaignId }: QuestDiaryWra
       entityId={questId}
       campaignId={campaignId}
       title="Quest Diary"
-      enableSearch={true}
-      enableFiltering={true}
     />
   );
 }

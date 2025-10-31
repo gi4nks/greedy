@@ -148,16 +148,14 @@ export default function LocationForm({
 
         {mode === "edit" && location?.id && (
           <div>
-            <DiaryWrapper
-              entityType="location"
-              entityId={location.id}
-              campaignId={campaignId}
-              title="Location Diary"
-              enableSearch={true}
-              enableFiltering={true}
-            />
-          </div>
-        )}
+          <DiaryWrapper
+            entityType="location"
+            entityId={location.id}
+            campaignId={campaignId}
+            title="Location Diary"
+          />
+        </div>
+      )}
 
         <FormSection title="Wiki Entities">
           <WikiEntitiesDisplay

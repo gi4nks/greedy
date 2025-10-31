@@ -19,8 +19,6 @@ export default function LocationDiaryWrapper({ locationId, campaignId }: Locatio
       entityId={locationId}
       campaignId={campaignId}
       title="Location Diary"
-      enableSearch={true}
-      enableFiltering={true}
     />
   );
 }

@@ -17,25 +17,39 @@ interface MarkdownRendererProps {
 }
 
 export const markdownComponents: Components = {
-  img: ({ src, alt, className, width, height }) => {
-    if (!src) return null;
+  img: ({ src, alt, className, width, height, ...props }) => {
+    if (typeof src === "string" && !src.startsWith("blob:")) {
+      const numericWidth =
+        typeof width === "string" ? parseInt(width, 10) : width || 800;
+      const numericHeight =
+        typeof height === "string" ? parseInt(height, 10) : height || 450;
 
-    const numericWidth =
-      typeof width === "string" ? parseInt(width, 10) : width || 800;
-    const numericHeight =
-      typeof height === "string" ? parseInt(height, 10) : height || 450;
+      return (
+        <Image
+          src={src}
+          alt={alt || ""}
+          width={Number.isNaN(numericWidth) ? 800 : numericWidth}
+          height={Number.isNaN(numericHeight) ? 450 : numericHeight}
+          className={cn(
+            "h-auto max-w-full rounded-lg shadow-sm",
+            className as string | undefined,
+          )}
+          sizes="100vw"
+        />
+      );
+    }
 
     return (
-      <Image
-        src={src}
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        {...props}
+        src={typeof src === "string" ? src : undefined}
         alt={alt || ""}
-        width={Number.isNaN(numericWidth) ? 800 : numericWidth}
-        height={Number.isNaN(numericHeight) ? 450 : numericHeight}
         className={cn(
-          "h-auto max-w-full rounded-lg shadow-sm",
-          className as string | undefined,
+          "max-w-full h-auto rounded-lg shadow-sm",
+          (className as string | undefined) || "",
         )}
-        sizes="100vw"
+        loading={props.loading ?? "lazy"}
       />
     );
   },

@@ -19,8 +19,6 @@ export function MagicItemDiary({ itemId, campaignId }: MagicItemDiaryProps) {
       entityId={itemId}
       campaignId={campaignId}
       title="Diary"
-      enableSearch={true}
-      enableFiltering={true}
     />
   );
 }

@@ -14,8 +14,6 @@ export default function CharacterDiaryWrapper({ characterId, campaignId }: Chara
       entityId={characterId}
       campaignId={campaignId}
       title="Character Journey"
-      enableSearch={true}
-      enableFiltering={true}
     />
   );
 }
