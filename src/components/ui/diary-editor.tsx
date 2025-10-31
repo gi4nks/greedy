@@ -10,17 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, X, Plus, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import EntitySelectorModal from "@/components/ui/entity-selector-modal";
-
-interface DiaryEntry {
-  id: number;
-  description: string;
-  date: string;
-  linkedEntities: { id: string; type: string; name: string }[];
-  isImportant: boolean;
-}
+import {
+  type DiaryEntry,
+  type DiaryEntityType,
+  type DiaryLinkedEntity,
+} from "@/lib/types/diary";
 
 interface DiaryEditorProps {
-  entityType: "character" | "location" | "quest";
+  entityType: DiaryEntityType;
   entityId: number;
   campaignId: number;
   entry?: DiaryEntry;
@@ -76,7 +73,16 @@ export default function DiaryEditor({
         throw new Error("Failed to save diary entry");
       }
 
-      const savedEntry = await response.json();
+      const result = await response.json();
+      const savedEntry: DiaryEntry =
+        (result && typeof result === "object" && "data" in result
+          ? (result.data as DiaryEntry)
+          : result) ?? undefined;
+
+      if (!savedEntry) {
+        throw new Error("Invalid diary entry response");
+      }
+
       toast.success(entry?.id ? "Diary entry updated" : "Diary entry created");
       onSave(savedEntry);
     } catch (error) {
@@ -87,7 +93,7 @@ export default function DiaryEditor({
     }
   };
 
-  const addLinkedEntity = (entity: { id: string; type: string; name: string }) => {
+  const addLinkedEntity = (entity: DiaryLinkedEntity) => {
     const exists = linkedEntities.some(
       (linked) => linked.id === entity.id && linked.type === entity.type,
     );

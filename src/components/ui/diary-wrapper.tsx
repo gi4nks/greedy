@@ -3,20 +3,16 @@
 import { useState, useEffect } from "react";
 import CollapsibleSection from "@/components/ui/collapsible-section";
 import DiaryComponent from "@/components/ui/diary-component";
+import {
+  type DiaryEntry,
+  type DiaryEntityType,
+} from "@/lib/types/diary";
 
 interface DiaryWrapperProps {
-  entityType: string;
+  entityType: DiaryEntityType;
   entityId: number;
   campaignId: number;
   title?: string;
-}
-
-interface DiaryEntry {
-  id: number;
-  description: string;
-  date: string;
-  linkedEntities: { id: string; type: string; name: string }[];
-  isImportant: boolean;
 }
 
 export default function DiaryWrapper({
@@ -38,11 +34,14 @@ export default function DiaryWrapper({
           if (Array.isArray(entries)) {
             setDiaryEntries(entries);
           } else {
-            console.error('Diary entries data is not an array:', entries);
+            console.error("Diary entries data is not an array:", entries);
             setDiaryEntries([]);
           }
         } else {
-          console.error(`Failed to fetch ${entityType} diary entries:`, response.status);
+          console.error(
+            `Failed to fetch ${entityType} diary entries:`,
+            response.status,
+          );
           setDiaryEntries([]);
         }
       } catch (error) {
@@ -56,9 +55,6 @@ export default function DiaryWrapper({
     fetchDiaryEntries();
   }, [entityType, entityId]);
 
-  // Don't render anything if there are no diary entries and not loading
-  // Actually, we should always show the section so users can add entries
-  // Only hide if we're still loading
   if (loading) {
     return null;
   }
@@ -66,11 +62,12 @@ export default function DiaryWrapper({
   return (
     <CollapsibleSection title={title} className="mb-6">
       <DiaryComponent
-        entityType={entityType as "character" | "location" | "quest"}
+        entityType={entityType}
         entityId={entityId}
         campaignId={campaignId}
         initialEntries={diaryEntries}
         loading={loading}
+        disableAutoFetch
       />
     </CollapsibleSection>
   );

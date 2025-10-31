@@ -9,30 +9,33 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, X, Filter, Plus } from "lucide-react";
-
-interface DiaryEntry {
-  id: number;
-  description: string;
-  date: string;
-  linkedEntities: { id: string; type: string; name: string }[];
-  isImportant: boolean;
-}
+import {
+  type DiaryEntry,
+  type DiaryEntityType,
+  type DiaryLinkedEntity,
+} from "@/lib/types/diary";
 
 interface DiaryComponentProps {
-  entityType: "character" | "location" | "quest";
+  entityType: DiaryEntityType;
   entityId: number;
   campaignId: number;
   initialEntries?: DiaryEntry[];
   loading?: boolean;
+  disableAutoFetch?: boolean;
 }
 
 export default function DiaryComponent({
   entityType,
   entityId,
   campaignId,
-  initialEntries = [],
-  loading = false
+  initialEntries: initialEntriesProp,
+  loading = false,
+  disableAutoFetch = false,
 }: DiaryComponentProps) {
+  const initialEntries = useMemo(
+    () => initialEntriesProp ?? [],
+    [initialEntriesProp],
+  );
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(initialEntries);
   const [diarySearchQuery, setDiarySearchQuery] = useState("");
   const [diaryEntityFilter, setDiaryEntityFilter] = useState<string[]>([]);
@@ -65,10 +68,23 @@ export default function DiaryComponent({
   }, [entityType, entityId]);
 
   useEffect(() => {
+    setDiaryEntries(initialEntries);
+  }, [initialEntries]);
+
+  useEffect(() => {
+    if (disableAutoFetch) {
+      return;
+    }
     if (initialEntries.length === 0) {
       fetchDiaryEntries();
     }
-  }, [entityType, entityId, fetchDiaryEntries, initialEntries.length]);
+  }, [
+    disableAutoFetch,
+    entityType,
+    entityId,
+    fetchDiaryEntries,
+    initialEntries.length,
+  ]);
 
   // Helper function to highlight search terms
   const highlightSearchTerms = (text: string, searchQuery: string) => {
@@ -87,7 +103,7 @@ export default function DiaryComponent({
   };
 
   // Handle clicking on linked entities
-  const handleEntityClick = (entity: { id: string; type: string; name: string }) => {
+  const handleEntityClick = (entity: DiaryLinkedEntity) => {
     // Navigate to the appropriate entity page based on type
     const entityRoutes: Record<string, string> = {
       'character': `/campaigns/${campaignId}/characters/${entity.id}`,

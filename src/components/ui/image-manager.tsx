@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,11 +30,17 @@ export function ImageManager({
   onImagesChange,
   className = "",
 }: ImageManagerProps) {
-  const [images, setImages] = useState<ImageInfo[]>(() =>
-    parseImagesJson(currentImages),
+  const parsedImages = useMemo(
+    () => parseImagesJson(currentImages),
+    [currentImages],
   );
+  const [images, setImages] = useState<ImageInfo[]>(parsedImages);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setImages(parsedImages);
+  }, [parsedImages]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
