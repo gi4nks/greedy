@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,17 +17,28 @@ interface MarkdownRendererProps {
 }
 
 export const markdownComponents: Components = {
-  img: (props) => (
-    <img
-      {...props}
-      alt={props.alt || ""}
-      className={cn(
-        "max-w-full h-auto rounded-lg shadow-sm",
-        (props as { className?: string }).className,
-      )}
-      loading={props.loading ?? "lazy"}
-    />
-  ),
+  img: ({ src, alt, className, width, height }) => {
+    if (!src) return null;
+
+    const numericWidth =
+      typeof width === "string" ? parseInt(width, 10) : width || 800;
+    const numericHeight =
+      typeof height === "string" ? parseInt(height, 10) : height || 450;
+
+    return (
+      <Image
+        src={src}
+        alt={alt || ""}
+        width={Number.isNaN(numericWidth) ? 800 : numericWidth}
+        height={Number.isNaN(numericHeight) ? 450 : numericHeight}
+        className={cn(
+          "h-auto max-w-full rounded-lg shadow-sm",
+          className as string | undefined,
+        )}
+        sizes="100vw"
+      />
+    );
+  },
   a: (props) => {
     const isExternal =
       typeof props.href === "string" && /^https?:\/\//.test(props.href);

@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { sessions, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import SessionForm from "@/components/session/SessionForm";
-import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";

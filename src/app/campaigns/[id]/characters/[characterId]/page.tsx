@@ -13,7 +13,7 @@ import CharacterDiaryWrapper from "@/components/character/CharacterDiaryWrapper"
 import EntityRelationships from "@/components/ui/entity-relationships";
 import { getEntityRelationships } from "@/lib/actions/relationships";
 import { EntityErrorBoundary } from "@/components/ui/error-boundary";
-import { EntityDetailSkeleton, CharacterDetailSkeleton, CharacterStatsSkeleton } from "@/components/ui/loading-skeleton";
+import { CharacterDetailSkeleton, CharacterStatsSkeleton } from "@/components/ui/loading-skeleton";
 import { Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

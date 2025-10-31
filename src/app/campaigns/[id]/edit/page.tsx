@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import CampaignForm from "@/components/campaign/CampaignForm";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { BookOpen } from "lucide-react";
@@ -75,42 +74,6 @@ export default async function EditCampaignPage({
         </CardHeader>
         <CardContent className="p-6">
           <CampaignForm campaign={campaign} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function EditCampaignSkeleton() {
-  return (
-    <div className="container mx-auto px-4 py-6 md:p-6 max-w-5xl">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="skeleton h-8 w-8 rounded-lg"></div>
-          <div className="skeleton h-6 w-48"></div>
-        </div>
-        <div className="skeleton h-8 w-64 mb-2"></div>
-        <div className="skeleton h-4 w-96"></div>
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="skeleton h-6 w-32 mb-4"></div>
-            <div className="skeleton h-10 w-full mb-4"></div>
-            <div className="skeleton h-6 w-32 mb-4"></div>
-            <div className="skeleton h-32 w-full mb-4"></div>
-            <div className="skeleton h-6 w-32 mb-4"></div>
-            <div className="skeleton h-10 w-full mb-4"></div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="skeleton h-10 w-full"></div>
-              <div className="skeleton h-10 w-full"></div>
-            </div>
-            <div className="flex gap-4">
-              <div className="skeleton h-10 w-24"></div>
-              <div className="skeleton h-10 w-32"></div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

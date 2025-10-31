@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, AlertCircle, Plus, Camera } from "lucide-react";
+import { Upload, X, Plus, Camera } from "lucide-react";
 import {
   EntityType,
   ImageInfo,
@@ -273,10 +274,12 @@ export function ImageManager({
                 >
                   <CardContent className="p-0">
                     <div className="aspect-square relative">
-                      <img
+                      <Image
                         src={image.thumbnailUrl || image.url}
                         alt={`${entityType} image`}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="absolute bottom-1 left-1 right-1 flex justify-center">

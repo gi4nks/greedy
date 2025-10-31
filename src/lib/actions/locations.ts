@@ -5,7 +5,6 @@ import { locations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/lib/types/api";
-import type { Location } from "@/lib/db/schema";
 
 export async function getLocations(campaignId: number) {
   const locationList = await db
@@ -50,7 +49,7 @@ export async function createLocation(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const [newLocation] = await db
+    await db
       .insert(locations)
       .values({
         name,
@@ -98,7 +97,7 @@ export async function updateLocation(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const [updatedLocation] = await db
+    await db
       .update(locations)
       .set({
         name,

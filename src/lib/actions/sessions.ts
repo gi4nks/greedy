@@ -6,7 +6,9 @@ import { eq, desc } from "drizzle-orm";
 import { getSessionWithWikiEntities } from "@/lib/db/queries";
 import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/lib/types/api";
-import type { Session } from "@/lib/db/schema";
+
+type SessionInsert = typeof sessions.$inferInsert;
+type SessionUpdate = Partial<typeof sessions.$inferInsert>;
 
 export async function getSessions() {
   return await db
@@ -74,18 +76,20 @@ export async function createSession(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const [session] = await db
+    const sessionValues: SessionInsert = {
+      campaignId: campaignId ? Number(campaignId) : null,
+      title,
+      date,
+      adventureId,
+      text: text || null,
+      images: images ? JSON.parse(images) : null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db
       .insert(sessions)
-      .values({
-        campaignId: campaignId ? Number(campaignId) : null,
-        title,
-        date,
-        adventureId,
-        text: text || null,
-        images: images ? JSON.parse(images) : null,
-        createdAt: now,
-        updatedAt: now,
-      })
+      .values(sessionValues)
       .returning();
 
     // Revalidate campaign-specific sessions path
@@ -130,7 +134,7 @@ export async function updateSession(
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     
     // Parse images if provided
-    let parsedImages: any = null;
+    let parsedImages: SessionInsert["images"] = null;
     if (imagesValue) {
       try {
         parsedImages = JSON.parse(imagesValue);
@@ -140,17 +144,19 @@ export async function updateSession(
       }
     }
 
-    const [session] = await db
+    const sessionUpdates: SessionUpdate = {
+      campaignId: campaignId ? Number(campaignId) : undefined,
+      adventureId: adventureId ?? undefined,
+      title,
+      date,
+      text: text || null,
+      images: parsedImages ?? undefined,
+      updatedAt: now,
+    };
+
+    await db
       .update(sessions)
-      .set({
-        campaignId: campaignId ? Number(campaignId) : undefined,
-        adventureId: adventureId || undefined,
-        title,
-        date,
-        text: text || null,
-        images: parsedImages || undefined,
-        updatedAt: now,
-      } as any)
+      .set(sessionUpdates)
       .where(eq(sessions.id, id))
       .returning();
 

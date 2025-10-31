@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { campaigns, adventures, sessions, characters } from "@/lib/db/schema";
-import { eq, sql, desc, count } from "drizzle-orm";
+import { sql, desc, count } from "drizzle-orm";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 
 export interface CampaignAnalytics {
@@ -39,8 +39,9 @@ export interface CampaignAnalytics {
 
 export class AnalyticsService {
   static async getCampaignAnalytics(
-    campaignId?: number,
+    _campaignId?: number,
   ): Promise<CampaignAnalytics> {
+    void _campaignId;
     // Get basic counts
     const [campaignCount] = await db.select({ count: count() }).from(campaigns);
     const [adventureCount] = await db

@@ -17,7 +17,6 @@ import {
 export default function WikiEntitiesDisplay({
   wikiEntities,
   entityType,
-  entityId: _entityId,
   showImportMessage = true,
   onRemoveEntity,
   isEditable = false,

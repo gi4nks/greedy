@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/actions/sessions";
 import { SessionHeader } from "@/components/session/SessionHeader";
-import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { ImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";

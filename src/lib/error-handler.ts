@@ -1,6 +1,5 @@
 "use client";
 
-import { toast } from "sonner";
 import { showToast } from "@/lib/toast";
 
 /**

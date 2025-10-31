@@ -14,6 +14,7 @@ interface SelectContextType {
   selectedIndex?: number;
   setSelectedIndex?: React.Dispatch<React.SetStateAction<number>>;
   items?: Array<{ value: string; label: string }>;
+  listboxId?: string;
 }
 
 const SelectContext = React.createContext<SelectContextType>({});
@@ -55,6 +56,7 @@ const Select = React.forwardRef<
     const [selectedIndex, setSelectedIndex] = React.useState(-1);
     const triggerRef = React.useRef<HTMLElement>(null);
     const contentRef = React.useRef<HTMLElement>(null);
+    const listboxId = React.useId();
 
     // Determine the current value (controlled vs uncontrolled)
     const currentValue = value !== undefined ? value : internalValue;
@@ -150,6 +152,7 @@ const Select = React.forwardRef<
           selectedIndex,
           setSelectedIndex,
           items,
+          listboxId,
         }}
       >
         <div
@@ -206,7 +209,16 @@ const SelectTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, children, ...props }, ref) => {
-  const { setIsOpen, isOpen, triggerRef, selectedIndex, setSelectedIndex, items, onValueChange } = React.useContext(SelectContext);
+  const {
+    setIsOpen,
+    isOpen,
+    triggerRef,
+    selectedIndex,
+    setSelectedIndex,
+    items,
+    onValueChange,
+    listboxId,
+  } = React.useContext(SelectContext);
 
   const handleClick = () => {
     setIsOpen?.((prev) => !prev);
@@ -267,6 +279,7 @@ const SelectTrigger = React.forwardRef<
       role="combobox"
       aria-expanded={isOpen}
       aria-haspopup="listbox"
+      aria-controls={listboxId}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
@@ -286,7 +299,7 @@ const SelectContent = React.forwardRef<
   HTMLUListElement,
   React.HTMLAttributes<HTMLUListElement>
 >(({ className, children, ...props }, ref) => {
-  const { isOpen, contentRef } = React.useContext(SelectContext);
+  const { isOpen, contentRef, listboxId } = React.useContext(SelectContext);
 
   // Merge refs - must be before any early returns
   const setRefs = React.useCallback((element: HTMLUListElement | null) => {
@@ -303,6 +316,7 @@ const SelectContent = React.forwardRef<
     <ul
       ref={setRefs}
       role="listbox"
+      id={listboxId}
       className={cn(
         "dropdown-content z-[200] p-2 shadow bg-base-100 rounded-box border border-base-300 min-w-full max-h-96 overflow-auto",
         className,

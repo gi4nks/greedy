@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { campaigns, gameEditions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import LocationForm from "@/components/location/LocationForm";
-import { Skeleton } from "@/components/ui/skeleton";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";

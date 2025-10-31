@@ -8,7 +8,6 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
 } from "@/components/ui/select";
 import { X, Users, MapPin, BookOpen, Play, User, EyeOff, Plus } from "lucide-react";
 
@@ -183,18 +182,6 @@ export default function EntitySelectorModal({
     const getEntityIcon = (type: string) => {
         const entityType = ENTITY_TYPES.find(et => et.value === type);
         return entityType ? entityType.icon : Users;
-    };
-
-    const isEntityExcluded = (entity: Entity) => {
-        // Exclude entities that are already linked to the current diary entry
-        const isInExcludedList = Array.isArray(excludedEntities) && excludedEntities.some(
-            excluded => excluded.id === entity.id.toString() && excluded.type === (entity.subtype || entity.type)
-        );
-
-        // Exclude the source entity (the entity from which this modal was opened)
-        const isSourceEntity = sourceEntity && sourceEntity.id === entity.id.toString() && sourceEntity.type === (entity.subtype || entity.type);
-
-        return isInExcludedList || isSourceEntity;
     };
 
     const availableEntities = entities.filter(e => {

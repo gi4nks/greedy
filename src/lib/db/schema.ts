@@ -1,11 +1,4 @@
-import {
-  sqliteTable,
-  integer,
-  text,
-  real,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Core entities - simplified for initial migration
 export const gameEditions = sqliteTable("game_editions", {

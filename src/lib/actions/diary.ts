@@ -130,20 +130,16 @@ export async function updateDiaryEntry(
 
   try {
     let table;
-    let entityColumn;
 
     switch (entityType) {
       case "character":
         table = characterDiaryEntries;
-        entityColumn = "characterId";
         break;
       case "location":
         table = locationDiaryEntries;
-        entityColumn = "locationId";
         break;
       case "quest":
         table = questDiaryEntries;
-        entityColumn = "questId";
         break;
     }
 

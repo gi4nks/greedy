@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
@@ -109,10 +110,13 @@ export function EntityImageCarousel({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <img
+          <Image
             src={currentImage.url}
             alt={`${entityType} image ${currentIndex + 1}`}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 800px"
+            priority={currentIndex === 0}
           />
 
           {/* Navigation Arrows */}
@@ -161,10 +165,12 @@ export function EntityImageCarousel({
                 }`}
                 aria-label={`Go to image ${index + 1}`}
               >
-                <img
-                  src={image.url}
+                <Image
+                  src={image.thumbnailUrl || image.url}
                   alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="64px"
                 />
               </button>
             ))}

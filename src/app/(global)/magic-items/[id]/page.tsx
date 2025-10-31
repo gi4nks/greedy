@@ -19,29 +19,8 @@ import { UnassignMagicItemButton } from "@/components/magic-items/UnassignMagicI
 
 import { EntityErrorBoundary } from "@/components/ui/error-boundary";
 import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
-import { Edit, Save } from "lucide-react";
+import { Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-function parseTags(tags: unknown): string[] {
-  if (!tags) return [];
-  
-  if (Array.isArray(tags)) {
-    return tags.filter(tag => typeof tag === 'string');
-  }
-  
-  if (typeof tags === 'string') {
-    try {
-      const parsed = JSON.parse(tags);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(tag => typeof tag === 'string');
-      }
-    } catch (error) {
-      console.warn("Failed to parse tags JSON", error);
-    }
-  }
-  
-  return [];
-}
 
 function parseProperties(value: unknown): Record<string, unknown> | null {
   if (!value) {
@@ -275,20 +254,6 @@ function MagicItemDetail({
           className="max-w-2xl mx-auto"
         />
       </CollapsibleSection>
-    </div>
-  );
-}
-
-function MagicItemDetailSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="animate-pulse">
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-base-300 rounded-lg"></div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

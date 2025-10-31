@@ -5,7 +5,9 @@ import { quests, adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { ActionResult } from "@/lib/types/api";
-import type { Quest } from "@/lib/db/schema";
+
+type QuestInsert = typeof quests.$inferInsert;
+type QuestUpdate = Partial<typeof quests.$inferInsert>;
 
 export async function getQuests(campaignId?: number) {
   if (campaignId) {
@@ -62,22 +64,24 @@ export async function createQuest(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const [newQuest] = await db
+    const questValues: QuestInsert = {
+      title,
+      description: description || null,
+      adventureId,
+      status: status || "active",
+      priority: priority || "medium",
+      type: type || "main",
+      dueDate: dueDate || null,
+      assignedTo: assignedTo || null,
+      tags: tags.length > 0 ? JSON.stringify(tags) : null,
+      images: images ? JSON.parse(images) : null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db
       .insert(quests)
-      .values({
-        title,
-        description: description || null,
-        adventureId,
-        status: status || "active",
-        priority: priority || "medium",
-        type: type || "main",
-        dueDate: dueDate || null,
-        assignedTo: assignedTo || null,
-        tags: tags.length > 0 ? JSON.stringify(tags) : null,
-        images: images ? JSON.parse(images) : null,
-        createdAt: now,
-        updatedAt: now,
-      } as any)
+      .values(questValues)
       .returning();
 
     // Revalidate adventure-specific path if applicable
@@ -128,21 +132,23 @@ export async function updateQuest(
 
   try {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const [updatedQuest] = await db
+    const questUpdates: QuestUpdate = {
+      title,
+      description: description || null,
+      adventureId,
+      status: status || "active",
+      priority: priority || "medium",
+      type: type || "main",
+      dueDate: dueDate || null,
+      assignedTo: assignedTo || null,
+      tags: tags.length > 0 ? JSON.stringify(tags) : null,
+      images: images ? JSON.parse(images) : null,
+      updatedAt: now,
+    };
+
+    await db
       .update(quests)
-      .set({
-        title,
-        description: description || null,
-        adventureId,
-        status: status || "active",
-        priority: priority || "medium",
-        type: type || "main",
-        dueDate: dueDate || null,
-        assignedTo: assignedTo || null,
-        tags: tags.length > 0 ? JSON.stringify(tags) : null,
-        images: images ? JSON.parse(images) : null,
-        updatedAt: now,
-      } as any)
+      .set(questUpdates)
       .where(eq(quests.id, id))
       .returning();
 

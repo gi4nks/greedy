@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { relations, characters, npcs, locations, quests } from "@/lib/db/schema";
 import { eq, or, and } from "drizzle-orm";
-import { relationshipSchema, type RelationshipFormData } from "@/lib/validation";
+import { relationshipSchema } from "@/lib/validation";
 import { validateFormData } from "@/lib/validation";
 
 type RelationshipMetadata = {

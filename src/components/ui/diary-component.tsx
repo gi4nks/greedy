@@ -390,7 +390,7 @@ export default function DiaryComponent({
         </div>
       ) : (
         <div className="space-y-2">
-          {sortedEntries.map((entry, index) => (
+          {sortedEntries.map((entry) => (
             <DiaryEntryCard
               key={entry.id}
               entry={entry}

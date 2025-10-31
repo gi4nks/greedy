@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Info } from "lucide-react";
 import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
-import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
 import { QuestsList } from "@/components/quests/QuestsList";
 
 interface CampaignQuestsPageProps {

@@ -43,7 +43,7 @@ const checkAndCreateTable = async () => {
 
     // Test select
     try {
-      const entries = await db.select().from(sql`character_diary_entries`).limit(1);
+      await db.select().from(sql`character_diary_entries`).limit(1);
       console.log("✅ Table is accessible");
     } catch (error) {
       console.log("❌ Table not accessible:", (error as Error).message);

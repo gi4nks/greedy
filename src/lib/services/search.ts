@@ -9,7 +9,7 @@ import {
   quests,
   magicItems,
 } from "@/lib/db/schema";
-import { eq, sql, and, gte, lte, desc, asc, SQL } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface SearchResult {
   id: number;
@@ -121,7 +121,7 @@ export class SearchService {
 
     try {
       const results: SearchResult[] = [];
-      const { entityTypes, dateRange, tags, sortBy = "relevance" } = filters;
+      const { entityTypes, sortBy = "relevance" } = filters;
       const searchLower = query.toLowerCase();
 
       // Helper function to check if text matches search query
@@ -379,7 +379,10 @@ export class SearchService {
   ) {
     // For now, we'll skip the FTS indexing until we properly set up the virtual table
     // This is a placeholder for future FTS implementation
-    console.log(`Would index: ${entityType} ${entityId} - ${title}`);
+    console.log(
+      `Would index: ${entityType} ${entityId} - ${title}`,
+      JSON.stringify({ tags, campaignId, adventureId, contentLength: content.length }),
+    );
   }
 
   static async reindexAll() {

@@ -183,7 +183,8 @@ export async function updateCharacter(
 
     revalidatePath(`/campaigns/${characterData.campaignId}/characters`);
     return { success: true };
-  } catch (_error) {
+  } catch (error) {
+    console.error("Database error updating character:", error);
     return {
       success: false,
       error: "Database Error: Failed to update character.",
@@ -209,7 +210,8 @@ export async function deleteCharacter(id: number): Promise<ActionResult> {
         message: "Character not found.",
       };
     }
-  } catch (_error) {
+  } catch (error) {
+    console.error("Database error deleting character:", error);
     return {
       success: false,
       message: "Database Error: Failed to delete character.",

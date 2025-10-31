@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton, CardSkeleton, TextSkeleton, ListSkeleton, TableSkeleton } from "@/components/ui/basic-skeleton";
+import { Skeleton, TextSkeleton, ListSkeleton, TableSkeleton } from "@/components/ui/basic-skeleton";
 
 /**
  * Loading skeleton for entity detail pages (characters, locations, quests, etc.)

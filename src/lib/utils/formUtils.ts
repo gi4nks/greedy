@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { formatZodErrors } from "@/lib/validation";
-import { ZodError } from "zod";
+import { type ZodSchema } from "zod";
 
 /**
  * Common form validation and submission utilities
@@ -12,7 +12,7 @@ import { ZodError } from "zod";
  * Validates form data using a Zod schema and returns formatted errors
  */
 export function validateFormData<T>(
-  schema: { safeParse: (data: T) => { success: boolean; error?: ZodError } },
+  schema: ZodSchema<T>,
   data: T
 ): { success: boolean; errors?: Record<string, string> } {
   const validationResult = schema.safeParse(data);
@@ -28,7 +28,7 @@ export function validateFormData<T>(
 /**
  * Common form submission handler pattern
  */
-export async function handleFormSubmission<T>(
+export async function handleFormSubmission(
   action: (formData: FormData) => Promise<{ success: boolean; message?: string }>,
   formData: FormData,
   options: {

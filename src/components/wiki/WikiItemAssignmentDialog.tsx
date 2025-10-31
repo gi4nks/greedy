@@ -1,15 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Plus,
-  BookOpen,
-  X,
-  EyeOff,
-} from "lucide-react";
+import { Plus, X, EyeOff } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import {
   WikiItemCategory,
@@ -33,7 +28,6 @@ interface WikiItemAssignmentDialogProps {
 }
 
 export function WikiItemAssignmentDialog({
-  itemId: _itemId,
   itemTitle,
   itemCategory,
   campaignId,
@@ -94,28 +88,6 @@ export function WikiItemAssignmentDialog({
       setNotes("");
     }
   };
-
-  const currentEntityList = useMemo(() => {
-    const list = (() => {
-      switch (selectedEntityType) {
-        case "character":
-          return entities.characters.map((c) => ({ id: c.id, name: c.name }));
-        case "npc":
-          return entities.npcs.map((n) => ({ id: n.id, name: n.name }));
-        case "session":
-          return entities.sessions.map((s) => ({
-            id: s.id,
-            name: `Session ${s.sessionNumber}: ${s.title}`,
-          }));
-        case "location":
-          return entities.locations.map((l) => ({ id: l.id, name: l.name }));
-        default:
-          return [];
-      }
-    })();
-    console.log(`Current entity list for ${selectedEntityType}:`, list);
-    return list;
-  }, [selectedEntityType, entities]);
 
   return (
     <>

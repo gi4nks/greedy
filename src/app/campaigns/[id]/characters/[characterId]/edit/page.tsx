@@ -13,7 +13,6 @@ import {
 } from "@/lib/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import CharacterForm from "@/components/character/CharacterForm";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { WikiDataService } from "@/lib/services/wiki-data";
@@ -235,44 +234,6 @@ export default async function EditCharacterPage({
             adventureId={character.adventureId || undefined}
             mode="edit"
           />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function EditCharacterSkeleton() {
-  return (
-    <div className="container mx-auto px-4 py-6 md:p-6">
-      <div className="mb-8">
-        <Skeleton className="h-8 w-64 mb-4" />
-        <Skeleton className="h-6 w-48" />
-      </div>
-
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <Skeleton className="h-6 w-32 mb-4" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <Skeleton className="h-6 w-32 mb-4" />
-                <div className="grid grid-cols-3 gap-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

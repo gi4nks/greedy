@@ -138,7 +138,6 @@ export default function PromoteToModal({
       }
 
       let result;
-      let redirectPath = "";
       let entityName = "";
 
       switch (selectedType) {
@@ -160,7 +159,6 @@ export default function PromoteToModal({
           submitData.append("tags", "[]");
 
           result = await createCharacter({ success: false }, submitData);
-          redirectPath = `/campaigns/${campaignId}/characters`;
           entityName = "Character";
           break;
 
@@ -173,7 +171,6 @@ export default function PromoteToModal({
           submitData.append("images", "[]");
 
           result = await createQuest(submitData);
-          redirectPath = `/campaigns/${campaignId}/quests`;
           entityName = "Quest";
           break;
 
@@ -184,7 +181,6 @@ export default function PromoteToModal({
           submitData.append("images", "[]");
 
           result = await createLocation(submitData);
-          redirectPath = `/campaigns/${campaignId}/locations`;
           entityName = "Location";
           break;
 
@@ -198,7 +194,6 @@ export default function PromoteToModal({
           submitData.append("attunementRequired", "false");
 
           result = await createMagicItemAction(submitData);
-          redirectPath = `/magic-items`;
           entityName = "Magic Item";
           break;
 
@@ -216,20 +211,15 @@ export default function PromoteToModal({
           };
 
           let diaryEndpoint = "";
-          let redirectPathDiary = "";
-          
           switch (formData.entityType) {
             case "character":
               diaryEndpoint = `/api/characters/${formData.entityId}/diary`;
-              redirectPathDiary = `/campaigns/${campaignId}/characters/${formData.entityId}`;
               break;
             case "location":
               diaryEndpoint = `/api/locations/${formData.entityId}/diary`;
-              redirectPathDiary = `/campaigns/${campaignId}/locations/${formData.entityId}`;
               break;
             case "quest":
               diaryEndpoint = `/api/quests/${formData.entityId}/diary`;
-              redirectPathDiary = `/campaigns/${campaignId}/quests/${formData.entityId}`;
               break;
           }
 
@@ -243,7 +233,6 @@ export default function PromoteToModal({
 
           const diaryResult = await response.json();
           result = diaryResult;
-          redirectPath = redirectPathDiary;
           entityName = "Diary Note";
           break;
       }

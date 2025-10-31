@@ -534,7 +534,6 @@ function analyzeCodebase() {
         // Escape special regex characters
         const escapedName = exp.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const exportRegex = new RegExp(`\\b${escapedName}\\b`, 'g');
-        const matches = data.content.match(exportRegex) || [];
 
         // Count occurrences that appear after the export declaration
         let usageCount = 0;
@@ -618,8 +617,6 @@ function analyzeCodebase() {
   // Propagate usage through re-exports
   Object.keys(reExports).forEach(sourceFile => {
     if (fileData[sourceFile]) {
-      const sourceExports = fileData[sourceFile].exports;
-
       reExports[sourceFile].forEach(reExport => {
         if (fileData[reExport.file]) {
           const reExportData = fileData[reExport.file];

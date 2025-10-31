@@ -1,6 +1,4 @@
 "use server";
-
-import { notFound } from "next/navigation";
 import { getCharacterWithAllEntities } from "@/lib/db/queries";
 import { getMagicItemById } from "@/lib/actions/magicItems";
 import { getSession } from "@/lib/actions/sessions";
@@ -19,7 +17,6 @@ import {
   relations,
   sessions,
 } from "@/lib/db/schema";
-import { ActionResult } from "@/lib/types/api";
 import type { WikiEntity } from "@/lib/types/wiki";
 
 /**

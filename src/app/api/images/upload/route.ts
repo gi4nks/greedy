@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImages, EntityType } from "@/lib/utils/imageUtils";
 import { db } from "@/lib/db";
-import { sessions, adventures, characters, locations, quests, magicItems } from "@/lib/db/schema";
+import {
+  sessions,
+  adventures,
+  characters,
+  locations,
+  quests,
+  magicItems,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import { revalidatePath } from "next/cache";
-
-// Map entity types to their database tables and fields
-const tableMap = {
-  sessions: sessions,
-  adventures: adventures,
-  characters: characters,
-  locations: locations,
-  quests: quests,
-  "magic-items": magicItems,
-} as const;
 
 async function updateEntityImages(
   entityType: EntityType,
@@ -22,65 +19,254 @@ async function updateEntityImages(
   newImages: Array<{ filename: string; url: string; thumbnailUrl?: string; uploadedAt: string }>,
 ) {
   try {
-    const table = tableMap[entityType];
-    if (!table) {
-      throw new Error(`Unsupported entity type: ${entityType}`);
-    }
+    const timestamp = new Date().toISOString();
 
-    // Fetch current images from entity
-    const [entity] = await db
-      .select({ images: table.images })
-      .from(table)
-      .where(eq(table.id, entityId))
-      .limit(1);
+    const revalidatePaths = (paths: Array<string | null | undefined>) => {
+      const seen = new Set<string>();
+      for (const path of paths) {
+        if (!path || seen.has(path)) continue;
+        seen.add(path);
+        revalidatePath(path, "layout");
+      }
+    };
 
-    if (!entity) {
-      throw new Error(`Entity not found: ${entityType} ${entityId}`);
-    }
-
-    // Parse existing images
-    const currentImages = parseImagesJson(entity.images);
-    
-    // Combine with new images
-    const updatedImages = [...currentImages, ...newImages];
-
-    // Update database
-    await db
-      .update(table)
-      .set({
-        images: JSON.stringify(updatedImages),
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(table.id, entityId));
-
-    // Revalidate cache for this entity's pages
-    // We need to revalidate the entity detail page and any listing pages
     if (entityType === "sessions") {
-      // We don't know the campaignId here, so revalidate all sessions paths
-      revalidatePath("/campaigns/[id]/sessions", "layout");
-      revalidatePath("/campaigns/[id]/sessions/[sessionId]", "layout");
-      revalidatePath("/campaigns/[id]/sessions/[sessionId]/edit", "layout");
-    } else if (entityType === "adventures") {
-      revalidatePath("/campaigns/[id]/adventures", "layout");
-      revalidatePath("/campaigns/[id]/adventures/[adventureId]", "layout");
-      revalidatePath("/campaigns/[id]/adventures/[adventureId]/edit", "layout");
-    } else if (entityType === "characters") {
-      revalidatePath("/campaigns/[id]/characters", "layout");
-      revalidatePath("/campaigns/[id]/characters/[characterId]", "layout");
-      revalidatePath("/campaigns/[id]/characters/[characterId]/edit", "layout");
-    } else if (entityType === "locations") {
-      revalidatePath("/campaigns/[id]/locations", "layout");
-      revalidatePath("/campaigns/[id]/locations/[locationId]", "layout");
-      revalidatePath("/campaigns/[id]/locations/[locationId]/edit", "layout");
-    } else if (entityType === "quests") {
-      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests", "layout");
-      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests/[questId]", "layout");
-      revalidatePath("/campaigns/[id]/adventures/[adventureId]/quests/[questId]/edit", "layout");
-    } else if (entityType === "magic-items") {
-      revalidatePath("/magic-items", "layout");
-      revalidatePath("/magic-items/[id]", "layout");
-      revalidatePath("/magic-items/[id]/edit", "layout");
+      const [entity] = await db
+        .select({
+          images: sessions.images,
+          campaignId: sessions.campaignId,
+          adventureId: sessions.adventureId,
+        })
+        .from(sessions)
+        .where(eq(sessions.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: sessions ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(sessions)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(sessions.id, entityId));
+
+      revalidatePaths([
+        "/sessions",
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/sessions`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/sessions/${entityId}`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/sessions/${entityId}/edit`
+          : null,
+      ]);
+      return;
     }
+
+    if (entityType === "adventures") {
+      const [entity] = await db
+        .select({
+          images: adventures.images,
+          campaignId: adventures.campaignId,
+        })
+        .from(adventures)
+        .where(eq(adventures.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: adventures ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(adventures)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(adventures.id, entityId));
+
+      revalidatePaths([
+        "/adventures",
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/adventures`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/adventures/${entityId}`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/adventures/${entityId}/edit`
+          : null,
+      ]);
+      return;
+    }
+
+    if (entityType === "characters") {
+      const [entity] = await db
+        .select({
+          images: characters.images,
+          campaignId: characters.campaignId,
+        })
+        .from(characters)
+        .where(eq(characters.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: characters ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(characters)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(characters.id, entityId));
+
+      revalidatePaths([
+        "/characters",
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/characters`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/characters/${entityId}`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/characters/${entityId}/edit`
+          : null,
+      ]);
+      return;
+    }
+
+    if (entityType === "locations") {
+      const [entity] = await db
+        .select({
+          images: locations.images,
+          campaignId: locations.campaignId,
+        })
+        .from(locations)
+        .where(eq(locations.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: locations ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(locations)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(locations.id, entityId));
+
+      revalidatePaths([
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/locations`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/locations/${entityId}`
+          : null,
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/locations/${entityId}/edit`
+          : null,
+      ]);
+      return;
+    }
+
+    if (entityType === "quests") {
+      const [entity] = await db
+        .select({
+          images: quests.images,
+          adventureId: quests.adventureId,
+          campaignId: adventures.campaignId,
+        })
+        .from(quests)
+        .leftJoin(adventures, eq(quests.adventureId, adventures.id))
+        .where(eq(quests.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: quests ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(quests)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(quests.id, entityId));
+
+      revalidatePaths([
+        entity.campaignId
+          ? `/campaigns/${entity.campaignId}/quests`
+          : null,
+        entity.campaignId && entity.adventureId
+          ? `/campaigns/${entity.campaignId}/adventures/${entity.adventureId}/quests`
+          : null,
+        entity.campaignId && entity.adventureId
+          ? `/campaigns/${entity.campaignId}/adventures/${entity.adventureId}/quests/${entityId}`
+          : null,
+        entity.campaignId && entity.adventureId
+          ? `/campaigns/${entity.campaignId}/adventures/${entity.adventureId}/quests/${entityId}/edit`
+          : null,
+      ]);
+      return;
+    }
+
+    if (entityType === "magic-items") {
+      const [entity] = await db
+        .select({
+          images: magicItems.images,
+        })
+        .from(magicItems)
+        .where(eq(magicItems.id, entityId))
+        .limit(1);
+
+      if (!entity) {
+        throw new Error(`Entity not found: magic-items ${entityId}`);
+      }
+
+      const currentImages = parseImagesJson(entity.images);
+      const updatedImages = [...currentImages, ...newImages];
+
+      await db
+        .update(magicItems)
+        .set({
+          images: JSON.stringify(updatedImages),
+          updatedAt: timestamp,
+        })
+        .where(eq(magicItems.id, entityId));
+
+      revalidatePaths([
+        "/magic-items",
+        `/magic-items/${entityId}`,
+        `/magic-items/${entityId}/edit`,
+      ]);
+      return;
+    }
+
+    throw new Error(`Unsupported entity type: ${entityType}`);
   } catch (error) {
     console.error("Error updating entity images:", error);
     throw error;

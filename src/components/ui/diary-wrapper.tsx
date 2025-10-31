@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import CollapsibleSection from "@/components/ui/collapsible-section";
 import DiaryComponent from "@/components/ui/diary-component";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Search, X, Filter } from "lucide-react";
 
 interface DiaryWrapperProps {
   entityType: string;
   entityId: number;
   campaignId: number;
   title?: string;
-  enableSearch?: boolean;
-  enableFiltering?: boolean;
 }
 
 interface DiaryEntry {
@@ -30,13 +24,9 @@ export default function DiaryWrapper({
   entityId,
   campaignId,
   title = "Diary",
-  enableSearch = true,
-  enableFiltering = true
 }: DiaryWrapperProps) {
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [entityFilter, setEntityFilter] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchDiaryEntries = async () => {
@@ -66,43 +56,6 @@ export default function DiaryWrapper({
     fetchDiaryEntries();
   }, [entityType, entityId]);
 
-  // Get unique entity types for filtering
-  const availableEntityTypes = useMemo(() => {
-    const types = new Set<string>();
-    if (Array.isArray(diaryEntries)) {
-      diaryEntries.forEach(entry => {
-        entry.linkedEntities.forEach(entity => {
-          types.add(entity.type);
-        });
-      });
-    }
-    return Array.from(types).sort();
-  }, [diaryEntries]);
-
-  // Filter entries based on search and entity filter
-  const filteredEntries = useMemo(() => {
-    if (!Array.isArray(diaryEntries)) return [];
-    return diaryEntries.filter(entry => {
-      // Search filter
-      if (searchQuery && !entry.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-
-      // Entity type filter
-      if (entityFilter.length > 0) {
-        const entryEntityTypes = entry.linkedEntities.map(e => e.type);
-        const hasMatchingEntity = entityFilter.some(filterType =>
-          entryEntityTypes.includes(filterType)
-        );
-        if (!hasMatchingEntity) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [diaryEntries, searchQuery, entityFilter]);
-
   // Don't render anything if there are no diary entries and not loading
   // Actually, we should always show the section so users can add entries
   // Only hide if we're still loading
@@ -116,7 +69,7 @@ export default function DiaryWrapper({
         entityType={entityType as "character" | "location" | "quest"}
         entityId={entityId}
         campaignId={campaignId}
-        initialEntries={filteredEntries}
+        initialEntries={diaryEntries}
         loading={loading}
       />
     </CollapsibleSection>

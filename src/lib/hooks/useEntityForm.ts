@@ -14,7 +14,6 @@ import { ErrorHandler } from "@/lib/error-handler";
 export function useEntityForm({
   mode,
   entity,
-  campaignId,
   redirectPath,
   initialTags = [],
   initialImages = [],
@@ -22,7 +21,6 @@ export function useEntityForm({
 }: {
   mode: "create" | "edit";
   entity?: { id?: number };
-  campaignId?: number;
   redirectPath: string;
   initialTags?: string[];
   initialImages?: unknown[];

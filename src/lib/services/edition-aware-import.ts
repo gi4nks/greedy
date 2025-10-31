@@ -1,5 +1,4 @@
 import { WikiDataService, WikiArticle } from "./wiki-data";
-import { DnD5eToolsService } from "./dnd5e-tools";
 import * as Open5eAPI from "./open5e-api";
 
 export type GameEdition = "adnd2e" | "dnd5e" | "pf2e" | "other";

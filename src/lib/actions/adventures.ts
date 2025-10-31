@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { adventures } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { ActionResult } from "@/lib/types/api";
 
 export async function getAdventures(campaignId?: number) {

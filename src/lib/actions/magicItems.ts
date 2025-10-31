@@ -15,14 +15,12 @@ import {
 } from "@/lib/db/schema";
 import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   SUPPORTED_MAGIC_ITEM_ENTITY_TYPES,
   type AssignableEntityOption,
   type MagicItemAssignableEntity,
 } from "@/lib/magicItems/shared";
-import { ActionResult } from "@/lib/types/api";
 
 export interface EquipmentItem {
   name: string;

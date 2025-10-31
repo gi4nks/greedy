@@ -24,7 +24,7 @@ interface HighlightedMarkdownRendererProps {
 export default function HighlightedMarkdownRenderer({
   content,
   className,
-  allowHtml = false,
+  allowHtml = true,
   promotions = [],
   onHighlightClick,
   onHighlightHover,
@@ -100,7 +100,7 @@ export default function HighlightedMarkdownRenderer({
           onHighlightHover(promotion);
         }
       }}
-      onMouseLeave={(e) => {
+      onMouseLeave={() => {
         if (onHighlightHover) {
           onHighlightHover(null);
         }
@@ -109,7 +109,7 @@ export default function HighlightedMarkdownRenderer({
       <MarkdownRenderer
         content={processedContent}
         className={className}
-        allowHtml={true} // We need HTML for the highlight spans
+        allowHtml={allowHtml}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   theme: {
     extend: {},
   },
@@ -7,4 +7,6 @@ export default {
   daisyui: {
     themes: ['corporate'],
   },
-}
+};
+
+export default config;

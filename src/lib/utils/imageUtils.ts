@@ -1,7 +1,6 @@
 // Server-side image utilities
-import { NextRequest } from "next/server";
 import { writeFile, mkdir, unlink, readdir } from "fs/promises";
-import { join, extname } from "path";
+import { join } from "path";
 import { existsSync } from "fs";
 import sharp from "sharp";
 import { logger } from "@/lib/utils/logger";
@@ -47,23 +46,6 @@ const OPTIMIZATION_CONFIG = {
     quality: 80,
   },
 };
-
-/**
- * Generate a filename with proper naming convention
- * Format: {entityType}_{entityId}_{timestamp}_{originalName}
- */
-function generateFilename(
-  entityType: EntityType,
-  entityId: number,
-  originalName: string,
-): string {
-  const timestamp = Date.now();
-  const extension = extname(originalName);
-  const baseName = originalName
-    .replace(extension, "")
-    .replace(/[^a-zA-Z0-9]/g, "_");
-  return `${entityType}_${entityId}_${timestamp}_${baseName}${extension}`;
-}
 
 /**
  * Validate uploaded file

@@ -1,17 +1,13 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MagicItemForm } from "@/components/magic-items/MagicItemForm";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { getMagicItemById } from "@/lib/actions/magicItems";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
-import type { MagicItemAssignableEntity } from "@/lib/magicItems/shared";
-import { formatDate } from "@/lib/utils/date";
 import { logger } from "@/lib/utils/logger";
-import { Eye, Wand2 } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { MagicItemSidebar } from "@/components/magic-items/MagicItemSidebar";
 
 interface EditMagicItemPageProps {
@@ -46,36 +42,6 @@ async function getCampaignOptions() {
     title: row.title ?? `Campaign ${row.id}`,
   }));
 }
-
-function parseAssignments(
-  assignments: {
-    id: number;
-    entityType: MagicItemAssignableEntity;
-    entityId: number;
-    entityName: string;
-    entityDescription?: string | null;
-    entityPath: string | null;
-    campaignTitle: string | null;
-    source: string | null;
-    notes: string | null;
-    assignedAt: string | null;
-  }[],
-) {
-  return [...assignments]
-    .sort((a, b) => {
-      const aTime = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
-      const bTime = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
-      return bTime - aTime;
-    })
-    .map((assignment) => ({
-      ...assignment,
-      assignedDateLabel: assignment.assignedAt
-        ? formatDate(assignment.assignedAt)
-        : null,
-    }));
-}
-
-type ParsedAssignment = ReturnType<typeof parseAssignments>[number];
 
 export default async function EditMagicItemPage({
   params,
