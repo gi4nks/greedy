@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ interface MagicItemFormProps {
 
 export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
   const router = useRouter();
+  const hasRedirectedRef = useRef(false);
 
   // Form state
   const [formData, setFormData] = useState<MagicItemFormData>(() => ({
@@ -92,13 +93,15 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
 
   // Handle redirect on success
   useEffect(() => {
-    if (state.success) {
+    if (state?.success && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       const redirectPath = mode === "edit" && magicItem?.id 
         ? `/magic-items/${magicItem.id}`
         : "/magic-items";
-      router.push(redirectPath);
+      // Use router.replace to prevent back button returning to edit page
+      router.replace(redirectPath);
     }
-  }, [state.success, mode, magicItem?.id, router]);
+  }, [state?.success, mode, magicItem?.id, router]);
 
   // Helper functions
   const updateFormData = <K extends keyof MagicItemFormData>(key: K, value: MagicItemFormData[K]) => {
