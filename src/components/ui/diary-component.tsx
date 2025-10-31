@@ -18,9 +18,8 @@ import { getDiaryApiPath } from "@/lib/utils/diaryApi";
 import {
   highlightSearchTerms,
   getLinkedEntityRoute,
-  filterDiaryEntries,
-  sortDiaryEntries,
 } from "@/lib/utils/diaryUi";
+import { useDiaryFilters } from "@/lib/hooks/useDiaryFilters";
 
 interface DiaryComponentProps {
   entityType: DiaryEntityType;
@@ -44,13 +43,20 @@ export default function DiaryComponent({
     [initialEntriesProp],
   );
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(initialEntries);
-  const [diarySearchQuery, setDiarySearchQuery] = useState("");
-  const [diaryEntityFilter, setDiaryEntityFilter] = useState<string[]>([]);
   const [expandedTexts, setExpandedTexts] = useState<Set<number>>(new Set());
   const [showEditor, setShowEditor] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | undefined>();
   const [showFilters, setShowFilters] = useState(false);
   const router = useRouter();
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    entityFilter,
+    setEntityFilter,
+    clearFilters,
+    sortedEntries,
+  } = useDiaryFilters(diaryEntries);
 
   const fetchDiaryEntries = useCallback(async () => {
     try {
@@ -162,17 +168,6 @@ export default function DiaryComponent({
   };
 
   // Filter diary entries based on search query and entity filter (client-side only)
-  const filteredDiaryEntries = useMemo(() => {
-    if (!Array.isArray(diaryEntries)) {
-      return [];
-    }
-    return filterDiaryEntries(diaryEntries, diarySearchQuery, diaryEntityFilter);
-  }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
-
-  const sortedEntries = useMemo(
-    () => sortDiaryEntries(filteredDiaryEntries),
-    [filteredDiaryEntries],
-  );
 
   if (loading) {
     return (
@@ -219,14 +214,14 @@ export default function DiaryComponent({
               <Input
                 type="text"
                 placeholder="Search entries..."
-                value={diarySearchQuery}
-                onChange={(e) => setDiarySearchQuery(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-8 py-2 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                 aria-label="Search diary entries"
               />
-              {diarySearchQuery && (
+              {searchQuery && (
                 <button
-                  onClick={() => setDiarySearchQuery("")}
+                  onClick={() => setSearchQuery("")}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Clear search"
                 >
@@ -245,40 +240,37 @@ export default function DiaryComponent({
             >
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">Filters</span>
-              {diaryEntityFilter.length > 0 && (
+              {entityFilter.length > 0 && (
                 <Badge className="ml-1 bg-blue-600 text-white px-1.5 py-0 text-xs">
-                  {diaryEntityFilter.length}
+                  {entityFilter.length}
                 </Badge>
               )}
             </Button>
           </div>
 
           {/* Active Filters Badges (Compact) */}
-          {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
+          {(entityFilter.length > 0 || searchQuery) && (
             <div className="flex flex-wrap items-center gap-1">
-              {diarySearchQuery && (
+              {searchQuery && (
                 <Badge variant="secondary" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                  Search: &quot;{diarySearchQuery.substring(0, 10)}{diarySearchQuery.length > 10 ? '...' : ''}&quot;
+                  Search: &quot;{searchQuery.substring(0, 10)}{searchQuery.length > 10 ? '...' : ''}&quot;
                 </Badge>
               )}
-              {diaryEntityFilter.map((entityType) => (
+              {entityFilter.map((entityType) => (
                 <Badge
                   key={entityType}
                   variant="secondary"
                   className="text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-gray-300"
-                  onClick={() => setDiaryEntityFilter(prev => prev.filter(type => type !== entityType))}
+                  onClick={() => setEntityFilter((prev: string[]) => prev.filter(type => type !== entityType))}
                 >
                   {entityType.replace('-', ' ')}
                   <X className="w-3 h-3" />
                 </Badge>
               ))}
-              {(diaryEntityFilter.length > 0 || diarySearchQuery) && (
+              {(entityFilter.length > 0 || searchQuery) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setDiarySearchQuery("");
-                    setDiaryEntityFilter([]);
-                  }}
+                  onClick={clearFilters}
                   className="text-xs text-gray-500 hover:text-gray-700 ml-1 underline"
                 >
                   Clear
@@ -309,16 +301,16 @@ export default function DiaryComponent({
                   }
 
                   return availableTypes.map((entityType) => {
-                    const isSelected = diaryEntityFilter.includes(entityType);
+                    const isSelected = entityFilter.includes(entityType);
                     return (
                       <button
                         type="button"
                         key={entityType}
                         onClick={() => {
                           if (isSelected) {
-                            setDiaryEntityFilter(prev => prev.filter(type => type !== entityType));
+                            setEntityFilter((prev: string[]) => prev.filter(type => type !== entityType));
                           } else {
-                            setDiaryEntityFilter(prev => [...prev, entityType]);
+                            setEntityFilter((prev: string[]) => [...prev, entityType]);
                           }
                         }}
                         className={`px-2.5 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ${
@@ -353,14 +345,11 @@ export default function DiaryComponent({
               : "Try adjusting your search terms or filters to find what you're looking for."
             }
           </p>
-          {Array.isArray(diaryEntries) && diaryEntries.length > 0 && (diarySearchQuery || diaryEntityFilter.length > 0) && (
+          {Array.isArray(diaryEntries) && diaryEntries.length > 0 && (searchQuery || entityFilter.length > 0) && (
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setDiarySearchQuery("");
-                setDiaryEntityFilter([]);
-              }}
+              onClick={clearFilters}
               className="text-sm"
             >
               Clear filters
@@ -377,7 +366,7 @@ export default function DiaryComponent({
               onToggleTextExpanded={toggleTextExpanded}
               onEntityClick={handleEntityClick}
               highlightSearchTerms={highlightSearchTerms}
-              searchQuery={diarySearchQuery}
+              searchQuery={searchQuery}
               onEdit={() => handleEditEntry(entry)}
               onDelete={() => handleDeleteEntry(entry.id)}
             />

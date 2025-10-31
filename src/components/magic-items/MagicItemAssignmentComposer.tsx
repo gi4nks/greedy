@@ -295,7 +295,7 @@ export function MagicItemAssignmentComposer({
       >
         <Plus className="w-4 h-4" />
         Assign
-      </Button>npm 
+      </Button>
 
       {isOpen && (
         <div className="modal modal-open">

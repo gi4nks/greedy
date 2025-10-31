@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Scroll, Play, Edit, Plus, View } from "lucide-react";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
-import { ImageCarousel } from "@/components/ui/image-carousel";
+import { EntityImageCarousel } from "@/components/ui/image-carousel";
 import { parseImagesJson } from "@/lib/utils/imageUtils.client";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { formatDate, formatDuration } from "@/lib/utils/date";
@@ -299,8 +299,9 @@ export default async function AdventurePage({ params }: AdventurePageProps) {
 
         {/* Image Carousel */}
         <div className="mb-8">
-          <ImageCarousel
+          <EntityImageCarousel
             images={parseImagesJson(adventure.images)}
+            entityType="adventure"
             className="max-w-2xl mx-auto"
           />
         </div>

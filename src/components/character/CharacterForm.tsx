@@ -24,6 +24,7 @@ import type { WikiEntity } from "@/lib/types/wiki";
 import DiaryEntryCard from "@/components/character/DiaryEntryCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { sortDiaryEntries } from "@/lib/utils/diaryUi";
 
 interface MagicItemSummary {
   id: number;
@@ -441,20 +442,7 @@ export default function CharacterForm({
             {/* Diary Entries List */}
             {diaryEntries.length > 0 ? (
               <div className="space-y-3">
-                {diaryEntries
-                  .sort((a, b) => {
-                    // Parse dates safely - handle YYYY-MM-DD format
-                    const parseDate = (dateString: string) => {
-                      const [year, month, day] = dateString.split('-').map(Number);
-                      return new Date(Date.UTC(year, month - 1, day)).getTime();
-                    };
-                    try {
-                      return parseDate(b.date) - parseDate(a.date);
-                    } catch {
-                      return b.date.localeCompare(a.date);
-                    }
-                  })
-                  .map((entry) => (
+                {sortDiaryEntries(diaryEntries).map((entry) => (
                   <DiaryEntryCard
                     key={entry.id}
                     entry={entry}

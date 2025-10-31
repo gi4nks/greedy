@@ -23,6 +23,7 @@ export function MagicItemSidebar({ item, campaignOptions, additionalContent }: M
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       }}
+      metadataVariant="compact"
       quickActions={
         <MagicItemAssignmentComposer
           itemId={item.id}

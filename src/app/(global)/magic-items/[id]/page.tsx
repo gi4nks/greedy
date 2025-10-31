@@ -135,14 +135,10 @@ function parseImages(images: unknown): ImageInfo[] {
 function MagicItemDetail({
   item,
   properties,
-  assignmentsByType,
-  parsedAssignments,
-  images
+  images,
 }: {
   item: MagicItemWithAssignments;
   properties: Record<string, unknown> | null;
-  assignmentsByType: Record<string, ParsedAssignment[]>;
-  parsedAssignments: ParsedAssignment[];
   images: ImageInfo[];
 }) {
   return (
@@ -186,66 +182,6 @@ function MagicItemDetail({
         </div>
       </CollapsibleSection>
 
-      {/* Assignments */}
-      <CollapsibleSection title="Assignments" defaultExpanded={false}>
-        <div className="space-y-6">
-          {parsedAssignments.length === 0 ? (
-            <div className="rounded-md border border-dashed border-base-300 p-6 text-center text-sm text-base-content/60">
-              This magic item has not been assigned to any entities yet.
-            </div>
-          ) : (
-            Object.entries(assignmentsByType).map(
-              ([entityType, assignments]) => (
-                <div key={entityType} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="capitalize">
-                      {entityType}
-                    </Badge>
-                    <span className="text-xs text-base-content/60">
-                      {assignments.length} assignment
-                      {assignments.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <div className="space-y-4">
-                    {assignments.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="flex items-center justify-between rounded-md border border-base-200 bg-base-100 p-4"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col">
-                            {assignment.entityType === "character" && assignment.entityPath ? (
-                              <Link
-                                href={assignment.entityPath}
-                                className="text-lg font-semibold text-primary hover:text-primary/80"
-                              >
-                                {assignment.entityName}
-                              </Link>
-                            ) : (
-                              <span className="text-lg font-semibold text-base-content">
-                                {assignment.entityName}
-                              </span>
-                            )}
-                            <Badge variant="outline" className="capitalize text-xs w-fit mt-1">
-                              {assignment.entityType}
-                            </Badge>
-                          </div>
-                        </div>
-                        <UnassignMagicItemButton
-                          itemId={item.id}
-                          entityType={assignment.entityType}
-                          entityId={assignment.entityId}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ),
-            )
-          )}
-        </div>
-      </CollapsibleSection>
-
       {/* Images */}
       <CollapsibleSection title="Images" defaultExpanded={false}>
         <EntityImageCarousel
@@ -255,6 +191,79 @@ function MagicItemDetail({
         />
       </CollapsibleSection>
     </div>
+  );
+}
+
+function MagicItemAssignments({
+  itemId,
+  assignmentsByType,
+  parsedAssignments,
+}: {
+  itemId: number;
+  assignmentsByType: Record<string, ParsedAssignment[]>;
+  parsedAssignments: ParsedAssignment[];
+}) {
+  return (
+    <CollapsibleSection title="Assignments" defaultExpanded={false} className="w-full">
+      <div className="space-y-4">
+        {parsedAssignments.length === 0 ? (
+          <div className="rounded-md border border-dashed border-base-300 p-4 text-center text-sm text-base-content/60">
+            This magic item has not been assigned to any entities yet.
+          </div>
+        ) : (
+          Object.entries(assignmentsByType).map(
+            ([entityType, assignments]) => (
+              <div key={entityType} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="capitalize">
+                    {entityType}
+                  </Badge>
+                  <span className="text-xs text-base-content/60">
+                    {assignments.length} assignment
+                    {assignments.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {assignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="w-full rounded-md border border-base-200 bg-base-100 p-3 space-y-2"
+                    >
+                      <div className="flex flex-col gap-1">
+                        {assignment.entityType === "character" &&
+                        assignment.entityPath ? (
+                          <Link
+                            href={assignment.entityPath}
+                            className="text-base font-semibold text-primary hover:text-primary/80"
+                          >
+                            {assignment.entityName}
+                          </Link>
+                        ) : (
+                          <span className="text-base font-semibold text-base-content">
+                            {assignment.entityName}
+                          </span>
+                        )}
+                        <Badge variant="outline" className="capitalize text-[10px] w-fit">
+                          {assignment.entityType}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-end">
+                        <UnassignMagicItemButton
+                          itemId={itemId}
+                          entityType={assignment.entityType}
+                          entityId={assignment.entityId}
+                          className="btn-ghost btn-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ),
+          )
+        )}
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -303,8 +312,6 @@ export default async function MagicItemPage({ params }: MagicItemDetailPageProps
               <MagicItemDetail
                 item={item}
                 properties={properties}
-                assignmentsByType={assignmentsByType}
-                parsedAssignments={assignments}
                 images={images}
               />
             </Suspense>
@@ -319,6 +326,13 @@ export default async function MagicItemPage({ params }: MagicItemDetailPageProps
             <MagicItemSidebar
               item={item}
               campaignOptions={campaignOptions}
+              additionalContent={
+                <MagicItemAssignments
+                  itemId={item.id}
+                  assignmentsByType={assignmentsByType}
+                  parsedAssignments={assignments}
+                />
+              }
             />
           </div>
         </div>
