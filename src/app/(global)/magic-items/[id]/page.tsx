@@ -252,7 +252,6 @@ function MagicItemAssignments({
                           itemId={itemId}
                           entityType={assignment.entityType}
                           entityId={assignment.entityId}
-                          className="btn-ghost btn-xs"
                         />
                       </div>
                     </div>
