@@ -1,79 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { locationDiaryEntries } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { createDiaryRouteHandlers } from "@/lib/api/diary";
 
-// PUT /api/locations/[id]/diary/[entryId] - Update a diary entry
+const handlers = createDiaryRouteHandlers("location");
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; entryId: string }> },
 ) {
   try {
-    const resolvedParams = await params;
-    const locationId = parseInt(resolvedParams.id);
-    const entryId = parseInt(resolvedParams.entryId);
+    const { id, entryId } = await params;
+    const locationId = Number(id);
+    const entryIdNum = Number(entryId);
 
-    if (isNaN(locationId) || isNaN(entryId)) {
+    if (!Number.isFinite(locationId) || !Number.isFinite(entryIdNum)) {
       return NextResponse.json(
         { error: "Invalid location ID or entry ID" },
         { status: 400 },
       );
     }
 
-    // Check if diary entry exists and belongs to the location
-    const [existingEntry] = await db
-      .select()
-      .from(locationDiaryEntries)
-      .where(
-        and(
-          eq(locationDiaryEntries.id, entryId),
-          eq(locationDiaryEntries.locationId, locationId),
-        ),
-      );
-
-    if (!existingEntry) {
-      return NextResponse.json(
-        { error: "Diary entry not found" },
-        { status: 404 },
-      );
-    }
-
-    // Parse request body
     const body = await request.json();
-    const { description, date, linkedEntities, isImportant } = body;
+    const result = await handlers.updateEntry(locationId, entryIdNum, body);
 
-    if (!description || !date) {
-      return NextResponse.json(
-        { error: "Description and date are required" },
-        { status: 400 },
-      );
+    if (!result.success) {
+      return NextResponse.json(result, { status: 400 });
     }
 
-    // Update diary entry
-    const [updatedEntry] = await db
-      .update(locationDiaryEntries)
-      .set({
-        description,
-        date,
-        linkedEntities: linkedEntities ? JSON.stringify(linkedEntities) : null,
-        isImportant: isImportant || false,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(and(
-        eq(locationDiaryEntries.id, entryId),
-        eq(locationDiaryEntries.locationId, locationId)
-      ))
-      .returning();
-
-    // Parse JSON fields for response
-    const parsedEntry = {
-      ...updatedEntry,
-      linkedEntities: updatedEntry.linkedEntities ? JSON.parse(updatedEntry.linkedEntities as string) : [],
-    };
-
-    return NextResponse.json(parsedEntry);
+    return NextResponse.json(result.data);
   } catch (error) {
-    console.error("Error updating location diary entry:", error);
+    console.error("Error updating diary entry:", error);
     return NextResponse.json(
       { error: "Failed to update diary entry" },
       { status: 500 },
@@ -81,52 +36,34 @@ export async function PUT(
   }
 }
 
-// DELETE /api/locations/[id]/diary/[entryId] - Delete a diary entry
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string; entryId: string }> },
 ) {
   try {
-    const resolvedParams = await params;
-    const locationId = parseInt(resolvedParams.id);
-    const entryId = parseInt(resolvedParams.entryId);
+    const { id, entryId } = await params;
+    const locationId = Number(id);
+    const entryIdNum = Number(entryId);
 
-    if (isNaN(locationId) || isNaN(entryId)) {
+    if (!Number.isFinite(locationId) || !Number.isFinite(entryIdNum)) {
       return NextResponse.json(
         { error: "Invalid location ID or entry ID" },
         { status: 400 },
       );
     }
 
-    // Check if diary entry exists and belongs to the location
-    const [existingEntry] = await db
-      .select()
-      .from(locationDiaryEntries)
-      .where(
-        and(
-          eq(locationDiaryEntries.id, entryId),
-          eq(locationDiaryEntries.locationId, locationId),
-        ),
-      );
-
-    if (!existingEntry) {
+    try {
+      await handlers.deleteEntry(locationId, entryIdNum);
+      return NextResponse.json({ message: "Diary entry deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting diary entry:", error);
       return NextResponse.json(
         { error: "Diary entry not found" },
         { status: 404 },
       );
     }
-
-    // Delete diary entry
-    await db
-      .delete(locationDiaryEntries)
-      .where(and(
-        eq(locationDiaryEntries.id, entryId),
-        eq(locationDiaryEntries.locationId, locationId)
-      ));
-
-    return NextResponse.json({ message: "Diary entry deleted successfully" });
   } catch (error) {
-    console.error("Error deleting location diary entry:", error);
+    console.error("Error deleting diary entry:", error);
     return NextResponse.json(
       { error: "Failed to delete diary entry" },
       { status: 500 },

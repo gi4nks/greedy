@@ -15,6 +15,7 @@ import {
   type DiaryEntityType,
   type DiaryLinkedEntity,
 } from "@/lib/types/diary";
+import { getDiaryApiPath } from "@/lib/utils/diaryApi";
 
 interface DiaryEditorProps {
   entityType: DiaryEntityType;
@@ -59,9 +60,7 @@ export default function DiaryEditor({
       };
 
       const method = entry?.id ? "PUT" : "POST";
-      const url = entry?.id
-        ? `/api/${entityType}s/${entityId}/diary/${entry.id}`
-        : `/api/${entityType}s/${entityId}/diary`;
+      const url = getDiaryApiPath(entityType, entityId, entry?.id ?? undefined);
 
       const response = await fetch(url, {
         method,

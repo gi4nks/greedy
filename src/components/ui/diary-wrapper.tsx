@@ -7,6 +7,7 @@ import {
   type DiaryEntry,
   type DiaryEntityType,
 } from "@/lib/types/diary";
+import { getDiaryApiPath } from "@/lib/utils/diaryApi";
 
 interface DiaryWrapperProps {
   entityType: DiaryEntityType;
@@ -27,7 +28,7 @@ export default function DiaryWrapper({
   useEffect(() => {
     const fetchDiaryEntries = async () => {
       try {
-        const response = await fetch(`/api/${entityType}s/${entityId}/diary`);
+        const response = await fetch(getDiaryApiPath(entityType, entityId));
         if (response.ok) {
           const result = await response.json();
           const entries = result.data;

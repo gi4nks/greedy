@@ -4,14 +4,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-
-interface DiaryEntry {
-  id: number;
-  description: string;
-  date: string;
-  linkedEntities: { id: string; type: string; name: string }[];
-  isImportant?: boolean;
-}
+import type { DiaryEntry, DiaryLinkedEntity } from "@/lib/types/diary";
 
 interface DiaryEntryCardProps {
   entry: DiaryEntry;
@@ -19,7 +12,7 @@ interface DiaryEntryCardProps {
   onDelete?: () => void;
   isTextExpanded?: boolean;
   onToggleTextExpanded?: (entryId: number) => void;
-  onEntityClick?: (entity: { id: string; type: string; name: string }) => void;
+  onEntityClick?: (entity: DiaryLinkedEntity) => void;
   highlightSearchTerms?: (text: string, searchQuery: string) => string | (string | React.ReactElement)[];
   searchQuery?: string;
 }

@@ -14,6 +14,13 @@ import {
   type DiaryEntityType,
   type DiaryLinkedEntity,
 } from "@/lib/types/diary";
+import { getDiaryApiPath } from "@/lib/utils/diaryApi";
+import {
+  highlightSearchTerms,
+  getLinkedEntityRoute,
+  filterDiaryEntries,
+  sortDiaryEntries,
+} from "@/lib/utils/diaryUi";
 
 interface DiaryComponentProps {
   entityType: DiaryEntityType;
@@ -47,7 +54,7 @@ export default function DiaryComponent({
 
   const fetchDiaryEntries = useCallback(async () => {
     try {
-      const response = await fetch(`/api/${entityType}s/${entityId}/diary`);
+      const response = await fetch(getDiaryApiPath(entityType, entityId));
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -87,34 +94,9 @@ export default function DiaryComponent({
   ]);
 
   // Helper function to highlight search terms
-  const highlightSearchTerms = (text: string, searchQuery: string) => {
-    if (!searchQuery.trim()) return text;
-
-    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 px-0.5 rounded">
-          {part}
-        </mark>
-      ) : part
-    );
-  };
-
   // Handle clicking on linked entities
   const handleEntityClick = (entity: DiaryLinkedEntity) => {
-    // Navigate to the appropriate entity page based on type
-    const entityRoutes: Record<string, string> = {
-      'character': `/campaigns/${campaignId}/characters/${entity.id}`,
-      'location': `/campaigns/${campaignId}/locations/${entity.id}`,
-      'session': `/campaigns/${campaignId}/sessions/${entity.id}`,
-      'quest': `/campaigns/${campaignId}/quests/${entity.id}`,
-      'magic-item': `/campaigns/${campaignId}/magic-items/${entity.id}`,
-      'adventure': `/campaigns/${campaignId}/adventures/${entity.id}`,
-    };
-
-    const route = entityRoutes[entity.type];
+    const route = getLinkedEntityRoute(entity, campaignId);
     if (route) {
       router.push(route);
     }
@@ -131,9 +113,12 @@ export default function DiaryComponent({
     }
 
     try {
-      const response = await fetch(`/api/${entityType}s/${entityId}/diary/${entryId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        getDiaryApiPath(entityType, entityId, entryId),
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to delete diary entry");
@@ -181,35 +166,13 @@ export default function DiaryComponent({
     if (!Array.isArray(diaryEntries)) {
       return [];
     }
-    return diaryEntries.filter((entry) => {
-      // Content search filter
-      const contentMatches = !diarySearchQuery.trim() ||
-        entry.description?.toLowerCase().includes(diarySearchQuery.toLowerCase()) ||
-        entry.linkedEntities?.some(entity => entity.name.toLowerCase().includes(diarySearchQuery.toLowerCase()));
-
-      // Entity type filter
-      const entityMatches = diaryEntityFilter.length === 0 ||
-        entry.linkedEntities?.some(entity => diaryEntityFilter.includes(entity.type));
-
-      return contentMatches && entityMatches;
-    });
+    return filterDiaryEntries(diaryEntries, diarySearchQuery, diaryEntityFilter);
   }, [diaryEntries, diarySearchQuery, diaryEntityFilter]);
 
-  // Sort by newest first
-  const sortedEntries = [...filteredDiaryEntries].sort((a, b) => {
-    // Parse dates safely - handle YYYY-MM-DD format
-    const parseDate = (dateString: string) => {
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(Date.UTC(year, month - 1, day)).getTime();
-    };
-    
-    try {
-      return parseDate(b.date) - parseDate(a.date);
-    } catch {
-      // Fallback to string comparison if parsing fails
-      return b.date.localeCompare(a.date);
-    }
-  });
+  const sortedEntries = useMemo(
+    () => sortDiaryEntries(filteredDiaryEntries),
+    [filteredDiaryEntries],
+  );
 
   if (loading) {
     return (

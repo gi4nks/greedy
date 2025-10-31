@@ -6,6 +6,7 @@ import { createQuest } from "@/lib/actions/quests";
 import { createLocation } from "@/lib/actions/locations";
 import { createMagicItemAction } from "@/lib/actions/magicItems";
 import { showToast } from "@/lib/toast";
+import { getDiaryApiPath } from "@/lib/utils/diaryApi";
 import { Button } from "@/components/ui/button";
 import { Edit, EyeOff } from "lucide-react";
 
@@ -210,18 +211,11 @@ export default function PromoteToModal({
             isImportant: false,
           };
 
-          let diaryEndpoint = "";
-          switch (formData.entityType) {
-            case "character":
-              diaryEndpoint = `/api/characters/${formData.entityId}/diary`;
-              break;
-            case "location":
-              diaryEndpoint = `/api/locations/${formData.entityId}/diary`;
-              break;
-            case "quest":
-              diaryEndpoint = `/api/quests/${formData.entityId}/diary`;
-              break;
-          }
+          const diaryEntityType = formData.entityType as "character" | "location" | "quest";
+          const diaryEndpoint = getDiaryApiPath(
+            diaryEntityType,
+            Number(formData.entityId),
+          );
 
           const response = await fetch(diaryEndpoint, {
             method: 'POST',
