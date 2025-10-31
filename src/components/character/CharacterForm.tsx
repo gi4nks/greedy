@@ -39,13 +39,7 @@ interface MagicItemSummary {
   campaignId?: number | null;
 }
 
-interface DiaryEntry {
-  id: number;
-  description: string;
-  date: string;
-  linkedEntities: { id: string; type: string; name: string }[];
-  isImportant?: boolean;
-}
+import type { DiaryEntry } from "@/lib/types/diary";
 
 interface DiaryEntryDraft extends DiaryEntryFormData {
   linkedEntities: { id: string; type: string; name: string }[];
