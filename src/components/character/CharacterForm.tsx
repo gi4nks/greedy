@@ -149,35 +149,39 @@ export default function CharacterForm({
   const wikiManagement = useWikiItemManagement(character?.wikiEntities || []);
 
   // Form action
-  const createOrUpdateCharacter = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
+  const createOrUpdateCharacter = async (prevState: { success: boolean; error?: string }, fData: FormData) => {
     try {
       // Validate form data
-      const rawData = Object.fromEntries(formData.entries());
-      const validation = validateFormData(CharacterFormSchema, {
+      const rawData = Object.fromEntries(fData.entries());
+      
+      // Use form state as fallback for values that might not be in FormData
+      const enrichedData = {
         ...rawData,
-        campaignId: parseInt(rawData.campaignId as string),
-        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
-        strength: parseInt(rawData.strength as string),
-        dexterity: parseInt(rawData.dexterity as string),
-        constitution: parseInt(rawData.constitution as string),
-        intelligence: parseInt(rawData.intelligence as string),
-        wisdom: parseInt(rawData.wisdom as string),
-        charisma: parseInt(rawData.charisma as string),
-        hitPoints: parseInt(rawData.hitPoints as string),
-        maxHitPoints: parseInt(rawData.maxHitPoints as string),
-        armorClass: parseInt(rawData.armorClass as string),
-        classes: JSON.parse(rawData.classes as string),
+        campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : campaignId,
+        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : adventureId,
+        strength: rawData.strength ? parseInt(rawData.strength as string) : formData.strength,
+        dexterity: rawData.dexterity ? parseInt(rawData.dexterity as string) : formData.dexterity,
+        constitution: rawData.constitution ? parseInt(rawData.constitution as string) : formData.constitution,
+        intelligence: rawData.intelligence ? parseInt(rawData.intelligence as string) : formData.intelligence,
+        wisdom: rawData.wisdom ? parseInt(rawData.wisdom as string) : formData.wisdom,
+        charisma: rawData.charisma ? parseInt(rawData.charisma as string) : formData.charisma,
+        hitPoints: rawData.hitPoints ? parseInt(rawData.hitPoints as string) : formData.hitPoints,
+        maxHitPoints: rawData.maxHitPoints ? parseInt(rawData.maxHitPoints as string) : formData.maxHitPoints,
+        armorClass: rawData.armorClass ? parseInt(rawData.armorClass as string) : formData.armorClass,
+        classes: rawData.classes ? JSON.parse(rawData.classes as string) : [],
         images: rawData.images ? JSON.parse(rawData.images as string) : [],
-      });
+      };
+
+      const validation = validateFormData(CharacterFormSchema, enrichedData);
 
       if (!validation.success) {
         return { success: false, error: Object.values(validation.errors)[0] };
       }
 
       if (mode === "edit" && character?.id) {
-        return await updateCharacter(character.id, prevState, formData);
+        return await updateCharacter(character.id, prevState, fData);
       } else {
-        return await createCharacter(prevState, formData);
+        return await createCharacter(prevState, fData);
       }
     } catch (error) {
       console.error("Form submission error:", error);
@@ -271,6 +275,7 @@ export default function CharacterForm({
                   ))}
                 </SelectContent>
               </Select>
+              <input type="hidden" name="characterType" value={formData.characterType} />
             </FormField>
           </div>
 
@@ -303,6 +308,7 @@ export default function CharacterForm({
                   ))}
                 </SelectContent>
               </Select>
+              <input type="hidden" name="alignment" value={formData.alignment} />
             </FormField>
           </div>
 
