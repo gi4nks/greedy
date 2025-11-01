@@ -157,6 +157,12 @@ export default function CharacterForm({
       // Use form state as fallback for values that might not be in FormData
       const enrichedData = {
         ...rawData,
+        name: rawData.name || formData.name,
+        race: rawData.race || formData.race,
+        background: rawData.background || formData.background,
+        description: rawData.description || formData.description,
+        characterType: rawData.characterType || formData.characterType,
+        alignment: rawData.alignment || formData.alignment,
         campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : campaignId,
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : adventureId,
         strength: rawData.strength ? parseInt(rawData.strength as string) : formData.strength,
