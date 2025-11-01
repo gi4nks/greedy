@@ -165,15 +165,15 @@ export default function CharacterForm({
         alignment: rawData.alignment || formData.alignment,
         campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : campaignId,
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : adventureId,
-        strength: rawData.strength ? parseInt(rawData.strength as string) : formData.strength,
-        dexterity: rawData.dexterity ? parseInt(rawData.dexterity as string) : formData.dexterity,
-        constitution: rawData.constitution ? parseInt(rawData.constitution as string) : formData.constitution,
-        intelligence: rawData.intelligence ? parseInt(rawData.intelligence as string) : formData.intelligence,
-        wisdom: rawData.wisdom ? parseInt(rawData.wisdom as string) : formData.wisdom,
-        charisma: rawData.charisma ? parseInt(rawData.charisma as string) : formData.charisma,
-        hitPoints: rawData.hitPoints ? parseInt(rawData.hitPoints as string) : formData.hitPoints,
-        maxHitPoints: rawData.maxHitPoints ? parseInt(rawData.maxHitPoints as string) : formData.maxHitPoints,
-        armorClass: rawData.armorClass ? parseInt(rawData.armorClass as string) : formData.armorClass,
+        strength: rawData.strength ? parseInt(rawData.strength as string) : Math.max(1, formData.strength || 10),
+        dexterity: rawData.dexterity ? parseInt(rawData.dexterity as string) : Math.max(1, formData.dexterity || 10),
+        constitution: rawData.constitution ? parseInt(rawData.constitution as string) : Math.max(1, formData.constitution || 10),
+        intelligence: rawData.intelligence ? parseInt(rawData.intelligence as string) : Math.max(1, formData.intelligence || 10),
+        wisdom: rawData.wisdom ? parseInt(rawData.wisdom as string) : Math.max(1, formData.wisdom || 10),
+        charisma: rawData.charisma ? parseInt(rawData.charisma as string) : Math.max(1, formData.charisma || 10),
+        hitPoints: rawData.hitPoints ? parseInt(rawData.hitPoints as string) : Math.max(0, formData.hitPoints || 0),
+        maxHitPoints: rawData.maxHitPoints ? parseInt(rawData.maxHitPoints as string) : Math.max(0, formData.maxHitPoints || 0),
+        armorClass: rawData.armorClass ? parseInt(rawData.armorClass as string) : Math.max(1, formData.armorClass || 10),
         classes: rawData.classes && rawData.classes !== "undefined" ? JSON.parse(rawData.classes as string) : [],
         images: rawData.images && rawData.images !== "undefined" ? JSON.parse(rawData.images as string) : [],
       };
@@ -181,6 +181,7 @@ export default function CharacterForm({
       const validation = validateFormData(CharacterFormSchema, enrichedData);
 
       if (!validation.success) {
+        console.error("Validation errors:", validation.errors);
         return { success: false, error: Object.values(validation.errors)[0] };
       }
 
