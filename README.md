@@ -1,109 +1,126 @@
 <<<<<<< HEAD
-# 🏰 Adventure Diary - A Modern D&D Campaign Manager
+# 🏰 Greedy - A Modern D&D Campaign Manager
 
 _Organize your worlds, characters, and adventures — all in one elegant app._
 
-Adventure Diary is a comprehensive web application designed for Dungeons & Dragons players and Dungeon Masters to manage their campaigns, characters, adventures, and sessions. Built with modern web technologies, it provides an intuitive interface for tracking your D&D world with features like character sheets, session logs, quest management, location tracking, and relationship graphs.
+Greedy is a comprehensive web application designed for Dungeons & Dragons players and Dungeon Masters to manage their campaigns, characters, adventures, and sessions. Built with modern web technologies, it provides an intuitive interface for tracking your D&D world with features like character sheets, session logs, quest management, location tracking, diary entries, and deep wiki integration.
 
 ## ✨ Key Features
 
+### Core Campaign Management
 - **📖 Campaign Management**: Create and organize multiple D&D campaigns with detailed descriptions and status tracking
-- **👥 Character Sheets**: Comprehensive character management with classes, races, equipment, and magic items
-- **🗺️ Adventure Tracking**: Organize adventures within campaigns with timelines and status updates
-- **📝 Session Logs**: Record detailed session notes with rich markdown support and image attachments
-- **🎯 Quest Management**: Track quests, objectives, and progress within your campaigns
-- **📍 Location Mapping**: Create and connect locations within your campaign world
-- **📚 Wiki Integration**: Build a living wiki of articles, monsters, spells, and lore
-- **🖼️ Image Galleries**: Upload and manage images for characters, locations, and sessions
-- **🔗 Relationship Graphs**: Visualize connections between characters, locations, and entities
+- **🎲 Multiple Game Edition Support**: Support for both AD&D 2e and D&D 5e content with edition-aware imports
+- **👥 Character Sheets**: Comprehensive character management with classes, races, equipment, magic items, and ability scores
+- **🗺️ Adventure Tracking**: Organize adventures within campaigns with timelines, status updates, and session tracking
+- **📝 Session Logs**: Record detailed session notes with rich markdown support, image attachments, and character linking
+- **🎯 Quest Management**: Track quests, objectives, progress, priority levels, and due dates within campaigns
+
+### Narrative & Tracking Features
+- **📖 Character Diary**: Keep personal narrative journals for each character with dated entries and important event marking
+- **📍 Location Mapping**: Create and connect locations within your campaign world with descriptions and images
+- **� Magic Item Tracking**: Manage magic items with rarity levels, properties, attunement requirements, and character assignments
+- **🔗 Relationship System**: Build intricate relationship networks between characters, NPCs, locations, and other entities
+
+### Wiki & Content Integration
+- **📚 Dual Wiki System**: 
+  - AD&D 2e content from Fandom Wiki with full-text search
+  - D&D 5e content from Open5e API with real-time updates
+- **🎲 Wiki Article Management**: Import, organize, and link wiki articles to campaign entities
+- **🔍 Smart Categorization**: Automatic detection of spell, monster, magic-item, class, race, weapon, armor, location, NPC, deity, organization, and artifact content
+- **🖇️ Entity Linking**: Connect wiki articles to characters, NPCs, locations, sessions, and quests for rich cross-referencing
+- **🎨 HTML Rendering**: Full support for rendering complex HTML content from wiki sources
+
+### Visual & Media Features
+- **🖼️ Image Galleries**: Upload and manage images for characters, locations, sessions, adventures, and campaigns
+- **🎠 Image Carousel**: Interactive carousel viewer with thumbnail navigation, keyboard controls, and touch gestures
+- **🔗 Relationship Graphs**: Visualize connections between characters, locations, and entities (planned enhancement)
 - **📊 Analytics Dashboard**: Track campaign progress and engagement metrics
 
 ## 🛠️ Tech Stack
 
 ### Frontend
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
+- **Framework**: Next.js 15 (App Router) with Server & Client Components
+- **Language**: TypeScript with strict type checking
 - **UI Library**: React 19
 - **Styling**: TailwindCSS + DaisyUI (Emerald & CMYK themes)
 - **Icons**: Lucide React
 - **Charts**: Recharts
-- **Graphs**: D3.js + React Force Graph
 - **Markdown**: React Markdown with syntax highlighting
+- **Forms**: Custom form validation with Zod
 
 ### Backend
 
 - **Runtime**: Node.js 20
-- **Framework**: Next.js API Routes
+- **Framework**: Next.js API Routes + Server Actions
 - **Database**: SQLite with Drizzle ORM
-- **Validation**: Zod
+- **Validation**: Zod schemas for runtime validation
 - **File Storage**: Local filesystem with image optimization
+- **Logging**: Structured logging for debugging
 
 ### DevOps & Tools
 
-- **Containerization**: Docker + Docker Compose
-- **Linting**: ESLint
+- **Containerization**: Docker + Docker Compose (dev, app, and production configs)
+- **Linting**: ESLint with React hooks rules enforcement
 - **Package Manager**: npm
-- **Database Migrations**: Drizzle Kit
-- **Development**: Hot-reload with volume mounting
+- **Database Migrations**: Drizzle Kit with SQL migrations
+- **Development**: Hot-reload with volume mounting for instant feedback
 
 ## 📁 Project Structure
 
 ```
 greedy/
-├── app/                          # Next.js App Router pages
-│   ├── (global)/                 # Route group for global pages (not campaign-scoped)
-│   │   ├── adventures/           # Global adventure pages
-│   │   ├── analytics/            # Analytics dashboard
-│   │   ├── characters/           # Global character pages
-│   │   ├── login/                # Authentication pages
-│   │   ├── magic-items/          # Magic item management
-│   │   ├── relationships/        # NPC relationship management
-│   │   ├── search/               # Global search
-│   │   ├── sessions/             # Global session pages
-│   │   └── wiki/                 # Wiki articles and entities
-│   ├── campaigns/                # Campaign management pages
-│   │   ├── [id]/                 # Campaign-scoped pages
-│   │   │   ├── adventures/       # Adventure management
-│   │   │   ├── characters/       # Character management
-│   │   │   ├── locations/        # Location management
-│   │   │   ├── quests/           # Quest management
-│   │   │   ├── sessions/         # Session management
-│   │   │   └── network/          # Relationship visualization
-│   │   ├── new/                  # Create new campaign
-│   │   └── page.tsx              # Campaigns list
-│   ├── globals.css               # Global styles
-│   ├── layout.tsx                # Root layout
-│   ├── page.tsx                  # Home page
-│   └── api/                      # REST API endpoints
-├── components/                   # Reusable React components
-│   ├── ui/                       # DaisyUI-based UI components
-│   ├── adventure/                # Adventure-specific components
-│   ├── campaign/                 # Campaign-specific components
-│   ├── character/                # Character-specific components
-│   ├── location/                # Location-specific components
-│   ├── quest/                    # Quest-specific components
-│   ├── session/                  # Session-specific components
-│   └── wiki/                     # Wiki-specific components
-├── lib/                          # Core application logic
-│   ├── actions/                  # Server actions for data operations
-│   ├── db/                       # Database schema and connection
-│   ├── services/                  # Business logic services
-│   └── utils/                    # Utility functions
-├── public/                       # Static assets
-├── scripts/                      # Database setup and migration scripts
-├── Dockerfile                    # Production container
-├── Dockerfile.dev                # Development container
-└── docker-compose.*.yml          # Docker Compose configurations
+├── src/
+│   ├── app/                              # Next.js App Router pages
+│   │   ├── (global)/                     # Route group for global pages
+│   │   │   ├── wiki/                     # Wiki articles, search, and import
+│   │   │   ├── analytics/                # Analytics dashboard
+│   │   │   ├── magic-items/              # Global magic item management
+│   │   │   ├── search/                   # Global search functionality
+│   │   │   └── ...
+│   │   ├── api/                          # REST API endpoints
+│   │   │   ├── campaigns/                # Campaign API routes
+│   │   │   ├── wiki-articles/            # Wiki article creation and management
+│   │   │   ├── images/                   # Image upload and management
+│   │   │   └── ...
+│   │   ├── campaigns/                    # Campaign-scoped pages
+│   │   │   ├── [id]/
+│   │   │   │   ├── adventures/           # Adventure management
+│   │   │   │   ├── characters/           # Character management with diary support
+│   │   │   │   ├── sessions/             # Session logging with entity linking
+│   │   │   │   ├── locations/            # Location management
+│   │   │   │   ├── quests/               # Quest tracking
+│   │   │   │   └── network/              # Relationship visualization
+│   │   │   └── page.tsx                  # Campaign list
+│   │   └── page.tsx                      # Home page
+│   ├── components/                       # Reusable React components
+│   │   ├── ui/                           # DaisyUI-based UI components
+│   │   │   ├── image-carousel.tsx        # Image viewing with gestures
+│   │   │   ├── form-components.tsx       # Shared form components
+│   │   │   └── ...
+│   │   ├── adventure/                    # Adventure-specific components
+│   │   ├── character/                    # Character forms and displays
+│   │   ├── session/                      # Session creation and editing
+│   │   ├── wiki/                         # Wiki article display and assignment
+│   │   └── ...
+│   ├── lib/                              # Core application logic
+│   │   ├── actions/                      # Server actions for CRUD operations
+│   │   ├── db/                           # Database schema and Drizzle connection
+│   │   ├── forms/                        # Form validation schemas and utilities
+│   │   ├── services/                     # Business logic services
+│   │   │   ├── open5e-api.ts             # D&D 5e API integration
+│   │   │   ├── wiki-categories.ts        # Wiki categorization logic
+│   │   │   └── ...
+│   │   └── utils/                        # Utility functions for images, forms, etc.
+│   ├── public/                           # Static assets and 5etools data
+│   └── middleware.ts                     # Next.js middleware
+├── scripts/                              # Database setup and utilities
+├── database/                             # SQLite database file location
+├── drizzle/                              # SQL migration files
+├── Dockerfile                            # Production container
+├── docker-compose.*.yml                  # Docker Compose configurations
+└── README.md                             # This file
 ```
-
-### Architecture Notes
-
-- **Route Groups**: The `(global)` folder groups all non-campaign-scoped pages together for better organization. URLs remain unchanged (e.g., `/analytics` still works despite being in `(global)/analytics/`)
-- **Campaign-Scoped Entities**: Most entities (adventures, characters, quests, etc.) are scoped within campaigns, following the pattern `campaigns/[id]/entity/`
-- **Global Pages**: Pages in the `(global)` route group are accessible across all campaigns and don't require campaign context
-- **API Routes**: RESTful API endpoints mirror the page structure for data operations
-- **Component Organization**: Components are organized by feature/domain for maintainability
 
 ## 🚀 Setup and Installation
 
@@ -111,50 +128,38 @@ greedy/
 
 - **Node.js 20+** (LTS recommended)
 - **Docker & Docker Compose** (for containerized deployment)
-- **Git** (for cloning the repository)
+- **npm 10+** (comes with Node.js)
 
 ### Quick Start with Docker (Recommended)
 
 1. **Clone the repository**
-
    ```bash
    git clone <repository-url>
-   cd greedy/greedy
+   cd greedy
    ```
 
 2. **Start the development environment**
-
    ```bash
-   # From the project root (greedy/)
    docker-compose -f docker-compose.dev.yml --profile dev up --build
    ```
 
 3. **Access the application**
-   - Open [http://localhost:3000](http://localhost:3000) in your browser
-   - The app will automatically reload when you make changes to the code
+   - Open [http://localhost:3000](http://localhost:3000)
+   - The app reloads automatically on code changes
 
 ### Local Development Setup
 
-1. **Clone and install dependencies**
-
+1. **Install dependencies**
    ```bash
-   git clone <repository-url>
-   cd greedy/greedy
    npm install
    ```
 
 2. **Set up the database**
-
    ```bash
-   # Initialize the database
    npm run init-db
-
-   # Run any pending migrations
-   npm run migrate
    ```
 
 3. **Start the development server**
-
    ```bash
    npm run dev
    ```
@@ -178,189 +183,121 @@ NEXT_TELEMETRY_DISABLED=1
 NODE_ENV=development
 ```
 
+## 🎯 Latest Features (November 2025)
+
+### Recently Added
+- ✅ **Character Diary System**: Per-character diary entries with dates and important event tracking
+- ✅ **Wiki Article Assignment**: Assign wiki articles (spells, monsters, magic items) to campaign entities
+- ✅ **Extended Text Fields**: Characters now support up to 50,000 characters for background and description
+- ✅ **Relative URL Support**: Wiki articles can use relative paths for integration flexibility
+- ✅ **Session Adventure Linking**: Link sessions to specific adventures for better organization
+- ✅ **Form Layout Improvements**: Optimized 3-column grid layouts for better space utilization
+- ✅ **Image Carousel Enhancements**: Touch gestures, keyboard navigation, aspect ratio detection
+
+### Recent Fixes
+- Fixed React hooks rules violations (moved all hooks before conditional returns)
+- Improved wiki article validation with support for relative and absolute URLs
+- Fixed adventure form redirect using useEffect to avoid state update during render
+- Enhanced form field handling with optional chaining and proper null checks
+
 ## 🔄 Development Workflow
 
-### Hot-Reload Development
-
-The Docker development setup provides hot-reloading without container restarts:
+### Code Quality Commands
 
 ```bash
-# Start development environment
-docker-compose -f docker-compose.dev.yml --profile dev up
+# Lint the codebase
+npm run lint
 
-# Make changes to code - they'll appear instantly in the browser
-# No need to rebuild containers for code changes
+# Type check
+npx tsc --noEmit
+
+# Run database migrations
+npm run migrate
+
+# Initialize database
+npm run init-db
 ```
 
-### Code Quality
+### Form Handling Best Practices
 
-- **Linting**: ESLint with Next.js configuration
-
-  ```bash
-  npm run lint
-  ```
-
-- **Type Checking**: TypeScript strict mode enabled
-  ```bash
-  npx tsc --noEmit
-  ```
-
-### Database Operations
-
-- **Initialize Database**: Set up initial schema and seed data
-
-  ```bash
-  npm run init-db
-  ```
-
-- **Run Migrations**: Apply database schema changes
-  ```bash
-  npm run migrate
-  ```
-
-## 🏗️ Architecture Overview
-
-### Frontend-Backend Interaction
-
-The application uses Next.js App Router with Server Components and Client Components:
-
-- **Server Components**: Handle data fetching and initial rendering
-- **Client Components**: Manage interactive UI elements and state
-- **Server Actions**: Handle form submissions and data mutations
-- **API Routes**: Provide REST endpoints for complex operations
-
-### Data Flow
-
-```
-User Interaction → Server Action/API Route → Drizzle ORM → SQLite Database
-                                      ↓
-Database Response → Server Component → Client Component → UI Update
-```
-
-### Mutation Flow Patterns
-
-**Server Actions for Forms**: All form submissions should use Server Actions for optimal performance and user experience.
-
-- ✅ **Use Server Actions** for: Form submissions, data mutations from UI components
-- ✅ **Use API Routes** for: Client-side data fetching, third-party integrations, complex queries
-
-**Examples**:
+All form submissions use Server Actions with Zod validation:
 
 ```typescript
-// ✅ Correct: Server Action for form submission
+// ✅ Server Action with validation
 "use server";
-export async function createCampaign(formData: FormData) {
-  // Handle form submission with validation and redirect
-}
-
-// ✅ Correct: API Route for data fetching
-export async function GET() {
-  // Return JSON data for client consumption
+export async function createAdventure(
+  prevState: { success: boolean; error?: string },
+  formData: FormData
+) {
+  const validation = validateFormData(AdventureFormSchema, {...});
+  if (!validation.success) return { success: false, error: validation.errors };
+  // Process form...
 }
 ```
 
-**Migration Notes**: Legacy API routes for mutations are deprecated. New features should use Server Actions. Existing API routes are maintained for backward compatibility but should be migrated over time.
+### Component Patterns
 
-### Key Features Implementation
+- **Form Components**: Use `useActionState` for form submission with optimistic updates
+- **Entity Dialogs**: Modal components for assignment and linking operations
+- **Images**: Use `EntityImageCarousel` for consistent image viewing experience
+- **Validation**: Always validate on both client and server using Zod schemas
 
-#### Wiki System
+## 🏗️ Architecture Highlights
 
-- **Storage**: Wiki articles stored in `wiki_articles` table
-- **Linking**: Articles connected to entities via `wiki_article_entities` junction table
-- **Rendering**: Markdown content with syntax highlighting and image support
+### Server Components + Client Components Strategy
 
-#### Image Management
+- **Server Components** fetch data securely and handle sensitive operations
+- **Client Components** manage interactive UI and real-time user feedback
+- **Server Actions** handle mutations with built-in CSRF protection
 
-- **Upload**: Images stored locally with metadata tracking
-- **Display**: Carousel component with lazy loading
-- **Optimization**: Automatic image optimization via Next.js Image component
+### Database Schema Features
 
-#### Relationship Graph
+- **Campaign Scoping**: Most entities belong to a campaign for data isolation
+- **Adventure Scoping**: Sessions and related data can be scoped to adventures
+- **Entity Relationships**: Flexible relationship system supporting any entity-to-entity connection
+- **Diary Entries**: Support for character, location, and quest diary entries with linked entities
+- **Wiki Integration**: Two-way linking between wiki articles and campaign entities
 
-- **Visualization**: D3.js force-directed graph for entity relationships
-- **Data**: Dynamic relationship data from database queries
-- **Interactivity**: Zoom, pan, and node selection capabilities
+## 🚢 Production Deployment
 
-#### Shared Type System
+### Docker Production Build
 
-- **Type Safety**: Centralized TypeScript interfaces for all entities
-- **Validation**: Zod schemas for runtime data validation
-- **Consistency**: Shared types across frontend and backend
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes following our coding standards
-4. Test thoroughly and ensure all tests pass
-5. Submit a pull request
-
-### Coding Standards
-
-- **UI Consistency**: Use only DaisyUI components and Tailwind classes (no custom CSS)
-- **TypeScript**: Strict typing required, no `any` types
-- **Component Structure**: Follow the established component organization
-- **Commit Messages**: Use conventional commits format
-
-### Code Quality
-
-- Run linting before committing: `npm run lint`
-- Ensure TypeScript compilation passes: `npx tsc --noEmit`
-- Test your changes in both development and production builds
-
-## 🚢 Deployment
-
-### Production Deployment
-
-1. **Build the production image**
-
-   ```bash
-   docker-compose -f docker-compose.app.yml up --build -d
-   ```
-
-2. **Access the application**
-   - The app will be available at `http://localhost:3000`
+```bash
+docker-compose -f docker-compose.app.yml up --build -d
+```
 
 ### Environment Variables for Production
 
 ```env
-# Database
 DATABASE_URL="file:./campaign.db"
-
-# Next.js
 NEXT_PUBLIC_APP_URL="https://your-domain.com"
 NEXT_TELEMETRY_DISABLED=1
-
-# Production
 NODE_ENV=production
 ```
 
-### Database Persistence
+### Backup & Maintenance
 
-- **Backup**: Regularly backup the `campaign.db` file
-- **Migration**: Run migrations before deploying schema changes
-- **Volume Mounting**: Database file is mounted as a volume for persistence
+- Regularly backup the `campaign.db` file
+- Test migrations before production deployment
+- Monitor container logs: `docker logs <container-id>`
 
-## 🔮 Known Issues & Future Improvements
+## 🤝 Contributing
 
-### Current Limitations
+We welcome contributions! Please:
 
-- **Graph Performance**: Large relationship graphs may have performance issues
-- **Image Storage**: Local filesystem storage (consider cloud storage for production)
-- **Real-time Updates**: No real-time synchronization between users
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Follow coding standards (TypeScript, Zod validation, DaisyUI components)
+4. Run `npm run lint` before committing
+5. Submit a pull request
 
-### Planned Enhancements
+### Coding Standards
 
-- **Enhanced Graph Visualization**: Improved interactivity and performance
-- **Cloud Storage Integration**: Support for AWS S3, Cloudinary, etc.
-- **Collaborative Features**: Real-time collaboration for campaign management
-- **Mobile App**: React Native companion app
-- **Advanced Analytics**: More detailed campaign insights and reports
-- **Import/Export**: Campaign data import/export functionality
+- ✅ Strict TypeScript (no `any` types)
+- ✅ DaisyUI components only for UI consistency
+- ✅ Zod schemas for all form validation
+- ✅ Server Actions for form submissions
+- ✅ Proper error handling and logging
 
 ## 📄 License
 
@@ -369,8 +306,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for the D&D community**
-
-For questions, issues, or contributions, please visit our [GitHub repository](https://github.com/your-username/greedy).
 =======
 # greedy
 
