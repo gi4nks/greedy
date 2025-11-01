@@ -168,8 +168,8 @@ export default function CharacterForm({
         hitPoints: rawData.hitPoints ? parseInt(rawData.hitPoints as string) : formData.hitPoints,
         maxHitPoints: rawData.maxHitPoints ? parseInt(rawData.maxHitPoints as string) : formData.maxHitPoints,
         armorClass: rawData.armorClass ? parseInt(rawData.armorClass as string) : formData.armorClass,
-        classes: rawData.classes ? JSON.parse(rawData.classes as string) : [],
-        images: rawData.images ? JSON.parse(rawData.images as string) : [],
+        classes: rawData.classes && rawData.classes !== "undefined" ? JSON.parse(rawData.classes as string) : [],
+        images: rawData.images && rawData.images !== "undefined" ? JSON.parse(rawData.images as string) : [],
       };
 
       const validation = validateFormData(CharacterFormSchema, enrichedData);
