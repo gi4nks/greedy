@@ -45,6 +45,23 @@ export function EntityImageCarousel({
     );
   }, [images.length]);
 
+  const handleImageLoad = useCallback(
+    (img: HTMLImageElement, image: ImageInfo) => {
+      setImageAspectRatios((prev) => {
+        if (prev[image.filename]) {
+          return prev;
+        }
+
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        return {
+          ...prev,
+          [image.filename]: aspectRatio,
+        };
+      });
+    },
+    [],
+  );
+
   const goToSlide = (slideIndex: number) => {
     setCurrentIndex(slideIndex);
   };
@@ -105,23 +122,6 @@ export function EntityImageCarousel({
   const currentAspectRatio = currentImage
     ? imageAspectRatios[currentImage.filename]
     : undefined;
-
-  const handleImageLoad = useCallback(
-    (img: HTMLImageElement, image: ImageInfo) => {
-      setImageAspectRatios((prev) => {
-        if (prev[image.filename]) {
-          return prev;
-        }
-
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
-        return {
-          ...prev,
-          [image.filename]: aspectRatio,
-        };
-      });
-    },
-    [],
-  );
 
   return (
     <>
