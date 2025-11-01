@@ -324,10 +324,11 @@ export default function CharacterForm({
               name="background"
               value={formData.background}
               onChange={(e) => updateFormData("background", e.target.value)}
-              rows={3}
+              rows={6}
               className="textarea textarea-bordered w-full"
               placeholder="Character's background story..."
             />
+            <span className="text-xs text-base-content/60 mt-1 block">{formData.background?.length ?? 0} characters</span>
           </FormField>
 
           <FormField label="Description">
@@ -335,10 +336,11 @@ export default function CharacterForm({
               name="description"
               value={formData.description}
               onChange={(e) => updateFormData("description", e.target.value)}
-              rows={4}
+              rows={6}
               className="textarea textarea-bordered w-full"
               placeholder="Physical description, personality, etc."
             />
+            <span className="text-xs text-base-content/60 mt-1 block">{formData.description?.length ?? 0} characters</span>
           </FormField>
         </div>
       ),

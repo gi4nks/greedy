@@ -62,13 +62,13 @@ export const PrioritySchema = z.enum(["low", "medium", "high"]).optional().defau
 export const CharacterFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
   race: z.string().max(50, "Race must be less than 50 characters").optional().or(z.literal("")),
-  background: z.string().max(1000, "Background must be less than 1000 characters").optional().or(z.literal("")),
+  background: z.string().max(50000, "Background must be less than 50000 characters").optional().or(z.literal("")),
   alignment: z.enum([
     "Lawful Good", "Neutral Good", "Chaotic Good",
     "Lawful Neutral", "True Neutral", "Chaotic Neutral",
     "Lawful Evil", "Neutral Evil", "Chaotic Evil"
   ]),
-  description: z.string().max(5000, "Description must be less than 5000 characters").optional().or(z.literal("")),
+  description: z.string().max(50000, "Description must be less than 50000 characters").optional().or(z.literal("")),
   characterType: z.enum(["pc", "npc", "monster"]),
   campaignId: z.number().int().positive("Campaign ID is required"),
   adventureId: z.number().int().positive().optional().nullable(),
