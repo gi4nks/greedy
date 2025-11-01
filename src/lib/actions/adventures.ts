@@ -28,7 +28,7 @@ export async function getAdventure(id: number) {
 export async function createAdventure(
   formData: FormData,
 ): Promise<{ success: boolean; error?: string }> {
-  const title = formData.get("title") as string;
+  const title = formData.get("name") as string;
   const description = formData.get("description") as string;
   const campaignId = formData.get("campaignId")
     ? Number(formData.get("campaignId"))
@@ -69,7 +69,7 @@ export async function updateAdventure(
   formData: FormData,
 ): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
-  const title = formData.get("title") as string;
+  const title = formData.get("name") as string;
   const description = formData.get("description") as string;
   const campaignId = formData.get("campaignId")
     ? Number(formData.get("campaignId"))

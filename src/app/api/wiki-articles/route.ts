@@ -76,9 +76,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    logger.info("Wiki article POST request body:", body);
+    
     const validation = validateRequestBody(CreateWikiArticleSchema, body);
 
     if (!validation.success) {
+      logger.error("Wiki article validation failed", validation.data);
       return NextResponse.json(validation, { status: 400 });
     }
 
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Check if article already exists by title and wikiUrl (if provided)
     const whereConditions = [eq(wikiArticles.title, validatedData.title)];
-    if (validatedData.wikiUrl) {
+    if (validatedData.wikiUrl && validatedData.wikiUrl.length > 0) {
       whereConditions.push(eq(wikiArticles.wikiUrl, validatedData.wikiUrl));
     }
 
@@ -107,7 +110,7 @@ export async function POST(request: NextRequest) {
       .values({
         title: validatedData.title,
         contentType: validatedData.contentType,
-        wikiUrl: validatedData.wikiUrl || null,
+        wikiUrl: validatedData.wikiUrl && validatedData.wikiUrl.length > 0 ? validatedData.wikiUrl : null,
         rawContent: validatedData.rawContent || null,
         parsedData: validatedData.parsedData || null,
         importedFrom: validatedData.importedFrom,

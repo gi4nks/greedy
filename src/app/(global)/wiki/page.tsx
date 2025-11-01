@@ -907,6 +907,12 @@ export default function WikiImport() {
                                     }
 
                                     // First, create or find the wiki article in our database
+                                    const wikiUrl = article.url 
+                                      ? (article.id >= 5000000
+                                          ? article.url
+                                          : `https://adnd2e.fandom.com${article.url}`)
+                                      : null;
+                                    
                                     const articleResponse = await fetch(
                                       "/api/wiki-articles",
                                       {
@@ -917,10 +923,7 @@ export default function WikiImport() {
                                         body: JSON.stringify({
                                           title: article.title,
                                           contentType: category,
-                                          wikiUrl:
-                                            article.id >= 5000000
-                                              ? article.url
-                                              : `https://adnd2e.fandom.com${article.url}`,
+                                          wikiUrl: wikiUrl,
                                           rawContent: fullContent?.content || "",
                                           parsedData: parsedData,
                                           importedFrom:
@@ -932,8 +935,10 @@ export default function WikiImport() {
                                     );
 
                                     if (!articleResponse.ok) {
+                                      const errorData = await articleResponse.json();
+                                      console.error("Wiki article creation error:", errorData);
                                       throw new Error(
-                                        "Failed to create wiki article",
+                                        errorData.error || "Failed to create wiki article",
                                       );
                                     }
 

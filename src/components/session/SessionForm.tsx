@@ -165,9 +165,6 @@ export default function SessionForm({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm text-base-content/70 mt-1">
-                Link this session to a specific adventure
-              </p>
             </FormField>
           </div>
 

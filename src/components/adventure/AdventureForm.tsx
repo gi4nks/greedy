@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { createAdventure, updateAdventure } from "@/lib/actions/adventures";
@@ -96,12 +96,14 @@ export default function AdventureForm({
   // Handle form submission results
   const redirectPath = `/campaigns/${campaignId}/adventures`;
   
-  if (state?.success) {
-    ErrorHandler.showSuccess(`Adventure ${mode === "create" ? "created" : "updated"} successfully!`);
-    router.push(redirectPath);
-  } else if (state?.error) {
-    ErrorHandler.handleSubmissionError(state.error, `${mode} adventure`);
-  }
+  useEffect(() => {
+    if (state?.success) {
+      ErrorHandler.showSuccess(`Adventure ${mode === "create" ? "created" : "updated"} successfully!`);
+      router.push(redirectPath);
+    } else if (state?.error) {
+      ErrorHandler.handleSubmissionError(state.error, `${mode} adventure`);
+    }
+  }, [state?.success, state?.error, mode, redirectPath, router]);
 
   // Helper functions
   const updateFormData = <K extends keyof AdventureFormData>(key: K, value: AdventureFormData[K]) => {
@@ -113,8 +115,8 @@ export default function AdventureForm({
       <input type="hidden" name="campaignId" value={campaignId.toString()} />
       {mode === "edit" && adventure?.id && <input type="hidden" name="id" value={adventure.id.toString()} />}
 
-      <div className="space-y-6">
-        <FormGrid columns={2}>
+      <div className="space-y-3">
+        <FormGrid columns={3}>
           <FormField label="Title" required>
             <input
               type="text"
@@ -124,17 +126,6 @@ export default function AdventureForm({
               className="input input-bordered w-full"
               placeholder="Enter adventure title"
               required
-            />
-          </FormField>
-
-          <FormField label="Slug" help="URL-friendly identifier (auto-generated from title)">
-            <input
-              type="text"
-              name="slug"
-              value={adventure?.slug || ""}
-              className="input input-bordered w-full"
-              placeholder="adventure-slug"
-              readOnly
             />
           </FormField>
 
@@ -154,6 +145,17 @@ export default function AdventureForm({
                 ))}
               </SelectContent>
             </Select>
+          </FormField>
+
+          <FormField label="Slug">
+            <input
+              type="text"
+              name="slug"
+              value={adventure?.slug || ""}
+              className="input input-bordered w-full"
+              placeholder="adventure-slug"
+              readOnly
+            />
           </FormField>
 
           <FormField label="Start Date">
@@ -176,7 +178,7 @@ export default function AdventureForm({
             />
           </FormField>
 
-          <div className="col-span-2">
+          <div className="col-span-3">
             <FormField label="Description">
               <textarea
                 name="description"
