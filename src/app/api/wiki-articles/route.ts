@@ -76,12 +76,15 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    logger.info("Wiki article POST request body:", body);
+    logger.info("Wiki article POST request body:", JSON.stringify(body, null, 2));
     
     const validation = validateRequestBody(CreateWikiArticleSchema, body);
 
     if (!validation.success) {
-      logger.error("Wiki article validation failed", validation.data);
+      logger.error("Wiki article validation failed", {
+        errors: validation.data,
+        body: body
+      });
       return NextResponse.json(validation, { status: 400 });
     }
 

@@ -58,7 +58,10 @@ export const CreateWikiArticleSchema = z.object({
     "artifact",
     "other",
   ]),
-  wikiUrl: z.string().url("Wiki URL must be a valid URL").optional().or(z.literal("")),
+  wikiUrl: z.string().refine(
+    (url) => !url || url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"),
+    "Wiki URL must be a valid URL or a relative path"
+  ).optional().or(z.literal("")),
   rawContent: z.string().optional(),
   parsedData: z.unknown().optional(),
   importedFrom: z.string().optional().default("wiki"),

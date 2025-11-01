@@ -913,6 +913,20 @@ export default function WikiImport() {
                                           : `https://adnd2e.fandom.com${article.url}`)
                                       : null;
                                     
+                                    const requestBody = {
+                                      title: article.title,
+                                      contentType: category,
+                                      wikiUrl: wikiUrl,
+                                      rawContent: fullContent?.content || "",
+                                      parsedData: parsedData,
+                                      importedFrom:
+                                        article.id >= 5000000
+                                          ? "open5e-api"
+                                          : "adnd2e-wiki",
+                                    };
+                                    
+                                    console.log("Wiki article request body:", requestBody);
+                                    
                                     const articleResponse = await fetch(
                                       "/api/wiki-articles",
                                       {
@@ -920,30 +934,30 @@ export default function WikiImport() {
                                         headers: {
                                           "Content-Type": "application/json",
                                         },
-                                        body: JSON.stringify({
-                                          title: article.title,
-                                          contentType: category,
-                                          wikiUrl: wikiUrl,
-                                          rawContent: fullContent?.content || "",
-                                          parsedData: parsedData,
-                                          importedFrom:
-                                            article.id >= 5000000
-                                              ? "open5e-api"
-                                              : "adnd2e-wiki",
-                                        }),
+                                        body: JSON.stringify(requestBody),
                                       },
                                     );
 
                                     if (!articleResponse.ok) {
                                       const errorData = await articleResponse.json();
                                       console.error("Wiki article creation error:", errorData);
+                                      if (errorData.data && Array.isArray(errorData.data)) {
+                                        console.error("Validation errors:", errorData.data);
+                                      }
                                       throw new Error(
                                         errorData.error || "Failed to create wiki article",
                                       );
                                     }
 
-                                    const createdArticle =
+                                    const articleResponseData =
                                       await articleResponse.json();
+                                    const createdArticle = articleResponseData.data || articleResponseData;
+
+                                    if (!createdArticle.id) {
+                                      throw new Error(
+                                        "Failed to get wiki article ID from response",
+                                      );
+                                    }
 
                                     // Then create the entity relationship
                                     const relationshipResponse = await fetch(
