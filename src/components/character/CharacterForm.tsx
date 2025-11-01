@@ -159,7 +159,7 @@ export default function CharacterForm({
         adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : undefined,
         strength: parseInt(rawData.strength as string),
         dexterity: parseInt(rawData.dexterity as string),
-        constitution: parseInt(rawData.construction as string),
+        constitution: parseInt(rawData.constitution as string),
         intelligence: parseInt(rawData.intelligence as string),
         wisdom: parseInt(rawData.wisdom as string),
         charisma: parseInt(rawData.charisma as string),
