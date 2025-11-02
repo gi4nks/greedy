@@ -140,12 +140,6 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
               </label>
               <p className="text-sm">{character.alignment || "Unknown"}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-base-content/70">
-                Background
-              </label>
-              <p className="text-sm">{character.background || "None"}</p>
-            </div>
           </div>
 
           {character.description && (
@@ -155,6 +149,18 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
               </label>
               <MarkdownRenderer
                 content={character.description}
+                className="prose-sm"
+              />
+            </div>
+          )}
+
+          {character.background && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-base-content/70">
+                Background
+              </label>
+              <MarkdownRenderer
+                content={character.background}
                 className="prose-sm"
               />
             </div>

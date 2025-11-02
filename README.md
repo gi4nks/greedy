@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🏰 Greedy - A Modern D&D Campaign Manager
 
 _Organize your worlds, characters, and adventures — all in one elegant app._
@@ -306,7 +305,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for the D&D community**
-=======
-# greedy
-
->>>>>>> ecfda9179dc043ac9d40ef266e645d54808c017d

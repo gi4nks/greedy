@@ -67,7 +67,6 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
             ],
           }}
           title={character.name}
-          subtitle={character.description || undefined}
           actions={
             <Link href={`/campaigns/${campaignId}/characters/${characterId}/edit`}>
               <Button variant="secondary" size="sm" className="gap-2">
