@@ -9,7 +9,7 @@ import { ActionResult } from "@/lib/types/api";
 
 const CreateCharacterSchema = z.object({
   campaignId: z.number(),
-  adventureId: z.number().optional(),
+  adventureId: z.number().optional().nullable(),
   characterType: z.enum(["pc", "npc", "monster"]).default("pc"),
   name: z.string().min(1, "Name is required"),
   race: z.string().nullable().optional(),
@@ -31,13 +31,13 @@ const CreateCharacterSchema = z.object({
   images: z
     .array(
       z.object({
-        filename: z.string(),
+        filename: z.string().optional(),
         url: z.string(),
-        uploadedAt: z.string(),
+        uploadedAt: z.string().optional(),
       }),
     )
     .default([]),
-});
+}).passthrough(); // Allow additional fields to be passed through
 
 export async function createCharacter(
   prevState: { success: boolean; error?: string },
@@ -84,9 +84,13 @@ export async function createCharacter(
   });
 
   if (!validatedFields.success) {
+    console.error("Character validation errors:", validatedFields.error.issues);
+    const errorMessages = validatedFields.error.issues
+      .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+      .join(", ");
     return {
       success: false,
-      error: "Validation failed. Please check your input.",
+      error: `Validation failed: ${errorMessages}`,
     };
   }
 
@@ -161,9 +165,13 @@ export async function updateCharacter(
   });
 
   if (!validatedFields.success) {
+    console.error("Character validation errors:", validatedFields.error.issues);
+    const errorMessages = validatedFields.error.issues
+      .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+      .join(", ");
     return {
       success: false,
-      error: "Validation failed. Please check your input.",
+      error: `Validation failed: ${errorMessages}`,
     };
   }
 

@@ -151,44 +151,40 @@ export default function CharacterForm({
   // Form action
   const createOrUpdateCharacter = async (prevState: { success: boolean; error?: string }, fData: FormData) => {
     try {
-      // Validate form data
-      const rawData = Object.fromEntries(fData.entries());
+      // Build a complete FormData from both the form submission and React state
+      // This ensures all controlled inputs are captured
+      const completeFormData = new FormData();
       
-      // Use form state as fallback for values that might not be in FormData
-      const enrichedData = {
-        ...rawData,
-        name: rawData.name || formData.name,
-        race: rawData.race || formData.race,
-        background: rawData.background || formData.background,
-        description: rawData.description || formData.description,
-        characterType: rawData.characterType || formData.characterType,
-        alignment: rawData.alignment || formData.alignment,
-        campaignId: rawData.campaignId ? parseInt(rawData.campaignId as string) : campaignId,
-        adventureId: rawData.adventureId ? parseInt(rawData.adventureId as string) : adventureId,
-        strength: rawData.strength ? parseInt(rawData.strength as string) : Math.max(1, formData.strength || 10),
-        dexterity: rawData.dexterity ? parseInt(rawData.dexterity as string) : Math.max(1, formData.dexterity || 10),
-        constitution: rawData.constitution ? parseInt(rawData.constitution as string) : Math.max(1, formData.constitution || 10),
-        intelligence: rawData.intelligence ? parseInt(rawData.intelligence as string) : Math.max(1, formData.intelligence || 10),
-        wisdom: rawData.wisdom ? parseInt(rawData.wisdom as string) : Math.max(1, formData.wisdom || 10),
-        charisma: rawData.charisma ? parseInt(rawData.charisma as string) : Math.max(1, formData.charisma || 10),
-        hitPoints: rawData.hitPoints ? parseInt(rawData.hitPoints as string) : Math.max(0, formData.hitPoints || 0),
-        maxHitPoints: rawData.maxHitPoints ? parseInt(rawData.maxHitPoints as string) : Math.max(0, formData.maxHitPoints || 0),
-        armorClass: rawData.armorClass ? parseInt(rawData.armorClass as string) : Math.max(1, formData.armorClass || 10),
-        classes: rawData.classes && rawData.classes !== "undefined" ? JSON.parse(rawData.classes as string) : [],
-        images: rawData.images && rawData.images !== "undefined" ? JSON.parse(rawData.images as string) : [],
-      };
-
-      const validation = validateFormData(CharacterFormSchema, enrichedData);
-
-      if (!validation.success) {
-        console.error("Validation errors:", validation.errors);
-        return { success: false, error: Object.values(validation.errors)[0] };
+      // Copy existing FormData entries
+      for (const [key, value] of fData.entries()) {
+        completeFormData.append(key, value);
       }
+      
+      // Add all form state values to ensure they're captured
+      completeFormData.set("name", formData.name || "");
+      completeFormData.set("race", formData.race || "");
+      completeFormData.set("background", formData.background || "");
+      completeFormData.set("description", formData.description || "");
+      completeFormData.set("characterType", formData.characterType);
+      completeFormData.set("alignment", formData.alignment || "");
+      completeFormData.set("campaignId", campaignId.toString());
+      if (adventureId) completeFormData.set("adventureId", adventureId.toString());
+      completeFormData.set("strength", Math.max(1, formData.strength || 10).toString());
+      completeFormData.set("dexterity", Math.max(1, formData.dexterity || 10).toString());
+      completeFormData.set("constitution", Math.max(1, formData.constitution || 10).toString());
+      completeFormData.set("intelligence", Math.max(1, formData.intelligence || 10).toString());
+      completeFormData.set("wisdom", Math.max(1, formData.wisdom || 10).toString());
+      completeFormData.set("charisma", Math.max(1, formData.charisma || 10).toString());
+      completeFormData.set("hitPoints", Math.max(0, formData.hitPoints || 0).toString());
+      completeFormData.set("maxHitPoints", Math.max(0, formData.maxHitPoints || 0).toString());
+      completeFormData.set("armorClass", Math.max(1, formData.armorClass || 10).toString());
+      completeFormData.set("classes", JSON.stringify(formData.classes));
+      completeFormData.set("images", JSON.stringify(imageManagement.images));
 
       if (mode === "edit" && character?.id) {
-        return await updateCharacter(character.id, prevState, fData);
+        return await updateCharacter(character.id, prevState, completeFormData);
       } else {
-        return await createCharacter(prevState, fData);
+        return await createCharacter(prevState, completeFormData);
       }
     } catch (error) {
       console.error("Form submission error:", error);
