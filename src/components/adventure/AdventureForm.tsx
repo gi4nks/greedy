@@ -145,6 +145,7 @@ export default function AdventureForm({
                 ))}
               </SelectContent>
             </Select>
+            <input type="hidden" name="status" value={formData.status} />
           </FormField>
 
           <FormField label="Slug">
@@ -199,6 +200,7 @@ export default function AdventureForm({
             currentImages={imageManagement.images}
             onImagesChange={imageManagement.setImages}
           />
+          <input type="hidden" name="images" value={JSON.stringify(imageManagement.images)} />
           {mode === "create" && !adventure?.id && (
             <p className="mt-2 text-sm text-base-content/70">
               Save the adventure to start uploading images.
