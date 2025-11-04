@@ -214,9 +214,7 @@ export function SessionHeader({
           <Card className="bg-base-100 shadow-sm relative">
             <CardContent className="p-6">
               <div className="relative" ref={containerRef}>
-                <div className="prose prose-sm max-w-none">
-                  <MarkdownRenderer content={session.text} />
-                </div>
+                <MarkdownRenderer content={session.text} className="text-base-content" />
 
                 {/* Contextual Floating Promote Menu */}
                 {selectedText && selectionRect && containerRef.current && !isPromoteModalOpen && (
