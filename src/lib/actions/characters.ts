@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@/lib/db";
 import { characters } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -86,7 +84,7 @@ export async function createCharacter(
   if (!validatedFields.success) {
     console.error("Character validation errors:", validatedFields.error.issues);
     const errorMessages = validatedFields.error.issues
-      .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+      .map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
       .join(", ");
     return {
       success: false,
@@ -167,7 +165,7 @@ export async function updateCharacter(
   if (!validatedFields.success) {
     console.error("Character validation errors:", validatedFields.error.issues);
     const errorMessages = validatedFields.error.issues
-      .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+      .map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
       .join(", ");
     return {
       success: false,

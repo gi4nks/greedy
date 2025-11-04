@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import type { Adventure, Campaign, Character } from "@/lib/db/schema";
-import { createCharacter, updateCharacter } from "@/lib/actions/characters";
-import { CharacterFormSchema, type CharacterFormData, type DiaryEntryFormData } from "@/lib/forms";
-import { validateFormData } from "@/lib/forms/validation";
+import { type CharacterFormData, type DiaryEntryFormData } from "@/lib/forms";
 import { useImageManagement } from "@/lib/utils/imageFormUtils";
 import { useWikiItemManagement } from "@/lib/utils/wikiUtils";
 import { TabbedEntityForm, FormSection, FormGrid, DynamicArrayField } from "@/lib/forms";
@@ -57,6 +55,7 @@ interface CharacterFormProps {
   campaignId: number;
   adventureId?: number;
   mode: "create" | "edit";
+  action?: (prevState: { success: boolean; error?: string }, formData: FormData) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface ClassEntry {
@@ -112,6 +111,7 @@ export default function CharacterForm({
   campaignId,
   adventureId,
   mode,
+  action,
 }: CharacterFormProps) {
 
   // Form state
@@ -181,10 +181,10 @@ export default function CharacterForm({
       completeFormData.set("classes", JSON.stringify(formData.classes));
       completeFormData.set("images", JSON.stringify(imageManagement.images));
 
-      if (mode === "edit" && character?.id) {
-        return await updateCharacter(character.id, prevState, completeFormData);
+      if (action) {
+        return await action(prevState, completeFormData);
       } else {
-        return await createCharacter(prevState, completeFormData);
+        throw new Error("No action provided for character form");
       }
     } catch (error) {
       console.error("Form submission error:", error);

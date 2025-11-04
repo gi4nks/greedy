@@ -7,6 +7,7 @@ import { CharactersList } from "@/components/characters/CharactersList";
 import { CampaignPageLayout } from "@/components/layout/CampaignPageLayout";
 import { getCampaignWithEdition } from "@/lib/utils/campaign";
 import { generateCampaignPageMetadata } from "@/lib/utils/metadata";
+import { deleteCharacter } from "@/lib/actions/characters";
 
 interface CharactersPageProps {
   params: Promise<{ id: string }>;
@@ -47,6 +48,12 @@ export default async function CharactersPage({ params }: CharactersPageProps) {
     return a.name.localeCompare(b.name);
   });
 
+  // Create a wrapper function for character deletion
+  const handleDeleteCharacter = async (characterId: number) => {
+    "use server";
+    await deleteCharacter(characterId);
+  };
+
   return (
     <CampaignPageLayout
       campaign={campaign}
@@ -59,7 +66,11 @@ export default async function CharactersPage({ params }: CharactersPageProps) {
         icon: <Plus className="w-4 h-4" />,
       }}
     >
-      <CharactersList characters={sortedCharacters} campaignId={campaignId} />
+      <CharactersList 
+        characters={sortedCharacters} 
+        campaignId={campaignId} 
+        onDeleteCharacter={handleDeleteCharacter}
+      />
     </CampaignPageLayout>
   );
 }

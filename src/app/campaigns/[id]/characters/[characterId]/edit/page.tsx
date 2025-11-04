@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { WikiDataService } from "@/lib/services/wiki-data";
 import { WikiEntity } from "@/lib/types/wiki";
+import { updateCharacter } from "@/lib/actions/characters";
 
 interface EditCharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -203,6 +204,14 @@ export default async function EditCharacterPage({
     notFound();
   }
 
+  // Create a wrapper action that binds the character ID
+  const updateCharacterAction = async (
+    prevState: { success: boolean; error?: string },
+    formData: FormData,
+  ) => {
+    return updateCharacter(characterIdNum, prevState, formData);
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 md:p-6">
       {/* Breadcrumb */}
@@ -233,6 +242,7 @@ export default async function EditCharacterPage({
             campaignId={campaignId}
             adventureId={character.adventureId || undefined}
             mode="edit"
+            action={updateCharacterAction}
           />
         </CardContent>
       </Card>

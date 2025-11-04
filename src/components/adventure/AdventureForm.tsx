@@ -69,6 +69,7 @@ export default function AdventureForm({
     try {
       // Validate form data
       const rawData = Object.fromEntries(formData.entries());
+      console.log("Raw form data:", rawData); // Debug log
       const validation = validateFormData(AdventureFormSchema, {
         ...rawData,
         campaignId: parseInt(rawData.campaignId as string),
@@ -77,7 +78,11 @@ export default function AdventureForm({
       });
 
       if (!validation.success) {
-        return { success: false, error: Object.values(validation.errors)[0] };
+        console.error("Adventure validation errors:", validation.errors);
+        const errorMessages = Object.entries(validation.errors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join(", ");
+        return { success: false, error: `Validation failed: ${errorMessages}` };
       }
 
       if (mode === "edit" && adventure) {

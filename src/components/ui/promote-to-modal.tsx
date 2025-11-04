@@ -1,10 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createCharacter } from "@/lib/actions/characters";
-import { createQuest } from "@/lib/actions/quests";
-import { createLocation } from "@/lib/actions/locations";
-import { createMagicItemAction } from "@/lib/actions/magicItems";
 import { showToast } from "@/lib/toast";
 import { getDiaryApiPath } from "@/lib/utils/diaryApi";
 import { Button } from "@/components/ui/button";
@@ -19,6 +15,10 @@ interface PromoteToModalProps {
   adventureId?: number;
   prefilledText: string;
   selectedType: PromotionType;
+  onCreateCharacter?: (prevState: { success: boolean; error?: string }, formData: FormData) => Promise<{ success: boolean; error?: string }>;
+  onCreateQuest?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
+  onCreateLocation?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
+  onCreateMagicItem?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
 }
 
 const entityTypeLabels = {
@@ -36,6 +36,10 @@ export default function PromoteToModal({
   adventureId,
   prefilledText,
   selectedType,
+  onCreateCharacter,
+  onCreateQuest,
+  onCreateLocation,
+  onCreateMagicItem,
 }: PromoteToModalProps) {
   const [formData, setFormData] = useState({
     title: "",
@@ -143,6 +147,10 @@ export default function PromoteToModal({
 
       switch (selectedType) {
         case "character":
+          if (!onCreateCharacter) {
+            showToast.error("Character creation not available");
+            return;
+          }
           submitData.append("campaignId", campaignId.toString());
           submitData.append("name", formData.title.trim());
           submitData.append("characterType", "npc");
@@ -159,11 +167,15 @@ export default function PromoteToModal({
           submitData.append("images", "[]");
           submitData.append("tags", "[]");
 
-          result = await createCharacter({ success: false }, submitData);
+          result = await onCreateCharacter({ success: false }, submitData);
           entityName = "Character";
           break;
 
         case "quest":
+          if (!onCreateQuest) {
+            showToast.error("Quest creation not available");
+            return;
+          }
           submitData.append("campaignId", campaignId.toString());
           submitData.append("status", "active");
           submitData.append("priority", "medium");
@@ -171,21 +183,29 @@ export default function PromoteToModal({
           submitData.append("tags", "[]");
           submitData.append("images", "[]");
 
-          result = await createQuest(submitData);
+          result = await onCreateQuest(submitData);
           entityName = "Quest";
           break;
 
         case "location":
+          if (!onCreateLocation) {
+            showToast.error("Location creation not available");
+            return;
+          }
           submitData.append("campaignId", campaignId.toString());
           submitData.append("name", formData.title.trim());
           submitData.append("tags", "[]");
           submitData.append("images", "[]");
 
-          result = await createLocation(submitData);
+          result = await onCreateLocation(submitData);
           entityName = "Location";
           break;
 
         case "magic-item":
+          if (!onCreateMagicItem) {
+            showToast.error("Magic item creation not available");
+            return;
+          }
           submitData.append("name", formData.title.trim());
           submitData.append("type", "");
           submitData.append("rarity", "");
@@ -194,7 +214,7 @@ export default function PromoteToModal({
           submitData.append("images", "[]");
           submitData.append("attunementRequired", "false");
 
-          result = await createMagicItemAction(submitData);
+          result = await onCreateMagicItem(submitData);
           entityName = "Magic Item";
           break;
 

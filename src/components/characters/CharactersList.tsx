@@ -6,18 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Edit, Trash2, View } from "lucide-react";
-import { deleteCharacterAction } from "@/lib/actions/characters";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import type { Character } from "@/lib/db/schema";
 
 interface CharactersListProps {
   characters: Character[];
   campaignId: number;
+  onDeleteCharacter: (characterId: number) => Promise<void>;
 }
 
 export function CharactersList({
   characters,
   campaignId,
+  onDeleteCharacter,
 }: CharactersListProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -25,9 +26,7 @@ export function CharactersList({
     if (confirm("Are you sure you want to delete this character?")) {
       startTransition(async () => {
         try {
-          const formData = new FormData();
-          formData.append("id", characterId.toString());
-          await deleteCharacterAction(formData);
+          await onDeleteCharacter(characterId);
         } catch (error) {
           console.error("Failed to delete character:", error);
           alert("Failed to delete character");

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import CharacterForm from "@/components/character/CharacterForm";
 import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
+import { createCharacter } from "@/lib/actions/characters";
 
 interface CreateCharacterPageProps {
   params: Promise<{ id: string }>;
@@ -68,7 +69,11 @@ export default async function CreateCharacterPage({
 
       <Card className="w-full">
         <CardContent className="p-6">
-          <CharacterForm campaignId={campaignId} mode="create" />
+          <CharacterForm 
+            campaignId={campaignId} 
+            mode="create" 
+            action={createCharacter}
+          />
         </CardContent>
       </Card>
     </div>
