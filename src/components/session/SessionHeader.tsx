@@ -19,19 +19,11 @@ interface SessionHeaderProps {
     wikiEntities?: WikiEntity[];
   };
   campaignId?: number;
-  onCreateCharacter?: (prevState: { success: boolean; error?: string }, formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateQuest?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateLocation?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateMagicItem?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function SessionHeader({ 
   session, 
   campaignId,
-  onCreateCharacter,
-  onCreateQuest,
-  onCreateLocation,
-  onCreateMagicItem,
 }: SessionHeaderProps) {
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
@@ -374,10 +366,6 @@ export function SessionHeader({
           adventureId={session.adventureId || undefined}
           prefilledText={selectedText}
           selectedType={selectedPromotionType}
-          onCreateCharacter={onCreateCharacter}
-          onCreateQuest={onCreateQuest}
-          onCreateLocation={onCreateLocation}
-          onCreateMagicItem={onCreateMagicItem}
         />
       )}
     </>

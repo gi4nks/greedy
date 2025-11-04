@@ -15,10 +15,6 @@ interface PromoteToModalProps {
   adventureId?: number;
   prefilledText: string;
   selectedType: PromotionType;
-  onCreateCharacter?: (prevState: { success: boolean; error?: string }, formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateQuest?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateLocation?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
-  onCreateMagicItem?: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
 }
 
 const entityTypeLabels = {
@@ -36,10 +32,6 @@ export default function PromoteToModal({
   adventureId,
   prefilledText,
   selectedType,
-  onCreateCharacter,
-  onCreateQuest,
-  onCreateLocation,
-  onCreateMagicItem,
 }: PromoteToModalProps) {
   const [formData, setFormData] = useState({
     title: "",
@@ -147,74 +139,34 @@ export default function PromoteToModal({
 
       switch (selectedType) {
         case "character":
-          if (!onCreateCharacter) {
-            showToast.error("Character creation not available");
-            return;
-          }
-          submitData.append("campaignId", campaignId.toString());
-          submitData.append("name", formData.title.trim());
-          submitData.append("characterType", "npc");
-          submitData.append("strength", "10");
-          submitData.append("dexterity", "10");
-          submitData.append("constitution", "10");
-          submitData.append("intelligence", "10");
-          submitData.append("wisdom", "10");
-          submitData.append("charisma", "10");
-          submitData.append("hitPoints", "0");
-          submitData.append("maxHitPoints", "0");
-          submitData.append("armorClass", "10");
-          submitData.append("classes", "[]");
-          submitData.append("images", "[]");
-          submitData.append("tags", "[]");
-
-          result = await onCreateCharacter({ success: false }, submitData);
+          result = await fetch(`/api/characters`, {
+            method: 'POST',
+            body: submitData,
+          }).then(res => res.json());
           entityName = "Character";
           break;
 
         case "quest":
-          if (!onCreateQuest) {
-            showToast.error("Quest creation not available");
-            return;
-          }
-          submitData.append("campaignId", campaignId.toString());
-          submitData.append("status", "active");
-          submitData.append("priority", "medium");
-          submitData.append("type", "main");
-          submitData.append("tags", "[]");
-          submitData.append("images", "[]");
-
-          result = await onCreateQuest(submitData);
+          result = await fetch(`/api/quests`, {
+            method: 'POST',
+            body: submitData,
+          }).then(res => res.json());
           entityName = "Quest";
           break;
 
         case "location":
-          if (!onCreateLocation) {
-            showToast.error("Location creation not available");
-            return;
-          }
-          submitData.append("campaignId", campaignId.toString());
-          submitData.append("name", formData.title.trim());
-          submitData.append("tags", "[]");
-          submitData.append("images", "[]");
-
-          result = await onCreateLocation(submitData);
+          result = await fetch(`/api/locations`, {
+            method: 'POST',
+            body: submitData,
+          }).then(res => res.json());
           entityName = "Location";
           break;
 
         case "magic-item":
-          if (!onCreateMagicItem) {
-            showToast.error("Magic item creation not available");
-            return;
-          }
-          submitData.append("name", formData.title.trim());
-          submitData.append("type", "");
-          submitData.append("rarity", "");
-          submitData.append("properties", "");
-          submitData.append("tags", "[]");
-          submitData.append("images", "[]");
-          submitData.append("attunementRequired", "false");
-
-          result = await onCreateMagicItem(submitData);
+          result = await fetch(`/api/magic-items`, {
+            method: 'POST',
+            body: submitData,
+          }).then(res => res.json());
           entityName = "Magic Item";
           break;
 

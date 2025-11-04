@@ -3,7 +3,7 @@ const config = {
   theme: {
     extend: {},
   },
-  plugins: ['daisyui'],
+  plugins: [require('@tailwindcss/typography'), 'daisyui'],
   daisyui: {
     themes: ['corporate'],
   },

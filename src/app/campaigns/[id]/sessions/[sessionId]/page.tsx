@@ -12,10 +12,6 @@ import { eq } from "drizzle-orm";
 
 import { EntityErrorBoundary } from "@/components/ui/error-boundary";
 import { EntityDetailSkeleton } from "@/components/ui/loading-skeleton";
-import { createCharacter } from "@/lib/actions/characters";
-import { createQuest } from "@/lib/actions/quests";
-import { createLocation } from "@/lib/actions/locations";
-import { createMagicItemAction } from "@/lib/actions/magicItems";
 
 interface SessionPageProps {
   params: Promise<{ id: string; sessionId: string }>;
@@ -81,10 +77,6 @@ async function SessionContent({ sessionId, campaignId }: { sessionId: number; ca
       <SessionHeader 
         session={session} 
         campaignId={campaignId}
-        onCreateCharacter={createCharacter}
-        onCreateQuest={createQuest}
-        onCreateLocation={createLocation}
-        onCreateMagicItem={createMagicItemAction}
       />
 
       {/* Image Carousel */}
