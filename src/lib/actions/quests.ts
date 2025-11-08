@@ -2,12 +2,11 @@
 
 import { db } from "@/lib/db";
 import { quests, adventures } from "@/lib/db/schema";
+import { parseQuestFormData, insertQuestRecord, updateQuestRecord } from "@/lib/services/quests";
+import { ActionResult } from "@/lib/types/api";
+import { formatZodErrors } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { ActionResult } from "@/lib/types/api";
-
-type QuestInsert = typeof quests.$inferInsert;
-type QuestUpdate = Partial<typeof quests.$inferInsert>;
 
 export async function getQuests(campaignId?: number) {
   if (campaignId) {
@@ -38,56 +37,21 @@ export async function getQuest(id: number) {
 export async function createQuest(
   formData: FormData,
 ): Promise<{ success: boolean; error?: string }> {
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const adventureIdValue = formData.get("adventureId");
-  if (!adventureIdValue) {
-    return { success: false, error: "Adventure is required" };
+  const parsed = parseQuestFormData(formData);
+  if (!parsed.success) {
+    const errors = formatZodErrors(parsed.error);
+    return { success: false, error: Object.values(errors)[0] ?? "Validation failed" };
   }
-  const adventureId = Number(adventureIdValue);
-  const status = formData.get("status") as string;
-  const priority = formData.get("priority") as string;
-  const type = formData.get("type") as string;
-  const dueDate = formData.get("dueDate") as string;
-  const assignedTo = formData.get("assignedTo") as string;
-  const tagsString = formData.get("tags") as string;
-  const images = formData.get("images") as string;
-  const campaignId = formData.get("campaignId") as string;
 
-  // Parse tags
-  const tags = tagsString
-    ? tagsString
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t)
-    : [];
+  const questData = parsed.data;
 
   try {
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const questValues: QuestInsert = {
-      title,
-      description: description || null,
-      adventureId,
-      status: status || "active",
-      priority: priority || "medium",
-      type: type || "main",
-      dueDate: dueDate || null,
-      assignedTo: assignedTo || null,
-      tags: tags.length > 0 ? JSON.stringify(tags) : null,
-      images: images ? JSON.parse(images) : null,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await db
-      .insert(quests)
-      .values(questValues)
-      .returning();
+    await insertQuestRecord(questData);
 
     // Revalidate adventure-specific path if applicable
-    if (adventureId) {
+    if (questData.campaignId && questData.adventureId) {
       revalidatePath(
-        `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+        `/campaigns/${questData.campaignId}/adventures/${questData.adventureId}/quests`,
       );
     }
 
@@ -106,56 +70,21 @@ export async function updateQuest(
   formData: FormData,
 ): Promise<{ success: boolean; error?: string }> {
   const id = Number(formData.get("id"));
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const adventureIdValue = formData.get("adventureId");
-  if (!adventureIdValue) {
-    return { success: false, error: "Adventure is required" };
+  const parsed = parseQuestFormData(formData);
+  if (!parsed.success) {
+    const errors = formatZodErrors(parsed.error);
+    return { success: false, error: Object.values(errors)[0] ?? "Validation failed" };
   }
-  const adventureId = Number(adventureIdValue);
-  const status = formData.get("status") as string;
-  const priority = formData.get("priority") as string;
-  const type = formData.get("type") as string;
-  const dueDate = formData.get("dueDate") as string;
-  const assignedTo = formData.get("assignedTo") as string;
-  const tagsString = formData.get("tags") as string;
-  const images = formData.get("images") as string;
-  const campaignId = formData.get("campaignId") as string;
 
-  // Parse tags
-  const tags = tagsString
-    ? tagsString
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t)
-    : [];
+  const questData = parsed.data;
 
   try {
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const questUpdates: QuestUpdate = {
-      title,
-      description: description || null,
-      adventureId,
-      status: status || "active",
-      priority: priority || "medium",
-      type: type || "main",
-      dueDate: dueDate || null,
-      assignedTo: assignedTo || null,
-      tags: tags.length > 0 ? JSON.stringify(tags) : null,
-      images: images ? JSON.parse(images) : null,
-      updatedAt: now,
-    };
-
-    await db
-      .update(quests)
-      .set(questUpdates)
-      .where(eq(quests.id, id))
-      .returning();
+    await updateQuestRecord(id, questData);
 
     // Revalidate adventure-specific path if applicable
-    if (adventureId) {
+    if (questData.campaignId && questData.adventureId) {
       revalidatePath(
-        `/campaigns/${campaignId}/adventures/${adventureId}/quests`,
+        `/campaigns/${questData.campaignId}/adventures/${questData.adventureId}/quests`,
       );
     }
 

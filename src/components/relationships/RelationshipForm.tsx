@@ -17,51 +17,9 @@ import {
 } from "@/lib/actions/relationships";
 import { StandardEntityForm } from "@/components/ui/entity-form";
 import { FormField, FormSection } from "@/components/ui/form-components";
+import type { RelationshipRecord } from "@/lib/types/relationships";
 
-interface Relationship {
-  id: number;
-  npcId: number;
-  characterId: number;
-  relationshipType: string;
-  strength: number;
-  trust: number;
-  fear: number;
-  respect: number;
-  notes: string;
-  isMutual: boolean;
-  discoveredByPlayers: boolean;
-}
-
-interface RelationshipFormProps {
-  npcs: Array<{
-    id: number;
-    name: string;
-    race: string | null;
-    classes: unknown;
-  }>;
-  playerCharacters: Array<{
-    id: number;
-    name: string;
-    race: string | null;
-    classes: unknown;
-  }>;
-  mode: "create" | "edit";
-  relationship?: Relationship;
-}
-
-interface Relationship {
-  id: number;
-  npcId: number;
-  characterId: number;
-  relationshipType: string;
-  strength: number;
-  trust: number;
-  fear: number;
-  respect: number;
-  notes: string;
-  isMutual: boolean;
-  discoveredByPlayers: boolean;
-}
+type Relationship = RelationshipRecord;
 
 interface RelationshipFormProps {
   npcs: Array<{

@@ -86,15 +86,44 @@ export const UpdateSessionSchema = CreateSessionSchema.partial();
 
 // Character schemas (for API routes if any)
 export const CreateCharacterSchema = z.object({
+  campaignId: z.number().int().positive("Campaign ID is required"),
+  adventureId: z.number().int().positive().optional().nullable(),
+  characterType: z.enum(["pc", "npc", "monster"]).default("pc"),
   name: z
     .string()
     .min(1, "Name is required")
     .max(255, "Name must be less than 255 characters"),
-  race: z.string().optional(),
-  characterType: z.enum(["pc", "npc"]).optional().default("pc"),
-  campaignId: z.number().int().positive().optional(),
-  adventureId: z.number().int().positive().optional(),
-  // Add other character fields as needed
+  race: z.string().nullable().optional(),
+  background: z.string().nullable().optional(),
+  alignment: z.string().nullable().optional(),
+  strength: z.number().int().min(1).max(30).default(10),
+  dexterity: z.number().int().min(1).max(30).default(10),
+  constitution: z.number().int().min(1).max(30).default(10),
+  intelligence: z.number().int().min(1).max(30).default(10),
+  wisdom: z.number().int().min(1).max(30).default(10),
+  charisma: z.number().int().min(1).max(30).default(10),
+  hitPoints: z.number().int().min(0).default(0),
+  maxHitPoints: z.number().int().min(0).default(0),
+  armorClass: z.number().int().min(0).default(10),
+  classes: z
+    .array(
+      z.object({
+        name: z.string(),
+        level: z.number().int().min(1).max(20),
+      }),
+    )
+    .default([]),
+  description: z.string().nullable().optional(),
+  images: z
+    .array(
+      z.object({
+        filename: z.string().optional(),
+        url: z.string().min(1, "Image URL is required"),
+        uploadedAt: z.string().optional(),
+      }),
+    )
+    .default([]),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 export const UpdateCharacterSchema = CreateCharacterSchema.partial();
@@ -120,17 +149,15 @@ export const CreateQuestSchema = z.object({
     .min(1, "Title is required")
     .max(255, "Title must be less than 255 characters"),
   description: z.string().optional(),
-  adventureId: z.number().int().positive().optional(),
-  status: z
-    .enum(["active", "completed", "cancelled"])
-    .optional()
-    .default("active"),
-  priority: z.enum(["low", "medium", "high"]).optional().default("medium"),
+  adventureId: z.number().int().positive("Adventure is required"),
+  status: z.enum(["active", "completed", "cancelled"]).default("active"),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
   type: z.string().optional(),
   dueDate: z.string().optional(),
   assignedTo: z.string().optional(),
   campaignId: z.number().int().positive().optional(),
-  // Add other quest fields as needed
+  tags: z.array(z.string()).optional().default([]),
+  images: z.array(z.unknown()).optional().default([]),
 });
 
 export const UpdateQuestSchema = CreateQuestSchema.partial();

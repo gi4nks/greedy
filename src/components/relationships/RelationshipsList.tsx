@@ -6,33 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Users, Heart, Shield, Sword } from "lucide-react";
 import Link from "next/link";
-
-interface Relationship {
-  id: number;
-  npcId: number;
-  characterId: number;
-  relationshipType: string;
-  strength: number;
-  trust: number;
-  fear: number;
-  respect: number;
-  notes: string;
-  npc_name: string;
-  npc_type: string;
-  target_name: string;
-  target_type: string;
-  latestEvent?: {
-    description: string;
-    strengthChange: number;
-    date: string;
-    sessionTitle?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import type { RelationshipSummary } from "@/lib/types/relationships";
 
 interface RelationshipsListProps {
-  initialRelationships: Relationship[];
+  initialRelationships: RelationshipSummary[];
   filters: {
     npcId?: string;
     characterId?: string;
@@ -45,7 +22,7 @@ export default function RelationshipsList({
   filters,
 }: RelationshipsListProps) {
   const [relationships, setRelationships] =
-    useState<Relationship[]>(initialRelationships);
+    useState<RelationshipSummary[]>(initialRelationships);
   const [loading, setLoading] = useState(false);
 
   const fetchRelationships = useCallback(async () => {

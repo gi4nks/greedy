@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { updateCampaign, deleteCampaign } from "@/lib/actions/campaigns";
@@ -10,6 +10,7 @@ import { FormField } from "@/components/ui/form-components";
 import { CampaignFormSchema, type CampaignFormData } from "@/lib/forms";
 import { validateFormData } from "@/lib/forms/validation";
 import { ErrorHandler } from "@/lib/error-handler";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,19 @@ interface CampaignFormProps {
 export default function CampaignForm({ campaign }: CampaignFormProps) {
   const router = useRouter();
   const [gameEditions, setGameEditions] = useState<GameEdition[]>([]);
+  const parsedTags = (() => {
+    if (!campaign.tags) {
+      return [] as string[];
+    }
+    if (Array.isArray(campaign.tags)) {
+      return campaign.tags as string[];
+    }
+    try {
+      return JSON.parse(campaign.tags as unknown as string);
+    } catch {
+      return [];
+    }
+  })();
 
   // Form state
   const [formData, setFormData] = useState<CampaignFormData>(() => ({
@@ -42,7 +56,9 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
     startDate: campaign.startDate ? new Date(campaign.startDate).toISOString().split("T")[0] : "",
     endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split("T")[0] : "",
     gameEditionId: campaign.gameEditionId || 1,
+    tags: parsedTags,
   }));
+  const [newTag, setNewTag] = useState("");
 
   // Fetch available game editions
   useEffect(() => {
@@ -99,9 +115,39 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
+  const addTag = () => {
+    const value = newTag.trim();
+    if (!value) return;
+    if (formData.tags?.includes(value)) {
+      setNewTag("");
+      return;
+    }
+    updateFormData("tags", [...(formData.tags ?? []), value]);
+    setNewTag("");
+  };
+
+  const removeTag = (tag: string) => {
+    updateFormData(
+      "tags",
+      (formData.tags ?? []).filter((existing) => existing !== tag),
+    );
+  };
+
+  const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      addTag();
+    }
+  };
+
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="id" value={campaign.id.toString()} />
+      <input
+        type="hidden"
+        name="tags"
+        value={JSON.stringify(formData.tags || [])}
+      />
       <FormGrid columns={2}>
         <FormField label="Title" required>
           <input
@@ -183,6 +229,45 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
               className="textarea textarea-bordered w-full"
               placeholder="Campaign description"
             />
+          </FormField>
+        </div>
+        <div className="col-span-2">
+          <FormField label="Tags" description="Add quick labels to help find this campaign later.">
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {(formData.tags ?? []).length === 0 && (
+                  <span className="text-sm text-base-content/60">
+                    No tags yet.
+                  </span>
+                )}
+                {(formData.tags ?? []).map((tag) => (
+                  <span key={tag} className="badge badge-outline gap-2">
+                    {tag}
+                    <button
+                      type="button"
+                      className="text-xs"
+                      aria-label={`Remove ${tag}`}
+                      onClick={() => removeTag(tag)}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  className="input input-bordered flex-1"
+                  placeholder="Type a tag and press Enter"
+                />
+                <Button type="button" variant="outline" onClick={addTag}>
+                  Add
+                </Button>
+              </div>
+            </div>
           </FormField>
         </div>
       </FormGrid>

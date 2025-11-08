@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/utils/logger";
+import { parseCharacterFormData, insertCharacterRecord } from "@/lib/services/characters";
+import { formatZodErrors } from "@/lib/validation";
 
 type MagicItemSummary = {
   id: number;
@@ -97,51 +99,17 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    const campaignId = formData.get("campaignId");
-    const name = formData.get("name");
-    const characterType = formData.get("characterType") || "npc";
-    const strength = formData.get("strength") || "10";
-    const dexterity = formData.get("dexterity") || "10";
-    const constitution = formData.get("constitution") || "10";
-    const intelligence = formData.get("intelligence") || "10";
-    const wisdom = formData.get("wisdom") || "10";
-    const charisma = formData.get("charisma") || "10";
-    const hitPoints = formData.get("hitPoints") || "0";
-    const maxHitPoints = formData.get("maxHitPoints") || "0";
-    const armorClass = formData.get("armorClass") || "10";
-    const classes = formData.get("classes") || "[]";
-    const images = formData.get("images") || "[]";
-    const tags = formData.get("tags") || "[]";
-
-    if (!campaignId || !name) {
+    const parsed = parseCharacterFormData(formData);
+    if (!parsed.success) {
+      const errors = formatZodErrors(parsed.error);
       return NextResponse.json(
-        { error: "campaignId and name are required" },
+        { error: "Validation failed", details: errors },
         { status: 400 }
       );
     }
 
-    const [newCharacter] = await db
-      .insert(characters)
-      .values({
-        campaignId: Number(campaignId),
-        name: name.toString(),
-        characterType: characterType.toString(),
-        strength: Number(strength),
-        dexterity: Number(dexterity),
-        constitution: Number(constitution),
-        intelligence: Number(intelligence),
-        wisdom: Number(wisdom),
-        charisma: Number(charisma),
-        hitPoints: Number(hitPoints),
-        maxHitPoints: Number(maxHitPoints),
-        armorClass: Number(armorClass),
-        classes: classes.toString(),
-        images: images.toString(),
-        tags: tags.toString(),
-      })
-      .returning();
-
-    return NextResponse.json({ success: true, character: newCharacter });
+    const character = await insertCharacterRecord(parsed.data);
+    return NextResponse.json({ success: true, character });
   } catch (error) {
     logger.error("Error creating character", error);
     return NextResponse.json(

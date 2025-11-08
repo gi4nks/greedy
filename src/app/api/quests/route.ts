@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { quests, adventures } from "@/lib/db/schema";
+import { parseQuestFormData, insertQuestRecord } from "@/lib/services/quests";
+import { formatZodErrors } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 
 // GET /api/quests?campaignId=X - Get all quests for a campaign
@@ -47,51 +49,17 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    const campaignId = formData.get("campaignId");
-    const title = formData.get("title");
-    const description = formData.get("description");
-    const status = formData.get("status") || "active";
-    const priority = formData.get("priority") || "medium";
-    const type = formData.get("type") || "main";
-    const tags = formData.get("tags") || "[]";
-    const images = formData.get("images") || "[]";
-
-    if (!campaignId || !title) {
+    const parsed = parseQuestFormData(formData);
+    if (!parsed.success) {
+      const errors = formatZodErrors(parsed.error);
       return NextResponse.json(
-        { error: "campaignId and title are required" },
+        { error: "Validation failed", details: errors },
         { status: 400 }
       );
     }
 
-    // For now, we'll need to get an adventure ID. Let's find the first adventure in the campaign
-    const [adventure] = await db
-      .select({ id: adventures.id })
-      .from(adventures)
-      .where(eq(adventures.campaignId, Number(campaignId)))
-      .limit(1);
-
-    if (!adventure) {
-      return NextResponse.json(
-        { error: "No adventure found in campaign" },
-        { status: 400 }
-      );
-    }
-
-    const [newQuest] = await db
-      .insert(quests)
-      .values({
-        adventureId: adventure.id,
-        title: title.toString(),
-        description: description?.toString() || null,
-        status: status.toString(),
-        priority: priority.toString(),
-        type: type.toString(),
-        tags: tags.toString(),
-        images: images.toString(),
-      })
-      .returning();
-
-    return NextResponse.json({ success: true, quest: newQuest });
+    const quest = await insertQuestRecord(parsed.data);
+    return NextResponse.json({ success: true, quest });
   } catch (error) {
     console.error("Error creating quest:", error);
     return NextResponse.json(

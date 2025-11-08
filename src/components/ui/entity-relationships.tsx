@@ -4,35 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Heart, Shield, Sword } from "lucide-react";
 import Link from "next/link";
-
-interface Relationship {
-  id: number;
-  npcId: number;
-  characterId: number;
-  relationshipType: string;
-  strength: number;
-  trust: number;
-  fear: number;
-  respect: number;
-  notes: string;
-  npc_name: string;
-  npc_type: string;
-  target_name: string;
-  target_type: string;
-  latestEvent?: {
-    description: string;
-    strengthChange: number;
-    date: string;
-    sessionTitle?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import type { RelationshipSummary } from "@/lib/types/relationships";
 
 interface EntityRelationshipsProps {
   entityId: string;
   entityType: "character" | "location" | "quest" | "magic-item";
-  relationships: Relationship[];
+  relationships: RelationshipSummary[];
   campaignId?: string;
 }
 

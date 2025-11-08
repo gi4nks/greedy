@@ -209,6 +209,7 @@ export default async function EditCharacterPage({
     prevState: { success: boolean; error?: string },
     formData: FormData,
   ) => {
+    "use server";
     return updateCharacter(characterIdNum, prevState, formData);
   };
 

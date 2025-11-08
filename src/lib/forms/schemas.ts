@@ -154,11 +154,12 @@ export const AdventureFormSchema = BaseEntitySchema.extend({
 // Campaign Schema
 export const CampaignFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title must be less than 255 characters"),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   status: CampaignStatusSchema,
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   gameEditionId: z.number().int().positive().optional().default(1),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 // ============================================================================
@@ -203,10 +204,12 @@ export type AdventureFormData = z.infer<typeof AdventureFormSchema>;
 export type CampaignFormData = z.infer<typeof CampaignFormSchema>;
 export type DiaryEntryFormData = z.infer<typeof DiaryEntryFormSchema>;
 export type WikiEntityFormData = z.infer<typeof WikiEntityFormSchema>;
+export type { RelationshipFormData } from "../validation/relationship";
 
 // ============================================================================
 // LEGACY COMPATIBILITY
 // ============================================================================
 // Re-export existing schemas for backward compatibility
+export { relationshipSchema as RelationshipFormSchema } from "../validation/relationship";
 export { characterSchema as LegacyCharacterSchema } from "../validation/character";
 export { diaryEntrySchema as LegacyDiaryEntrySchema } from "../validation/character";
