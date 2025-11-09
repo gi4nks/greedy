@@ -44,6 +44,14 @@ type RelationActionInput = z.infer<typeof RelationActionSchema>;
 
 type RelationshipEntityType = "character" | "npc" | "location" | "quest";
 
+type RelationParseResult = {
+  success: true;
+  data: RelationActionInput;
+} | {
+  success: false;
+  error: z.ZodError;
+};
+
 export async function getEntityRelationships(
   entityId: string,
   entityType: string,
@@ -139,6 +147,8 @@ export async function getEntityRelationships(
         fear: metadata.fear ?? DEFAULT_RELATIONSHIP_METADATA.fear!,
         respect: metadata.respect ?? DEFAULT_RELATIONSHIP_METADATA.respect!,
         notes: relation.description || "",
+        isMutual: relation.bidirectional ?? false,
+        discoveredByPlayers: metadata.discoveredByPlayers ?? DEFAULT_RELATIONSHIP_METADATA.discoveredByPlayers!,
         npc_name: otherEntityName,
         npc_type: otherEntityType,
         target_name: currentEntityName,

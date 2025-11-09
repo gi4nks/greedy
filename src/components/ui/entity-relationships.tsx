@@ -58,7 +58,7 @@ export default function EntityRelationships({
     }
   };
 
-  const getEntityLink = (relationship: Relationship) => {
+  const getEntityLink = (relationship: RelationshipSummary) => {
     // For non-character entities, use the npc_type and determine the ID from the data
     if (entityType === "character" || entityType === "magic-item") {
       const isNpcCurrent = relationship.npcId.toString() === entityId;
@@ -74,7 +74,7 @@ export default function EntityRelationships({
     }
   };
 
-  const getEntityName = (relationship: Relationship) => {
+  const getEntityName = (relationship: RelationshipSummary) => {
     // For non-character entities (location, quest, etc), we need to check
     // which side of the relationship we're looking at
     // npc_name is always the "other" entity, target_name is the current entity

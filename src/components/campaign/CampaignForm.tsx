@@ -51,7 +51,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
   // Form state
   const [formData, setFormData] = useState<CampaignFormData>(() => ({
     title: campaign.title,
-    description: campaign.description || "",
+    description: campaign.description ?? "",
     status: (campaign.status as "active" | "planning" | "completed" | "hiatus" | undefined) || "active",
     startDate: campaign.startDate ? new Date(campaign.startDate).toISOString().split("T")[0] : "",
     endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split("T")[0] : "",
@@ -223,7 +223,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
           <FormField label="Description">
             <textarea
               name="description"
-              value={formData.description}
+              value={formData.description ?? ""}
               onChange={(e) => updateFormData("description", e.target.value)}
               rows={4}
               className="textarea textarea-bordered w-full"
@@ -232,7 +232,7 @@ export default function CampaignForm({ campaign }: CampaignFormProps) {
           </FormField>
         </div>
         <div className="col-span-2">
-          <FormField label="Tags" description="Add quick labels to help find this campaign later.">
+          <FormField label="Tags" help="Add quick labels to help find this campaign later.">
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 {(formData.tags ?? []).length === 0 && (
