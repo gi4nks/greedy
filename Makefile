@@ -8,7 +8,7 @@ YELLOW=\033[1;33m
 NC=\033[0m
 
 # Docker variables
-REGISTRY=192.168.1.150:5000
+REGISTRY ?= ghcr.io/your-org
 IMAGE_NAME=greedy
 TAG=latest
 PLATFORMS=linux/arm64,linux/amd64
@@ -86,7 +86,7 @@ status:
 docker-build-lnx: ## Build and push multi-arch Docker image
 	@echo "$(BLUE)Building multi-arch Docker image for ARM & AMD64...$(NC)"
 	@docker buildx build --platform linux/amd64,linux/arm64 \
-		-t 192.168.1.150:5000/greedy:latest \
+		-t $(REGISTRY)/$(IMAGE_NAME):$(TAG) \
 		--push .
 	@echo "$(GREEN)Docker image built and pushed successfully!$(NC)"
 # docker-build:

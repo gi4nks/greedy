@@ -16,8 +16,8 @@ services:
       IMAGES_DIR: public/images
       NEXT_PUBLIC_APP_URL: http://greedy.local:3002
     volumes:
-      - /home/gianluca/projects/greedy/data:/app/database
-      - /home/gianluca/projects/greedy/data/images:/app/public/images
+      - ./database:/app/database
+      - ./public/images:/app/public/images
     logging:
       driver: "json-file"
       options:

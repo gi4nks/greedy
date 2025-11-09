@@ -358,13 +358,14 @@ src/app/(global)/wiki/page.tsx
 All documentation files are located in the project root:
 
 ```
-/Users/gianluca/Projects/github/gi4nks/greedy/
-├─ HTML_RENDERING_OVERVIEW.md (this file)
-├─ HTML_RENDERING_QUICK_REFERENCE.md
-├─ HTML_RENDERING_FIX.md
-├─ HTML_RENDERING_TEST_GUIDE.md
-├─ HTML_RENDERING_IMPLEMENTATION_SUMMARY.md
-├─ CHANGELOG_HTML_RENDERING.md
+./
+├─ docs/
+│  ├─ HTML_RENDERING_OVERVIEW.md (this file)
+│  ├─ HTML_RENDERING_QUICK_REFERENCE.md
+│  ├─ HTML_RENDERING_FIX.md
+│  ├─ HTML_RENDERING_TEST_GUIDE.md
+│  ├─ HTML_RENDERING_IMPLEMENTATION_SUMMARY.md
+│  └─ CHANGELOG_HTML_RENDERING.md
 └─ src/
    ├─ lib/utils/content-format.ts (new)
    └─ components/ui/wiki-content.tsx (updated)

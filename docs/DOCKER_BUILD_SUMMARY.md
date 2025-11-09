@@ -63,8 +63,8 @@ ENV HOSTNAME="0.0.0.0"
 # Use docker-compose for more reliable builds
 docker-build-lnx: ## Build and push Docker image
 	@docker compose -f docker-compose.app.yml build --no-cache
-	@docker tag greedy-greedy:latest 192.168.1.150:5000/greedy:latest
-	@docker push 192.168.1.150:5000/greedy:latest
+	@docker tag greedy-greedy:latest $(REGISTRY)/greedy:latest
+	@docker push $(REGISTRY)/greedy:latest
 ```
 
 ## 🎯 What's Happening Now
@@ -86,7 +86,7 @@ You'll see:
 ```
 🏷️  Tagging image for registry...
 🐳 Pushing Docker image...
-✅ Docker image built and pushed successfully to 192.168.1.150:5000/greedy:latest!
+✅ Docker image built and pushed successfully to $(REGISTRY)/greedy:latest!
 ```
 
 Then you can deploy using:
@@ -121,7 +121,7 @@ Common issues:
 ## 📞 Next Steps
 
 Once the build succeeds:
-1. ✅ Image pushed to 192.168.1.150:5000/greedy:latest
+1. ✅ Image pushed to $(REGISTRY)/greedy:latest
 2. Deploy to Linux server using docker-compose.yml
 3. Test the deployment
 4. Set up automatic builds/deployments if needed

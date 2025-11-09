@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "analyze-unused": "node scripts/analyze-unused.js",
     "init-db": "tsx scripts/init-database.ts",
-    "migrate": "tsx scripts/migrate-from-backend.ts"
+    "migrate": "drizzle-kit push",
+    "migrate:legacy": "tsx scripts/migrate-from-backend.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

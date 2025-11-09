@@ -19,10 +19,16 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+/uploads
+/public/uploads
+/tmp
+public/images/*
+!public/images/.gitkeep
 
 # debug
 npm-debug.log*
@@ -47,3 +53,8 @@ database/*.db
 database/*.db.*
 campaign.db
 campaign.db.*
+!database/.gitkeep
+public/images
+campaign.db
+campaign.db.backup.20251017_145159
+database
