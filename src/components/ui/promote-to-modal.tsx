@@ -134,11 +134,17 @@ export default function PromoteToModal({
         submitData.append("adventureId", adventureId.toString());
       }
 
+      // Add campaignId for entities that need it
+      if (campaignId && (selectedType === "character" || selectedType === "location")) {
+        submitData.append("campaignId", campaignId.toString());
+      }
+
       let result;
       let entityName = "";
 
       switch (selectedType) {
         case "character":
+          submitData.append("name", formData.title.trim());
           result = await fetch(`/api/characters`, {
             method: 'POST',
             body: submitData,
@@ -155,6 +161,7 @@ export default function PromoteToModal({
           break;
 
         case "location":
+          submitData.append("name", formData.title.trim());
           result = await fetch(`/api/locations`, {
             method: 'POST',
             body: submitData,
