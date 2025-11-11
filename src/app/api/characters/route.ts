@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { logger } from "@/lib/utils/logger";
 import { parseCharacterFormData, insertCharacterRecord } from "@/lib/services/characters";
 import { formatZodErrors } from "@/lib/validation";
+
+const CHARACTER_ENTITY_TYPES = ["character", "characters"] as const;
 
 type MagicItemSummary = {
   id: number;
@@ -55,7 +57,7 @@ export async function GET() {
         magicItems,
         eq(magicItemAssignments.magicItemId, magicItems.id),
       )
-      .where(eq(magicItemAssignments.entityType, "character"));
+      .where(inArray(magicItemAssignments.entityType, CHARACTER_ENTITY_TYPES));
 
     const assignmentsByCharacter = new Map<number, MagicItemSummary[]>();
     characterAssignments.forEach((assignment) => {

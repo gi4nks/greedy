@@ -6,11 +6,14 @@ import {
   gameEditions,
   magicItems,
   magicItemAssignments,
+  characterMagicItems,
   wikiArticles,
   wikiArticleEntities,
   sessions,
 } from "./schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
+
+const CHARACTER_ENTITY_TYPES = ["character", "characters"] as const;
 
 /**
  * Optimized queries for reducing N+1 database fetches
@@ -109,16 +112,58 @@ export async function getCharacterWithAllEntities(characterId: number) {
     .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
     .where(
       and(
-        eq(magicItemAssignments.entityType, "character"),
+        inArray(magicItemAssignments.entityType, CHARACTER_ENTITY_TYPES),
         eq(magicItemAssignments.entityId, characterId),
       ),
     );
 
   // Cast source to the expected union type
-  const typedMagicItems = magicItemsResult.map(item => ({
+  const typedMagicItems = magicItemsResult.map((item) => ({
     ...item,
-    source: item.source as "manual" | "wiki"
+    source: item.source as "manual" | "wiki",
   }));
+
+  // Legacy assignments stored in character_magic_items before assignments table shipped
+  const legacyMagicItems = await db
+    .select({
+      id: magicItems.id,
+      assignmentId: characterMagicItems.id,
+      name: magicItems.name,
+      rarity: magicItems.rarity,
+      type: magicItems.type,
+      description: magicItems.description,
+      assignedAt: characterMagicItems.createdAt,
+    })
+    .from(characterMagicItems)
+    .innerJoin(magicItems, eq(characterMagicItems.magicItemId, magicItems.id))
+    .where(eq(characterMagicItems.characterId, characterId));
+
+  const manualMagicItemsMap = new Map<number, typeof typedMagicItems[number]>();
+  typedMagicItems.forEach((item) => {
+    manualMagicItemsMap.set(item.id, item);
+  });
+
+  legacyMagicItems.forEach((legacyItem) => {
+    if (manualMagicItemsMap.has(legacyItem.id)) {
+      return;
+    }
+
+    manualMagicItemsMap.set(legacyItem.id, {
+      id: legacyItem.id,
+      assignmentId: legacyItem.assignmentId,
+      name: legacyItem.name,
+      rarity: legacyItem.rarity,
+      type: legacyItem.type,
+      description: legacyItem.description,
+      source: "manual",
+      notes: null,
+      metadata: null,
+      assignedAt: legacyItem.assignedAt,
+      campaignId: characterData.campaignId,
+    });
+  });
+
+  const mergedMagicItems = Array.from(manualMagicItemsMap.values());
 
   // Get wiki entities in a single query
   const wikiEntitiesResult = await db
@@ -206,7 +251,7 @@ export async function getCharacterWithAllEntities(characterId: number) {
           updatedAt: characterData.campaign_updatedAt,
         }
       : null,
-    magicItems: typedMagicItems,
+    magicItems: mergedMagicItems,
     wikiEntities: typedWikiEntities,
   };
 

@@ -51,18 +51,20 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
     return null;
   };
 
-  // Combine manual and wiki magic items
-  const getUnifiedMagicItems = () => {
-    const manualItems = (character.magicItems || []).map((item) => ({
+  // Manual magic items specifically created in-app
+  const getManualMagicItems = () => {
+    return (character.magicItems || []).map((item) => ({
       ...item,
       source: "manual" as const,
       assignmentId: item.assignmentId,
     }));
+  };
 
-    const wikiMagicItems = (character.wikiEntities || [])
+  // Magic items imported from the wiki linker
+  const getWikiMagicItems = () => {
+    return (character.wikiEntities || [])
       .filter((entity) => entity.contentType === "magic-item")
       .map((entity) => {
-        // Parse additional data from parsedData if available
         let rarity: string | null = null;
         let type: string | null = null;
         let description: string | null = entity.description || null;
@@ -94,12 +96,10 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
               ? entity.relationshipData
               : JSON.stringify(entity.relationshipData)
             : null,
-          assignedAt: null, // Wiki items don't have assignment dates
+          assignedAt: null,
           campaignId: null,
         };
       });
-
-    return [...manualItems, ...wikiMagicItems];
   };
 
   // Filter out magic items from wiki entities for the WikiEntitiesDisplay
@@ -110,7 +110,8 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
   };
 
   const classesDisplay = parseClasses();
-  const unifiedMagicItems = getUnifiedMagicItems();
+  const manualMagicItems = getManualMagicItems();
+  const wikiMagicItems = getWikiMagicItems();
   const filteredWikiEntities = getFilteredWikiEntities();
 
   return (
@@ -120,7 +121,7 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-base-content/70">
@@ -168,6 +169,76 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
         </CardContent>
       </Card>
 
+      {/* Manual Magic Items */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Magic Items</CardTitle>
+          {manualMagicItems.length > 0 && (
+            <p className="text-sm text-base-content/70">
+              {manualMagicItems.length} manually created item
+              {manualMagicItems.length === 1 ? "" : "s"} assigned to this character.
+            </p>
+          )}
+        </CardHeader>
+        <CardContent>
+          {manualMagicItems.length > 0 ? (
+            <div className="space-y-3">
+              {manualMagicItems.map((item) => (
+                <div
+                  key={`manual-${item.id}`}
+                  className="rounded-lg border border-purple-200 bg-purple-50 p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-2xl">✨</span>
+                    <span className="font-medium text-purple-900">
+                      {item.name}
+                    </span>
+                    <Badge className="text-xs">Manual</Badge>
+                    {item.rarity && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs capitalize bg-purple-100 border-purple-300"
+                      >
+                        {item.rarity}
+                      </Badge>
+                    )}
+                    {item.type && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.type}
+                      </Badge>
+                    )}
+                  </div>
+                  {item.description && (
+                    <div className="mt-3 text-sm text-base-content/80">
+                      <MarkdownRenderer content={item.description} />
+                    </div>
+                  )}
+                  {item.notes && (
+                    <p className="mt-2 text-xs text-base-content/70">
+                      Notes: {item.notes}
+                    </p>
+                  )}
+                  {item.assignedAt && (
+                    <p className="mt-1 text-xs text-base-content/60">
+                      Assigned{" "}
+                      {new Date(item.assignedAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-base-content/70">
+              No manually created magic items assigned yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Wiki Items from Wiki Import */}
       {filteredWikiEntities && filteredWikiEntities.length > 0 && (
         <WikiEntitiesDisplay
@@ -179,11 +250,11 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
         />
       )}
 
-      {/* Magic Items */}
-      <CollapsibleSection title="Magic Items" defaultExpanded={false}>
-        {unifiedMagicItems.length > 0 ? (
+      {/* Wiki Magic Items */}
+      {wikiMagicItems.length > 0 && (
+        <CollapsibleSection title="Wiki Magic Items" defaultExpanded={false}>
           <div className="grid gap-3">
-            {unifiedMagicItems.map((item) => (
+            {wikiMagicItems.map((item) => (
               <div
                 key={`${item.source}-${item.id}`}
                 className="border border-purple-200 bg-purple-50 rounded-lg"
@@ -195,12 +266,10 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
                       {item.name}
                     </span>
                     <Badge
-                      variant={
-                        item.source === "wiki" ? "secondary" : "default"
-                      }
-                      className={`text-xs ${item.source === "wiki" ? "bg-blue-500 text-white" : ""}`}
+                      variant="secondary"
+                      className="text-xs bg-blue-500 text-white"
                     >
-                      {item.source === "wiki" ? "Wiki" : "Manual"}
+                      Wiki
                     </Badge>
                     {item.rarity && (
                       <Badge
@@ -220,12 +289,8 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-sm text-base-content/70">
-            No magic items assigned yet.
-          </p>
-        )}
-      </CollapsibleSection>
+        </CollapsibleSection>
+      )}
 
       {/* Equipment */}
       

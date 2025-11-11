@@ -11,13 +11,15 @@ import {
   wikiArticleEntities,
   characterDiaryEntries,
 } from "@/lib/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, inArray } from "drizzle-orm";
 import CharacterForm from "@/components/character/CharacterForm";
 import { Card, CardContent } from "@/components/ui/card";
 import DynamicBreadcrumb from "@/components/ui/dynamic-breadcrumb";
 import { WikiDataService } from "@/lib/services/wiki-data";
 import { WikiEntity } from "@/lib/types/wiki";
 import { updateCharacter } from "@/lib/actions/characters";
+
+const CHARACTER_ENTITY_TYPES = ["character", "characters"] as const;
 
 interface EditCharacterPageProps {
   params: Promise<{ id: string; characterId: string }>;
@@ -104,7 +106,7 @@ async function getCharacter(characterId: number) {
     .innerJoin(magicItems, eq(magicItemAssignments.magicItemId, magicItems.id))
     .where(
       and(
-        eq(magicItemAssignments.entityType, "character"),
+        inArray(magicItemAssignments.entityType, CHARACTER_ENTITY_TYPES),
         eq(magicItemAssignments.entityId, characterId),
       ),
     );

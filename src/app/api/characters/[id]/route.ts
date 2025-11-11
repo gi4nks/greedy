@@ -7,7 +7,9 @@ import {
   wikiArticleEntities,
   wikiArticles,
 } from "@/lib/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
+
+const CHARACTER_ENTITY_TYPES = ["character", "characters"] as const;
 
 // GET /api/characters/[id] - Get character with all assigned entities
 export async function GET(
@@ -53,7 +55,7 @@ export async function GET(
       )
       .where(
         and(
-          eq(magicItemAssignments.entityType, "character"),
+          inArray(magicItemAssignments.entityType, CHARACTER_ENTITY_TYPES),
           eq(magicItemAssignments.entityId, characterId),
         ),
       );

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { characters, magicItems, magicItemAssignments } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
+const CHARACTER_ENTITY_TYPES = ["character", "characters"] as const;
+
 type MagicItemSummary = {
   id: number;
   assignmentId: number;
@@ -68,7 +70,7 @@ export async function GET(
           )
           .where(
             and(
-              eq(magicItemAssignments.entityType, "character"),
+              inArray(magicItemAssignments.entityType, CHARACTER_ENTITY_TYPES),
               inArray(magicItemAssignments.entityId, characterIds),
             ),
           )
