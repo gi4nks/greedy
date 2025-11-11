@@ -163,6 +163,7 @@ export default function PromoteToModal({
           break;
 
         case "magic-item":
+          submitData.append("name", formData.title.trim());
           result = await fetch(`/api/magic-items`, {
             method: 'POST',
             body: submitData,
