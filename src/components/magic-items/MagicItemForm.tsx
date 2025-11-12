@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import {
   updateMagicItemAction,
 } from "@/lib/actions/magicItems";
 import { ImageManager } from "@/components/ui/image-manager";
-import { parseImagesJson } from "@/lib/utils/imageUtils.client";
+import { parseImagesJson, type ImageInfo } from "@/lib/utils/imageUtils.client";
 import { FormSection, FormGrid, FormActions } from "@/lib/forms";
 import { FormField } from "@/components/ui/form-components";
 import { MagicItemFormSchema, type MagicItemFormData } from "@/lib/forms";
@@ -58,6 +58,10 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
 
   // Use shared hooks for state management
   const imageManagement = useImageManagement(parseImagesJson(magicItem?.images));
+  const serializedImages = useMemo(
+    () => JSON.stringify(imageManagement.images ?? []),
+    [imageManagement.images],
+  );
 
   // Server action setup
   const createOrUpdateMagicItem = async (prevState: { success: boolean; error?: string }, formData: FormData) => {
@@ -108,11 +112,17 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleImagesChange = (images: ImageInfo[]) => {
+    imageManagement.setImages(images);
+    updateFormData("images", images as MagicItemFormData["images"]);
+  };
+
   return (
     <form action={formAction} className="space-y-6">
       {mode === "edit" && magicItem?.id && (
         <input type="hidden" name="id" value={magicItem.id.toString()} />
       )}
+      <input type="hidden" name="images" value={serializedImages} readOnly />
       <FormGrid columns={2}>
         <FormField label="Name" required>
           <input
@@ -211,7 +221,7 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
           entityType="magic-items"
           entityId={magicItem?.id ?? 0}
           currentImages={imageManagement.images}
-          onImagesChange={imageManagement.setImages}
+          onImagesChange={handleImagesChange}
         />
         {mode === "create" && !magicItem?.id && (
           <p className="mt-2 text-sm text-base-content/70">
