@@ -30,6 +30,20 @@ interface CharacterDetailProps {
   };
 }
 
+function formatAssignedDate(dateValue?: string | null) {
+  if (!dateValue) return null;
+  const normalized = dateValue.includes("T")
+    ? dateValue
+    : dateValue.replace(" ", "T");
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function CharacterDetail({ character }: CharacterDetailProps) {
 
   // Parse classes data
@@ -183,53 +197,51 @@ export default function CharacterDetail({ character }: CharacterDetailProps) {
         <CardContent>
           {manualMagicItems.length > 0 ? (
             <div className="space-y-3">
-              {manualMagicItems.map((item) => (
-                <div
-                  key={`manual-${item.id}`}
-                  className="rounded-lg border border-purple-200 bg-purple-50 p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-2xl">✨</span>
-                    <span className="font-medium text-purple-900">
-                      {item.name}
-                    </span>
-                    <Badge className="text-xs">Manual</Badge>
-                    {item.rarity && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs capitalize bg-purple-100 border-purple-300"
-                      >
-                        {item.rarity}
-                      </Badge>
+              {manualMagicItems.map((item) => {
+                const assignedDate = formatAssignedDate(item.assignedAt);
+                return (
+                  <div
+                    key={`manual-${item.id}`}
+                    className="rounded-lg border border-purple-200 bg-purple-50 p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-2xl">✨</span>
+                      <span className="font-medium text-purple-900">
+                        {item.name}
+                      </span>
+                      <Badge className="text-xs">Manual</Badge>
+                      {item.rarity && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs capitalize bg-purple-100 border-purple-300"
+                        >
+                          {item.rarity}
+                        </Badge>
+                      )}
+                      {item.type && (
+                        <Badge variant="secondary" className="text-xs">
+                          {item.type}
+                        </Badge>
+                      )}
+                    </div>
+                    {item.description && (
+                      <div className="mt-3 text-sm text-base-content/80">
+                        <MarkdownRenderer content={item.description} />
+                      </div>
                     )}
-                    {item.type && (
-                      <Badge variant="secondary" className="text-xs">
-                        {item.type}
-                      </Badge>
+                    {item.notes && (
+                      <p className="mt-2 text-xs text-base-content/70">
+                        Notes: {item.notes}
+                      </p>
+                    )}
+                    {assignedDate && (
+                      <p className="mt-1 text-xs text-base-content/60">
+                        Assigned {assignedDate}
+                      </p>
                     )}
                   </div>
-                  {item.description && (
-                    <div className="mt-3 text-sm text-base-content/80">
-                      <MarkdownRenderer content={item.description} />
-                    </div>
-                  )}
-                  {item.notes && (
-                    <p className="mt-2 text-xs text-base-content/70">
-                      Notes: {item.notes}
-                    </p>
-                  )}
-                  {item.assignedAt && (
-                    <p className="mt-1 text-xs text-base-content/60">
-                      Assigned{" "}
-                      {new Date(item.assignedAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-base-content/70">
