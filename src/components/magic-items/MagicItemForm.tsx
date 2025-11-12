@@ -110,6 +110,9 @@ export function MagicItemForm({ mode, magicItem }: MagicItemFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
+      {mode === "edit" && magicItem?.id && (
+        <input type="hidden" name="id" value={magicItem.id.toString()} />
+      )}
       <FormGrid columns={2}>
         <FormField label="Name" required>
           <input
