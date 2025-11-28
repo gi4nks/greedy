@@ -47,7 +47,8 @@ export const sessions = sqliteTable("sessions", {
   adventureId: integer("adventure_id").references(() => adventures.id),
   title: text("title").notNull(),
   date: text("date").notNull(),
-  text: text("text"),
+  text: text("text"), // Raw session notes (events, mechanics, decisions)
+  narrative: text("narrative"), // Polished narrative version (story-like, romanced)
   images: text("images", { mode: "json" }),
   promotedTo: text("promoted_to", { mode: "json" }), // Array of {type, id, text, createdAt}
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),

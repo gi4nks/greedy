@@ -16,6 +16,8 @@ import { FormField } from "@/components/ui/form-components";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorHandler } from "@/lib/error-handler";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FileText, BookOpen } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -30,6 +32,7 @@ interface SessionFormProps {
     title: string;
     date: string;
     text?: string | null;
+    narrative?: string | null;
     adventureId?: number | null;
     images?: unknown;
     wikiEntities?: WikiEntity[];
@@ -59,9 +62,13 @@ export default function SessionForm({
     date: session?.date || new Date().toISOString().split("T")[0],
     adventureId: session?.adventureId || defaultAdventureId,
     text: session?.text || "",
+    narrative: session?.narrative || "",
     campaignId,
     images: parseImagesJson(session?.images),
   }));
+
+  // Tab state for Notes/Narrative
+  const [activeTab, setActiveTab] = useState<"notes" | "narrative">("notes");
 
   // Use shared hooks for state management
   const imageManagement = useImageManagement(parseImagesJson(session?.images));
@@ -114,6 +121,8 @@ export default function SessionForm({
       <input type="hidden" name="campaignId" value={campaignId?.toString() || ""} />
       <input type="hidden" name="adventureId" value={formData.adventureId?.toString() || "none"} />
       <input type="hidden" name="images" value={JSON.stringify(imageManagement.images)} />
+      <input type="hidden" name="text" value={formData.text || ""} />
+      <input type="hidden" name="narrative" value={formData.narrative || ""} />
       {mode === "edit" && session?.id && <input type="hidden" name="id" value={session.id.toString()} />}
 
       <div className="space-y-6">
@@ -169,14 +178,45 @@ export default function SessionForm({
           </div>
 
           <div className="col-span-2">
-            <FormField label="Session Summary">
-              <Textarea
-                name="text"
-                value={formData.text}
-                onChange={(e) => updateFormData("text", e.target.value)}
-                rows={12}
-                placeholder="What happened in this session? Record key events, character interactions, plot developments, combat encounters, and any memorable moments..."
-              />
+            <FormField label="Session Content">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "notes" | "narrative")} className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="notes" className="gap-2">
+                    <FileText className="w-4 h-4" />
+                    Session Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="narrative" className="gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Chronicle
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="notes">
+                  <div className="space-y-2">
+                    <p className="text-sm text-base-content/70">
+                      Raw session notes — events, mechanics, dice rolls, decisions, and key moments.
+                    </p>
+                    <Textarea
+                      value={formData.text}
+                      onChange={(e) => updateFormData("text", e.target.value)}
+                      rows={12}
+                      placeholder="What happened in this session? Record key events, character interactions, plot developments, combat encounters, and any memorable moments..."
+                    />
+                  </div>
+                </TabsContent>
+                <TabsContent value="narrative">
+                  <div className="space-y-2">
+                    <p className="text-sm text-base-content/70">
+                      The polished story version — like a chapter from a book. Paste your romanced narrative here.
+                    </p>
+                    <Textarea
+                      value={formData.narrative}
+                      onChange={(e) => updateFormData("narrative", e.target.value)}
+                      rows={12}
+                      placeholder="The chronicle of this session... Write or paste the narrative version of the session, describing events as they unfolded in story form."
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </FormField>
           </div>
         </FormGrid>

@@ -8,14 +8,16 @@ import { Button } from "@/components/ui/button";
 import { formatDisplayDate, formatUIDate } from "@/lib/utils/date";
 import WikiEntitiesDisplay from "@/components/ui/wiki-entities-display";
 import { WikiEntity } from "@/lib/types/wiki";
-import { Edit } from "lucide-react";
+import { Edit, FileText, BookOpen } from "lucide-react";
 import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import PromoteToModal, { PromotionType } from "@/components/ui/promote-to-modal";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface SessionHeaderProps {
   session: Session & {
     campaignId?: number | null;
+    narrative?: string | null;
     wikiEntities?: WikiEntity[];
   };
   campaignId?: number;
@@ -209,116 +211,143 @@ export function SessionHeader({
           </div>
         </div>
 
-        {/* Session Content */}
-        {session.text && (
+        {/* Session Content - Notes and Narrative Tabs */}
+        {(session.text || session.narrative) && (
           <Card className="bg-base-100 shadow-sm relative">
             <CardContent className="p-6">
-              <div className="relative" ref={containerRef}>
-                <MarkdownRenderer content={session.text} className="text-base-content" />
+              <Tabs defaultValue={session.narrative ? "narrative" : "notes"} className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="notes" className="gap-2">
+                    <FileText className="w-4 h-4" />
+                    Session Notes
+                    {!session.text && <span className="text-xs opacity-60">(empty)</span>}
+                  </TabsTrigger>
+                  <TabsTrigger value="narrative" className="gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Chronicle
+                    {!session.narrative && <span className="text-xs opacity-60">(empty)</span>}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="notes">
+                  {session.text ? (
+                    <div className="relative" ref={containerRef}>
+                      <MarkdownRenderer content={session.text} className="text-base-content" />
 
-                {/* Contextual Floating Promote Menu */}
-                {selectedText && selectionRect && containerRef.current && !isPromoteModalOpen && (
-                  <div
-                    className="absolute z-50 animate-in fade-in-0 zoom-in-95 duration-200"
-                    style={{
-                      top: selectionRect.top - containerRef.current.getBoundingClientRect().top - 40,
-                      left: Math.max(
-                        8,
-                        Math.min(
-                          selectionRect.left - containerRef.current.getBoundingClientRect().left + (selectionRect.width / 2) - 16, // Center on selection
-                          containerRef.current.offsetWidth - 200 // Account for dropdown width
-                        )
-                      ),
-                    }}
-                  >
-                    {/* Tooltip */}
-                    
-                    <div className="relative">
-                      <button
-                        className="btn btn-sm btn-primary btn-circle shadow-lg hover:scale-110 active:scale-95 transition-all duration-150 ring-2 ring-primary/20"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsContextualMenuOpen(!isContextualMenuOpen);
-                        }}
-                        title="Promote selected text"
-                        aria-label="Open promotion menu for selected text"
-                        aria-expanded={isContextualMenuOpen}
-                        aria-haspopup="menu"
-                      >
-                        <span className="text-lg font-bold text-primary-content">⋮</span>
-                      </button>
-                      {isContextualMenuOpen && (
-                        <div 
-                          className="absolute top-full left-0 mt-2 bg-base-100 rounded-box shadow-xl w-52 border border-base-300 animate-in fade-in-0 slide-in-from-top-2 duration-150 z-50"
-                          role="menu"
-                          aria-label="Promotion options"
+                      {/* Contextual Floating Promote Menu */}
+                      {selectedText && selectionRect && containerRef.current && !isPromoteModalOpen && (
+                        <div
+                          className="absolute z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                          style={{
+                            top: selectionRect.top - containerRef.current.getBoundingClientRect().top - 40,
+                            left: Math.max(
+                              8,
+                              Math.min(
+                                selectionRect.left - containerRef.current.getBoundingClientRect().left + (selectionRect.width / 2) - 16,
+                                containerRef.current.offsetWidth - 200
+                              )
+                            ),
+                          }}
                         >
-                          <div className="p-2">
-                            <div className="text-xs text-base-content/70 px-3 py-1 font-medium border-b border-base-300 mb-1">Promote Selection</div>
+                          <div className="relative">
                             <button
+                              className="btn btn-sm btn-primary btn-circle shadow-lg hover:scale-110 active:scale-95 transition-all duration-150 ring-2 ring-primary/20"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePromote('character');
+                                setIsContextualMenuOpen(!isContextualMenuOpen);
                               }}
-                              className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              role="menuitem"
-                              aria-label="Promote to character"
+                              title="Promote selected text"
+                              aria-label="Open promotion menu for selected text"
+                              aria-expanded={isContextualMenuOpen}
+                              aria-haspopup="menu"
                             >
-                              👤 Promote to Character
+                              <span className="text-lg font-bold text-primary-content">⋮</span>
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePromote('quest');
-                              }}
-                              className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              role="menuitem"
-                              aria-label="Promote to quest"
-                            >
-                              🎯 Promote to Quest
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePromote('location');
-                              }}
-                              className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              role="menuitem"
-                              aria-label="Promote to location"
-                            >
-                              🗺️ Promote to Location
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePromote('magic-item');
-                              }}
-                              className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              role="menuitem"
-                              aria-label="Promote to magic item"
-                            >
-                              ✨ Promote to Magic Item
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePromote('diary-note');
-                              }}
-                              className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              role="menuitem"
-                              aria-label="Promote to diary note"
-                            >
-                              📝 Promote to Diary Note
-                            </button>
+                            {isContextualMenuOpen && (
+                              <div 
+                                className="absolute top-full left-0 mt-2 bg-base-100 rounded-box shadow-xl w-52 border border-base-300 animate-in fade-in-0 slide-in-from-top-2 duration-150 z-50"
+                                role="menu"
+                                aria-label="Promotion options"
+                              >
+                                <div className="p-2">
+                                  <div className="text-xs text-base-content/70 px-3 py-1 font-medium border-b border-base-300 mb-1">Promote Selection</div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePromote('character');
+                                    }}
+                                    className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    role="menuitem"
+                                    aria-label="Promote to character"
+                                  >
+                                    👤 Promote to Character
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePromote('quest');
+                                    }}
+                                    className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    role="menuitem"
+                                    aria-label="Promote to quest"
+                                  >
+                                    🎯 Promote to Quest
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePromote('location');
+                                    }}
+                                    className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    role="menuitem"
+                                    aria-label="Promote to location"
+                                  >
+                                    🗺️ Promote to Location
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePromote('magic-item');
+                                    }}
+                                    className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    role="menuitem"
+                                    aria-label="Promote to magic item"
+                                  >
+                                    ✨ Promote to Magic Item
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePromote('diary-note');
+                                    }}
+                                    className="flex items-center gap-3 text-sm hover:bg-base-200 px-3 py-2 rounded-md transition-colors w-full text-left focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    role="menuitem"
+                                    aria-label="Promote to diary note"
+                                  >
+                                    📝 Promote to Diary Note
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
-              </div>
-
-              
+                  ) : (
+                    <p className="text-base-content/60 italic">No session notes recorded yet.</p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="narrative">
+                  {session.narrative ? (
+                    <div className="prose prose-lg max-w-none">
+                      <MarkdownRenderer content={session.narrative} className="text-base-content" />
+                    </div>
+                  ) : (
+                    <p className="text-base-content/60 italic">No chronicle written yet. Add a narrative version of this session&apos;s events.</p>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         )}

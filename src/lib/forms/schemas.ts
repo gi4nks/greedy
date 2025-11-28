@@ -126,7 +126,8 @@ export const SessionFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title must be less than 255 characters"),
   date: z.string().min(1, "Date is required"),
   adventureId: z.number().int().positive().optional(),
-  text: z.string().optional(),
+  text: z.string().optional(), // Raw session notes
+  narrative: z.string().optional(), // Polished narrative version
   campaignId: z.number().int().positive().optional(),
   images: BaseEntitySchema.shape.images,
 });

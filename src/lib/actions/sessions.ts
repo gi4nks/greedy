@@ -64,6 +64,7 @@ export async function createSession(
     ? Number(adventureIdValue)
     : null;
   const text = formData.get("text") as string;
+  const narrative = formData.get("narrative") as string;
   const images = formData.get("images") as string;
   const campaignId = formData.get("campaignId") as string;
 
@@ -82,6 +83,7 @@ export async function createSession(
       date,
       adventureId,
       text: text || null,
+      narrative: narrative || null,
       images: images ? JSON.parse(images) : null,
       createdAt: now,
       updatedAt: now,
@@ -120,6 +122,7 @@ export async function updateSession(
     ? Number(adventureIdValue)
     : null;
   const text = formData.get("text") as string;
+  const narrative = formData.get("narrative") as string;
   const imagesValue = formData.get("images") as string;
   const campaignId = formData.get("campaignId") as string;
 
@@ -150,6 +153,7 @@ export async function updateSession(
       title,
       date,
       text: text || null,
+      narrative: narrative || null,
       images: parsedImages ?? undefined,
       updatedAt: now,
     };
