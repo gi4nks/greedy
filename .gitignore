@@ -37,6 +37,9 @@
 public/images/*
 !public/images/.gitkeep
 
+# 5etools data (external data, download separately)
+public/5etools/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -44,7 +47,11 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env.development
+.env.production
+.env.test
 
 # vercel
 .vercel
