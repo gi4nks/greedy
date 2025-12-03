@@ -1,5 +1,12 @@
 name: Build and Deploy Docker Image
 
+# =============================================================================
+# REQUIRED GITEA VARIABLES (Settings > Actions > Variables):
+#   REGISTRY_HOST     - Docker registry host (e.g., 192.168.1.150:5000)
+#   REGISTRY_IMAGE    - Base image for builds (e.g., docker-node:latest)
+#   APP_NAME          - Application name (e.g., greedy) [optional, defaults to repo name]
+# =============================================================================
+
 on:
   push:
     branches:
@@ -11,11 +18,16 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+  REGISTRY_IMAGE: ${{ vars.REGISTRY_IMAGE }}
+  APP_NAME: ${{ vars.APP_NAME || 'greedy' }}
+
 jobs:
   build-and-deploy:
     runs-on: [docker]
     container:
-      image: 192.168.1.150:5000/docker-node:latest
+      image: ${{ env.REGISTRY_HOST }}/${{ env.REGISTRY_IMAGE }}
 
     steps:
       - name: Checkout code
@@ -27,7 +39,7 @@ jobs:
           driver-opts: |
             network=host
           config-inline: |
-            [registry."192.168.1.150:5000"]
+            [registry."${{ env.REGISTRY_HOST }}"]
               http = true
               insecure = true
 
@@ -38,11 +50,11 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: 192.168.1.150:5000/greedy:latest
+          tags: ${{ env.REGISTRY_HOST }}/${{ env.APP_NAME }}:latest
           provenance: false
 
       - name: Notify deployment success
         if: success()
         run: |
           echo "Docker image built and pushed successfully!"
-          echo "Registry: 192.168.1.150:5000/greedy:latest"
+          echo "Registry: ${{ env.REGISTRY_HOST }}/${{ env.APP_NAME }}:latest"
